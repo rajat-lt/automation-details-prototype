@@ -1,14 +1,25 @@
-// Test header: brief items 1 to 5. Spec: automation-details.md §3 and §4.
+// Test header: brief items 1 to 5, v2 items 12 and 13. Spec:
+// automation-details.md §3, §4 and §4b.
 import React, { useState } from 'react'
-import { Bug, Clock, Ellipsis, History, Maximize, Minimize, Monitor, PanelLeftOpen, Share2, Trash2, Zap } from 'lucide-react'
+import {
+  Bug, Clock, Ellipsis, History, Keyboard, Maximize, Minimize, Monitor, PanelLeftOpen, Share2, Trash2, Unlink, Zap,
+} from 'lucide-react'
 import { LTButton, LTIconButton, LTTooltip, LTCopyToClipboard, LTTestStatusLabel, LTMetaData, LTLink, cx } from './lt.jsx'
 import { LTActionMenu, LTInlineTextInput } from './overlays.jsx'
 import { fmtDateTime, fmtDuration, fmtRelative } from './format.js'
 
 export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleFullscreen, onStub,
-  testsCollapsed, onExpandTests }) {
+  testsCollapsed, onExpandTests, linked, onUnlink, onLink }) {
   const [titleHover, setTitleHover] = useState(false)
+  const [titleTip, setTitleTip] = useState('')
   const updated = test.updatedAt
+  // v2 items 13 and 16: the name takes all the width the row has left, and
+  // only when that runs out does it end in an ellipsis, with the full name on
+  // hover. Measured at the moment of hover, never while editing.
+  const checkTitle = e => {
+    const input = e.currentTarget.querySelector('input')
+    setTitleTip(input && document.activeElement !== input && input.scrollWidth > input.clientWidth + 1 ? name : '')
+  }
   return (
     <header className="td-head">
       <div className="td-title-row">
@@ -20,11 +31,13 @@ export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleF
             button shows on that hover and whenever it has keyboard focus. */}
         <div className={cx('td-titlewrap', titleHover && 'is-hover')}
           onMouseEnter={() => setTitleHover(true)} onMouseLeave={() => setTitleHover(false)}>
-          <h1 className="td-title">
-            <span className="vh">{name}</span>
-            <LTInlineTextInput value={name} onCommit={onRename} ariaLabel="Test name" size="large"
-              validationMessage="Enter a test name." />
-          </h1>
+          <LTTooltip text={titleTip} direction="bottom">
+            <h1 className="td-title" onMouseEnter={checkTitle} onFocus={() => setTitleTip('')}>
+              <span className="vh">{name}</span>
+              <LTInlineTextInput value={name} onCommit={onRename} ariaLabel="Test name" size="large"
+                validationMessage="Enter a test name." />
+            </h1>
+          </LTTooltip>
           <span className="td-copy">
             <LTCopyToClipboard textToCopy={test.testId} copyAriaLabel="Copy test ID"
               copiedAriaLabel="Test ID copied" tooltipDirection="n" />
@@ -41,11 +54,12 @@ export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleF
           <LTIconButton variant="outline" icon={fullscreen ? Minimize : Maximize}
             ariaLabel={fullscreen ? 'Exit full screen' : 'Enter full screen'} onClick={onToggleFullscreen} />
           <LTActionMenu ariaLabel="More actions" width={248}
-            anchor={<LTIconButton variant="outline" icon={Ellipsis} ariaLabel="More actions" />}
+            customAnchor={<LTIconButton variant="outline" icon={Ellipsis} ariaLabel="More actions" />}
             onSelect={o => onMenu(o.value)}
             options={[
               { value: 'share', label: 'Share', icon: Share2, trailing: 'S', keyshortcuts: 'S' },
               { value: 'history', label: 'View history', icon: History },
+              { value: 'shortcuts', label: 'Keyboard shortcuts', icon: Keyboard, trailing: '?', keyshortcuts: '?' },
               { divider: true },
               { value: 'delete', label: 'Delete', icon: Trash2, variant: 'danger' },
             ]} />
@@ -59,10 +73,24 @@ export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleF
         <LTTestStatusLabel status={test.status} showStatusText />
         {test.status !== 'queued' && <LTMetaData leadingIcon={Clock} label="Duration" value={fmtDuration(test.durationSec)} />}
         <LTMetaData>
-          <LTLink href="#test-case" muted aria-label={`Test case ${test.testCaseId}`}
-            onClick={e => { e.preventDefault(); onStub(`Test case ${test.testCaseId} opens in Test Manager.`) }}>
-            {test.testCaseId}
-          </LTLink>
+          {linked ? (
+            // v2 item 12: Unlink sits right beside the test case ID, shown on
+            // hover and on keyboard focus. Its space is kept even while
+            // hidden, so nothing in the row moves when it appears.
+            <span className="tc-link">
+              <LTLink href="#test-case" muted aria-label={`Test case ${test.testCaseId}`}
+                onClick={e => { e.preventDefault(); onStub(`Test case ${test.testCaseId} opens in Test Manager.`) }}>
+                {test.testCaseId}
+              </LTLink>
+              <LTIconButton icon={Unlink} ariaLabel="Unlink test case" variant="invisible" size="xsmall"
+                tooltipDirection="s" className="tc-unlink" onClick={onUnlink} />
+            </span>
+          ) : (
+            // The base pattern's unlinked state, as a standalone action link.
+            <button type="button" className="lt-link lt-link--muted meta-linkbtn" data-focus="link-tc" onClick={onLink}>
+              Link a Test Case
+            </button>
+          )}
         </LTMetaData>
         <LTMetaData label="Browser" value={`${test.browser} ${test.browserVersion}`} />
         <LTMetaData label="Operating system" value={`${test.os} ${test.osVersion}`} />

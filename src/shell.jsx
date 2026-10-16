@@ -9,7 +9,7 @@ import {
   House, Bot, SquareTerminal, ClipboardList, TestTubes, Monitor, Smartphone, Workflow, ScanEye,
   Zap, ChartColumn, Accessibility, Globe, Ellipsis, Settings, CircleHelp, KeyRound, ChevronRight, Bell, Layers,
 } from 'lucide-react'
-import { LTTooltip, LTIconButton, LTButton, LTAvatar, cx } from './lt.jsx'
+import { LTTooltip, LTIconButton, LTButton, LTAvatar, TruncText, cx } from './lt.jsx'
 
 const PRIMARY_NAV = [
   ['home', 'Home', House], ['kaneai', 'KaneAI', Bot, true], ['kane-cli', 'Kane CLI', SquareTerminal],
@@ -95,7 +95,10 @@ export function PlatformSidebar({ active = 'automation' }) {
 }
 
 /* LTBreadcrumbs: maxCharsPerItem 20, separator "/", the last crumb is the
-   current page and matches the h1 (guidelines/ltbreadcrumbs.md, topbar.md §5). */
+   current page and matches the h1 (guidelines/ltbreadcrumbs.md, topbar.md §5).
+   v2 item 13: the current crumb, the test run's name, takes whatever width
+   the bar has left and ends in an ellipsis only when that runs out, with the
+   full name on hover (v2 item 16). v1 capped it at 420px at every width. */
 function Breadcrumbs({ items }) {
   const short = s => (s.length > 20 ? `${s.slice(0, 20).trimEnd()}…` : s)
   return (
@@ -108,7 +111,7 @@ function Breadcrumbs({ items }) {
             <li key={i}>
               {i > 0 && <span className="crumb-sep" aria-hidden="true">/</span>}
               {last ? (
-                <span className="crumb current" aria-current="page">{c.label}</span>
+                <TruncText className="crumb current" aria-current="page" text={c.label} direction="bottom" />
               ) : text !== c.label ? (
                 <LTTooltip text={c.label} direction="bottom">
                   <a className="crumb" href={c.href ?? '#'} aria-label={c.label} onClick={e => e.preventDefault()}>{text}</a>

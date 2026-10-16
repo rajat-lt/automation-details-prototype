@@ -3,11 +3,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Download, ListFilter, Maximize, Minimize, Moon, PanelLeftClose, Sun } from 'lucide-react'
 import {
   LTIconButton, LTInputBox, LTCodeBlock, LTBlankSlate, LTTable, LTFlash, LTButton, LTSkeletonBox, StatusGlyph,
-  LTTooltip, announce, cx,
+  LTTooltip, cx,
 } from './lt.jsx'
 import { LTActionMenu } from './overlays.jsx'
 import { capabilitiesFor, BUILD } from './data.js'
-import { fmtDuration, fmtMs, fmtOffset } from './format.js'
+import { fmtDuration, fmtMs, fmtTime } from './format.js'
 
 /* ---------------- Logs ----------------
    A log console: LTCodeBlock with its toolbar in headerActions, dark by
@@ -17,7 +17,7 @@ import { fmtDuration, fmtMs, fmtOffset } from './format.js'
    single scroll is about the All Commands tab. */
 export function LogsTab({ detail, theme, setTheme }) {
   const lines = useMemo(() => detail.commands.flatMap(c => {
-    const stamp = `${fmtOffset(c.at)}.${String(Math.round((c.at % 1) * 1000)).padStart(3, '0')}`
+    const stamp = `${fmtTime(c.at)}.${String(Math.round((c.at % 1) * 1000)).padStart(3, '0')}`
     const args = c.request.requestBody ? ` ${c.request.requestBody}` : ''
     const head = { stamp, level: 'INFO', text: `${c.request.requestMethod} ${c.request.requestPath}${args}` }
     if (c.status === 'failed') {
@@ -117,6 +117,12 @@ export function MetaDataTab({ test }) {
 export function TestsPane({ tests, names, selectedId, onCollapse, demo, onRetry }) {
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('all')
+  const [clamped, setClamped] = useState({})
+  const measure = (e, id) => {
+    const el = e.currentTarget.querySelector('.tp-row__name')
+    const cut = !!el && el.scrollHeight > el.clientHeight + 1
+    if (cut !== !!clamped[id]) setClamped(c => ({ ...c, [id]: cut }))
+  }
   const listRef = useRef(null)
   const shown = tests.filter(t => (status === 'all' || t.status === status) && (names[t.id] ?? t.name).toLowerCase().includes(q.trim().toLowerCase()))
   const n = s => tests.filter(t => t.status === s).length
@@ -131,8 +137,8 @@ export function TestsPane({ tests, names, selectedId, onCollapse, demo, onRetry 
       </div>
       <div className="tp-filters">
         <LTInputBox value={q} onChange={setQ} placeholder="Search tests" ariaLabel="Search tests" size="small" className="tp-search" />
-        <LTActionMenu ariaLabel="Filter tests" width={200} selectionVariant="single" selectedValue={status}
-          anchor={<LTIconButton icon={ListFilter} ariaLabel="Filter tests" variant="outline" size="small" />}
+        <LTActionMenu ariaLabel="Filter tests" width={200} selectionVariant="single" activeId={status}
+          customAnchor={<LTIconButton icon={ListFilter} ariaLabel="Filter tests" variant="outline" size="small" />}
           onSelect={o => setStatus(o.value)}
           options={[{ value: 'all', label: 'All' }, { value: 'passed', label: 'Passed' }, { value: 'failed', label: 'Failed' }, { value: 'queued', label: 'Queued' }]} />
       </div>
@@ -170,8 +176,11 @@ export function TestsPane({ tests, names, selectedId, onCollapse, demo, onRetry 
               const on = t.id === selectedId
               return (
                 <li key={t.id}>
-                  <LTTooltip text={name} direction="right" delayDuration={600}>
-                    <a href={`#/${t.id}/commands`} className={cx('tp-row', on && 'is-selected')} aria-current={on ? 'page' : undefined}>
+                  {/* The full name on hover only when its three lines cut it
+                      off (v2 item 16; v1 showed it on every row). */}
+                  <LTTooltip text={clamped[t.id] ? name : ''} direction="right" delayDuration={600}>
+                    <a href={`#/${t.id}/commands`} className={cx('tp-row', on && 'is-selected')} aria-current={on ? 'page' : undefined}
+                      onMouseEnter={e => measure(e, t.id)} onFocus={e => measure(e, t.id)}>
                       <StatusGlyph status={t.status} />
                       <span className="tp-row__main">
                         <span className="tp-row__name">{name}</span>

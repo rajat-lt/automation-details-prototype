@@ -4,14 +4,19 @@
 import React, { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, X, CircleCheck, CircleAlert, Info } from 'lucide-react'
-import { cx, placeFloating, LTTooltip, LTIconButton, LTButton } from './lt.jsx'
+import { cx, placeFloating, LTTooltip, LTIconButton, LTButton, usePortalRoot } from './lt.jsx'
 
 /* ---------- LTActionMenu ----------
    Quick actions or one selection (selectionVariant="single"). Every item has
    an icon or none does; the trailing slot holds shortcuts only; danger items
-   use the danger treatment (guidelines/ltactionmenu.md). Keyboard: arrows,
-   Home, End, Enter, Space, Esc, Tab. */
-export function LTActionMenu({ anchor, options, onSelect, selectionVariant = '', selectedValue, width = 240,
+   use the danger treatment; an unavailable item stays focusable, inactive,
+   with its reason written into the item (guidelines/ltactionmenu.md).
+   Keyboard: arrows, Home, End, Enter, Space, Esc, Tab.
+   Documented props: customAnchor, activeId, selectionVariant, width, open,
+   onMenuToggle (story-verified). `options` is TBD upstream (passthrough
+   stories), so its item shape here, with onSelect and ariaLabel, stands in
+   for it, and `align` only places the overlay. */
+export function LTActionMenu({ customAnchor, options, onSelect, selectionVariant = '', activeId, width = 240,
   align = 'end', ariaLabel, open: controlledOpen, onMenuToggle }) {
   const [openState, setOpenState] = useState(false)
   const open = controlledOpen ?? openState
@@ -21,12 +26,17 @@ export function LTActionMenu({ anchor, options, onSelect, selectionVariant = '',
   const menuRef = useRef(null)
   const itemsRef = useRef([])
   const id = useId()
+  const root = usePortalRoot()
   const items = options.filter(o => !o.divider)
 
   useLayoutEffect(() => {
     if (!open || !menuRef.current || !anchorRef.current) return
     const update = () => setPos(placeFloating(anchorRef.current, menuRef.current, { side: 'bottom', align, offset: 4 }))
     update()
+    // Focus now, not in an animation frame: frames stall while the window is
+    // not painting.
+    const sel = selectionVariant === 'single' ? items.findIndex(o => o.value === activeId) : 0
+    itemsRef.current[Math.max(0, sel)]?.focus({ preventScroll: true })
     window.addEventListener('resize', update)
     window.addEventListener('scroll', update, true)
     return () => { window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true) }
@@ -34,8 +44,6 @@ export function LTActionMenu({ anchor, options, onSelect, selectionVariant = '',
 
   useEffect(() => {
     if (!open) return
-    const sel = selectionVariant === 'single' ? items.findIndex(o => o.value === selectedValue) : 0
-    requestAnimationFrame(() => itemsRef.current[Math.max(0, sel)]?.focus())
     const onDown = e => {
       if (!menuRef.current?.contains(e.target) && !anchorRef.current?.contains(e.target)) setOpen(false)
     }
@@ -44,7 +52,7 @@ export function LTActionMenu({ anchor, options, onSelect, selectionVariant = '',
   }, [open])
 
   const close = (refocus = true) => { setOpen(false); if (refocus) anchorRef.current?.focus() }
-  const choose = o => { close(); onSelect?.(o) }
+  const choose = o => { if (o.inactive) return; close(); onSelect?.(o) }
   const onKeyDown = e => {
     const list = itemsRef.current.filter(Boolean)
     const i = list.indexOf(document.activeElement)
@@ -56,7 +64,7 @@ export function LTActionMenu({ anchor, options, onSelect, selectionVariant = '',
     else if (e.key === 'Tab') close(false)
   }
 
-  const trigger = React.cloneElement(anchor, {
+  const trigger = React.cloneElement(customAnchor, {
     ref: anchorRef,
     'aria-haspopup': 'menu',
     'aria-expanded': open,
@@ -76,7 +84,7 @@ export function LTActionMenu({ anchor, options, onSelect, selectionVariant = '',
             if (o.divider) return <div key={`d${k}`} role="separator" className="lt-menu__divider" />
             n += 1
             const idx = n
-            const checked = selectionVariant === 'single' ? o.value === selectedValue : undefined
+            const checked = selectionVariant === 'single' ? o.value === activeId : undefined
             const Icon = o.icon
             return (
               <button key={o.value ?? o.label} type="button" tabIndex={-1}
@@ -84,17 +92,22 @@ export function LTActionMenu({ anchor, options, onSelect, selectionVariant = '',
                 role={selectionVariant === 'single' ? 'menuitemradio' : 'menuitem'}
                 aria-checked={checked}
                 aria-keyshortcuts={o.keyshortcuts}
-                className={cx('lt-menu__item', o.variant === 'danger' && 'is-danger')}
+                aria-disabled={o.inactive || undefined}
+                className={cx('lt-menu__item', o.variant === 'danger' && 'is-danger', o.inactive && 'is-inactive',
+                  o.description && 'has-description')}
                 onClick={() => choose(o)}>
                 {selectionVariant === 'single'
                   ? <span className="lt-menu__check" aria-hidden="true">{checked && <Check size={16} />}</span>
                   : Icon && <Icon size={16} aria-hidden="true" className="lt-menu__icon" />}
-                <span className="lt-menu__label">{o.label}</span>
+                <span className="lt-menu__text">
+                  <span className="lt-menu__label">{o.label}</span>
+                  {o.description && <span className="lt-menu__desc">{o.description}</span>}
+                </span>
                 {o.trailing && <span className="lt-menu__trail" aria-hidden="true">{o.trailing}</span>}
               </button>
             )
           })}
-        </div>, document.body)}
+        </div>, root)}
     </>
   )
 }
@@ -121,15 +134,18 @@ export function LTSegmentedControl({ options, selectedValue, onChange, ariaLabel
 
 /* ---------- LTUnderlineNav ----------
    The page's main tabs. Each tab has its own URL (guidelines/ltunderlinenav.md);
-   the counter counts the rows in the tab (ux-text-guidelines.md §7). */
-export function LTUnderlineNav({ navs, current, ariaLabel, trailing }) {
+   the counter counts the rows in the tab (ux-text-guidelines.md §7). Native
+   link dragging is off so a tab can be dragged to reorder it (v2 item 1,
+   composed around the nav in tabbar.jsx); `onKeyDown` is the documented prop. */
+export function LTUnderlineNav({ navs, current, ariaLabel, trailing, onKeyDown }) {
   return (
     <div className="lt-unav">
       <nav aria-label={ariaLabel}>
         <ul>
           {navs.map(t => (
-            <li key={t.id}>
-              <a href={t.href} aria-current={t.id === current ? 'page' : undefined}
+            <li key={t.id} data-tab={t.id}>
+              <a href={t.href} aria-current={t.id === current ? 'page' : undefined} draggable={false}
+                onKeyDown={onKeyDown}
                 className={cx('lt-unav__item', t.id === current && 'is-current')}>
                 <span className="lt-unav__label" data-text={t.label}>{t.label}</span>
                 {t.counter != null && <span className="lt-counter lt-counter--secondary">{t.counter}</span>}
@@ -150,7 +166,8 @@ function useDialog(isOpen, onClose, ref, initialRef) {
     const prev = document.activeElement
     const focusables = () => [...ref.current.querySelectorAll(
       'button:not([aria-disabled="true"]), [href], input, textarea, select, [tabindex]:not([tabindex="-1"])')]
-    requestAnimationFrame(() => (initialRef?.current ?? focusables()[0])?.focus())
+    // Focus at once: animation frames stall while the window is not painting.
+    ;(initialRef?.current ?? focusables()[0])?.focus()
     const onKey = e => {
       if (e.key === 'Escape') { e.preventDefault(); onClose() }
       if (e.key === 'Tab') {
@@ -172,6 +189,7 @@ function useDialog(isOpen, onClose, ref, initialRef) {
 export function LTModal({ isOpen, title, subTitle, onClose, children, renderFooter, extraStyle, initialRef, keepOnBackdrop = false }) {
   const ref = useRef(null)
   const id = useId()
+  const root = usePortalRoot()
   useDialog(isOpen, onClose, ref, initialRef)
   if (!isOpen) return null
   return createPortal(
@@ -187,13 +205,14 @@ export function LTModal({ isOpen, title, subTitle, onClose, children, renderFoot
         <div className="lt-modal__body">{children}</div>
         {renderFooter && <div className="lt-modal__foot">{renderFooter()}</div>}
       </div>
-    </div>, document.body)
+    </div>, root)
 }
 
 /* ---------- LTDrawer ---------- right side only (guidelines/ltmodal.md) */
 export function LTDrawer({ isOpen, title, subTitle, onClose, width = 480, children }) {
   const ref = useRef(null)
   const id = useId()
+  const root = usePortalRoot()
   useDialog(isOpen, onClose, ref)
   if (!isOpen) return null
   return createPortal(
@@ -208,19 +227,33 @@ export function LTDrawer({ isOpen, title, subTitle, onClose, width = 480, childr
         </div>
         <div className="lt-drawer__body">{children}</div>
       </div>
-    </div>, document.body)
+    </div>, root)
 }
 
-/* ---------- LTToast ---------- top right, 4 seconds (guidelines/README.md §7) */
+/* ---------- LTToast ---------- top right, 4 seconds (guidelines/README.md §7).
+   An optional action (the "With Secondary Action" story), such as Undo
+   (ux-text-guidelines.md §3 Toasts). A toast holds while the pointer or focus
+   is on it, so its action can be reached in time. */
 const ToastCtx = createContext(() => {})
 export const useToast = () => useContext(ToastCtx)
 export function ToastProvider({ children }) {
   const [list, setList] = useState([])
-  const push = useCallback((text, variant = 'default') => {
-    const id = Math.random().toString(36).slice(2)
-    setList(l => [...l.slice(-2), { id, text, variant }])
-    setTimeout(() => setList(l => l.filter(t => t.id !== id)), 4000)
+  const timers = useRef(new Map())
+  const root = usePortalRoot()
+  const remove = useCallback(id => {
+    clearTimeout(timers.current.get(id)); timers.current.delete(id)
+    setList(l => l.filter(t => t.id !== id))
   }, [])
+  const arm = useCallback(id => {
+    clearTimeout(timers.current.get(id))
+    timers.current.set(id, setTimeout(() => remove(id), 4000))
+  }, [remove])
+  const push = useCallback((text, variant = 'default', action = null) => {
+    const id = Math.random().toString(36).slice(2)
+    setList(l => [...l.slice(-2), { id, text, variant, action }])
+    arm(id)
+  }, [arm])
+  const hold = id => clearTimeout(timers.current.get(id))
   return (
     <ToastCtx.Provider value={push}>
       {children}
@@ -229,16 +262,99 @@ export function ToastProvider({ children }) {
           {list.map(t => {
             const Icon = t.variant === 'success' ? CircleCheck : t.variant === 'danger' ? CircleAlert : Info
             return (
-              <div key={t.id} className={cx('lt-toast', `lt-toast--${t.variant}`)}>
+              <div key={t.id} className={cx('lt-toast', `lt-toast--${t.variant}`)}
+                onMouseEnter={() => hold(t.id)} onMouseLeave={() => arm(t.id)}
+                onFocus={() => hold(t.id)} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) arm(t.id) }}>
                 <Icon size={16} aria-hidden="true" className="lt-toast__icon" />
                 <span>{t.text}</span>
+                {t.action && (
+                  <button type="button" className="lt-toast__action"
+                    onClick={() => { remove(t.id); t.action.onClick() }}>{t.action.label}</button>
+                )}
                 <button type="button" className="lt-toast__close" aria-label="Dismiss"
-                  onClick={() => setList(l => l.filter(x => x.id !== t.id))}><X size={14} aria-hidden="true" /></button>
+                  onClick={() => remove(t.id)}><X size={14} aria-hidden="true" /></button>
               </div>
             )
           })}
-        </div>, document.body)}
+        </div>, root)}
     </ToastCtx.Provider>
+  )
+}
+
+/* ---------- LTPopover ----------
+   Props from COMPONENTS.md: heading, text, popOverbodyJSX, direction,
+   canChangeDirection, openOnClick (false: it opens on hover, as the
+   component's own "Popover" story does), forceClose, onOpen, contentStyles.
+   Brief v2 item 8 puts errors in it on hover; guidelines/ltpopover.md says
+   never for errors and always a visible dismiss (conflict C20). It closes
+   when the pointer leaves and on Esc. It carries no controls, so it is not a
+   focus stop; keyboard users get the same facts from the playhead's
+   failed-command chip and the command row. */
+export function LTPopover({ children, heading, text, popOverbodyJSX, direction = 'top', canChangeDirection = false,
+  openOnClick = false, forceClose = false, onOpen, contentStyles }) {
+  const [open, setOpen] = useState(false)
+  const [pos, setPos] = useState(null)
+  const anchorRef = useRef(null)
+  const popRef = useRef(null)
+  const timer = useRef(0)
+  const root = usePortalRoot()
+  const side = direction.split('-')[0]
+  const align = { left: 'start', right: 'end' }[direction.split('-')[1]] ?? 'center'
+
+  useEffect(() => () => clearTimeout(timer.current), [])
+  useEffect(() => { if (forceClose) setOpen(false) }, [forceClose])
+  useLayoutEffect(() => {
+    if (!open || !anchorRef.current || !popRef.current) return
+    const update = () => {
+      if (!anchorRef.current || !popRef.current) return
+      const p = placeFloating(anchorRef.current, popRef.current, { side, align, offset: 10, flip: canChangeDirection })
+      const a = anchorRef.current.getBoundingClientRect()
+      const w = popRef.current.offsetWidth, h = popRef.current.offsetHeight
+      // The caret points at the anchor's centre, however the box was clamped.
+      p.caretX = Math.min(w - 16, Math.max(16, a.left + a.width / 2 - p.left))
+      p.caretY = Math.min(h - 16, Math.max(16, a.top + a.height / 2 - p.top))
+      setPos(p)
+    }
+    update()
+    window.addEventListener('scroll', update, true)
+    window.addEventListener('resize', update)
+    return () => { window.removeEventListener('scroll', update, true); window.removeEventListener('resize', update) }
+  }, [open, side, align])
+  useEffect(() => {
+    if (!open) return
+    onOpen?.()
+    const onKey = e => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open])
+
+  const child = React.Children.only(children)
+  const hover = openOnClick ? {} : {
+    onMouseEnter: e => { child.props.onMouseEnter?.(e); clearTimeout(timer.current); timer.current = setTimeout(() => setOpen(true), 150) },
+    onMouseLeave: e => { child.props.onMouseLeave?.(e); clearTimeout(timer.current); timer.current = setTimeout(() => setOpen(false), 80) },
+    onPointerDown: e => { child.props.onPointerDown?.(e); clearTimeout(timer.current); setOpen(false) },
+  }
+  const click = openOnClick ? { onClick: e => { child.props.onClick?.(e); setOpen(o => !o) } } : {}
+  const trigger = React.cloneElement(child, {
+    ref: node => {
+      anchorRef.current = node
+      const r = child.props.ref
+      if (typeof r === 'function') r(node); else if (r) r.current = node
+    },
+    ...hover, ...click,
+  })
+  return (
+    <>
+      {trigger}
+      {open && createPortal(
+        <div ref={popRef} className={cx('lt-popover', pos && `is-${pos.side}`)} aria-hidden="true"
+          style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, '--caret-x': `${pos?.caretX ?? 16}px`,
+            '--caret-y': `${pos?.caretY ?? 16}px`, ...contentStyles }}>
+          {heading && <p className="lt-popover__heading">{heading}</p>}
+          {text && <p className="lt-popover__text">{text}</p>}
+          {popOverbodyJSX}
+        </div>, root)}
+    </>
   )
 }
 
