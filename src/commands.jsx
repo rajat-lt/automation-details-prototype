@@ -206,6 +206,7 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, onStub
   const toolbarRef = useRef(null)
   const lastTop = useRef(0)
   const suppressUntil = useRef(0)
+  const programmatic = useRef(null) // scrollTop a scroll we started is heading to
   const toolbarActive = useRef(false)
   const focusAfterReveal = useRef(null)
 
@@ -293,8 +294,12 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, onStub
     const topSpace = (toolbarRef.current?.offsetHeight ?? 0) + (head?.offsetHeight ?? 0) + 8
     const rowTop = rr.top - sr.top
     if (rowTop < topSpace || rr.bottom > sr.bottom - 8) {
-      suppressUntil.current = Date.now() + 1200
-      sc.scrollTo({ top: sc.scrollTop + rowTop - topSpace, behavior: reduceMotion() ? 'auto' : 'smooth' })
+      // Keep the toolbar shown until this scroll lands, however long a smooth
+      // scroll takes; 2.5 seconds is the fallback if it stops short.
+      const target = Math.min(sc.scrollTop + rowTop - topSpace, sc.scrollHeight - sc.clientHeight)
+      programmatic.current = target
+      suppressUntil.current = Date.now() + 2500
+      sc.scrollTo({ top: target, behavior: reduceMotion() ? 'auto' : 'smooth' })
     }
     if (pendingScroll.flashIt) setFlash(f => ({ id: pendingScroll.id, n: f.n + 1 }))
     setPendingScroll(null)
@@ -327,6 +332,11 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, onStub
     const dy = st - lastTop.current
     lastTop.current = st
     if (st <= toolbarH) { if (hidden) setHidden(false); return }
+    if (programmatic.current != null) {
+      if (Math.abs(st - programmatic.current) > 2 && Date.now() < suppressUntil.current) return
+      programmatic.current = null // landed: user scrolling counts again
+      return
+    }
     if (Date.now() < suppressUntil.current || toolbarActive.current) return
     if (dy > 4 && !hidden) setHidden(true)
     else if (dy < -4 && hidden) setHidden(false)
