@@ -6,8 +6,24 @@
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Copy, X, Search, CircleAlert, TriangleAlert } from 'lucide-react'
+import { copyText } from './clipboard.js'
 
 export const cx = (...a) => a.filter(Boolean).join(' ')
+
+/* ---------- where overlays mount ----------
+   Inside whatever is full screen, or nothing portaled to <body> would show
+   while the test details or the video are full screen (a v1 bug, fixed
+   17 Oct 2026). */
+export const portalRoot = () => document.fullscreenElement ?? document.body
+export function usePortalRoot() {
+  const [root, setRoot] = useState(portalRoot)
+  useEffect(() => {
+    const f = () => setRoot(portalRoot())
+    document.addEventListener('fullscreenchange', f)
+    return () => document.removeEventListener('fullscreenchange', f)
+  }, [])
+  return root
+}
 
 /* ---------- announcements (guidelines/README.md §9, ux-text-guidelines.md §3) ---------- */
 let announceFn = () => {}
@@ -19,13 +35,13 @@ export function Announcer() {
 }
 
 /* ---------- positioning for tooltips and menus ---------- */
-export function placeFloating(anchor, el, { side = 'bottom', align = 'center', offset = 4 } = {}) {
+export function placeFloating(anchor, el, { side = 'bottom', align = 'center', offset = 4, flip = true } = {}) {
   const a = anchor.getBoundingClientRect()
   const w = el.offsetWidth, h = el.offsetHeight
   const vw = window.innerWidth, vh = window.innerHeight
   let s = side
-  if (s === 'bottom' && a.bottom + offset + h > vh - 8 && a.top - offset - h > 8) s = 'top'
-  if (s === 'top' && a.top - offset - h < 8 && a.bottom + offset + h < vh - 8) s = 'bottom'
+  if (flip && s === 'bottom' && a.bottom + offset + h > vh - 8 && a.top - offset - h > 8) s = 'top'
+  else if (flip && s === 'top' && a.top - offset - h < 8 && a.bottom + offset + h < vh - 8) s = 'bottom'
   let top, left
   if (s === 'top' || s === 'bottom') {
     top = s === 'bottom' ? a.bottom + offset : a.top - offset - h
@@ -53,6 +69,7 @@ export function LTTooltip({ text, direction = 'top', delayDuration = 400, type =
   const timer = useRef(0)
   const overTip = useRef(false)
   const id = useId()
+  const root = usePortalRoot()
 
   const show = delay => {
     clearTimeout(timer.current)
@@ -104,8 +121,30 @@ export function LTTooltip({ text, direction = 'top', delayDuration = 400, type =
           onMouseEnter={() => { overTip.current = true }}
           onMouseLeave={() => { overTip.current = false; hide() }}>
           {text}
-        </div>, document.body)}
+        </div>, root)}
     </>
+  )
+}
+
+/* ---------- full text of truncated text (v2 item 16) ----------
+   Not a library component: LTTooltip on a span, shown only while the span is
+   actually cut off, measured at the moment of hover, so it follows the
+   viewport and whatever sits beside the text. `lines` checks a line clamp
+   instead of an ellipsis. Text that fits never gets a tooltip
+   (guidelines/lttooltip.md: never repeat text already visible). */
+export function TruncText({ text, children, className, direction = 'top', lines = false, as: Tag = 'span', ...rest }) {
+  const ref = useRef(null)
+  const [tip, setTip] = useState('')
+  const check = () => {
+    const el = ref.current
+    if (!el) return
+    const cut = lines ? el.scrollHeight > el.clientHeight + 1 : el.scrollWidth > el.clientWidth + 1
+    setTip(cut ? text : '')
+  }
+  return (
+    <LTTooltip text={tip} direction={direction}>
+      <Tag ref={ref} className={className} onMouseEnter={check} {...rest}>{children ?? text}</Tag>
+    </LTTooltip>
   )
 }
 
@@ -170,9 +209,16 @@ export function LTCounterLabel({ count, scheme = 'secondary', className, ...rest
   return <span className={cx('lt-counter', `lt-counter--${scheme}`, className)} {...rest}>{count}</span>
 }
 
-/* ---------- LTTag ---------- read-only metadata (guidelines/lttag.md) */
-export function LTTag({ text, variant = 'secondary', labelStyle = 'outline', size = 'small', className }) {
-  return <span className={cx('lt-tag', `lt-tag--${variant}`, `lt-tag--${labelStyle}`, `lt-tag--${size}`, className)}>{text}</span>
+/* ---------- LTTag ---------- read-only metadata (guidelines/lttag.md).
+   `leadingVisual` takes an icon (icons.md, "How icons are passed"). A tag
+   cut off by its 200px cap shows its full text on hover (v2 item 16). */
+export function LTTag({ text, variant = 'secondary', labelStyle = 'outline', size = 'small', leadingVisual: Icon, className }) {
+  return (
+    <span className={cx('lt-tag', `lt-tag--${variant}`, `lt-tag--${labelStyle}`, `lt-tag--${size}`, className)}>
+      {Icon && <Icon size={12} aria-hidden="true" className="lt-tag__icon" />}
+      <TruncText text={text} className="lt-tag__text" />
+    </span>
+  )
 }
 
 /* ---------- LTTestStatusLabel ----------
@@ -257,24 +303,37 @@ export function LTSkeletonBox({ width = '100%', height = 12, radius = 'var(--rad
    readers (ux-text-guidelines.md §3: silent success still speaks). */
 export function LTCopyToClipboard({ textToCopy, copyAriaLabel = 'Copy to clipboard', copiedAriaLabel = 'Copied to clipboard',
   buttonVariant = 'invisible', size = 'medium', className, onCopy, tooltipDirection = 's', dark = false }) {
-  const [copied, setCopied] = useState(false)
+  return (
+    <CopyIconButton icon={Copy} ariaLabel={copyAriaLabel} copiedLabel={copiedAriaLabel} copy={() => copyText(textToCopy)}
+      variant={buttonVariant} size={size} tooltipDirection={tooltipDirection} onCopy={onCopy} dark={dark} className={className} />
+  )
+}
+
+/* ---------- copy with another icon ----------
+   Composed, not a library component: LTCopyToClipboard always shows the copy
+   glyph and copies plain text. "Copy link" (link glyph) and "Copy table"
+   (HTML plus text, v2 item 10) reuse its feedback: a tick for 2 seconds, the
+   tooltip "Copied", and the announcement. */
+export function CopyIconButton({ icon, ariaLabel, copiedLabel, copy, variant = 'invisible', size = 'small',
+  tooltipDirection = 's', onCopy, dark = false, className, tabIndex }) {
+  const [state, setState] = useState(null) // 'copied' | 'failed' | null
   const t = useRef(0)
   useEffect(() => () => clearTimeout(t.current), [])
-  const copy = async () => {
-    try { await navigator.clipboard.writeText(textToCopy) } catch {
-      const ta = document.createElement('textarea')
-      ta.value = textToCopy; document.body.appendChild(ta); ta.select()
-      try { document.execCommand('copy') } catch { /* nothing else to try */ }
-      ta.remove()
-    }
-    setCopied(true); announce(copiedAriaLabel); onCopy?.()
-    clearTimeout(t.current); t.current = setTimeout(() => setCopied(false), 2000)
+  // "Test ID copied" fails as "Test ID failed to copy" (ux-text-guidelines.md
+  // §5: "{object} failed to {verb}").
+  const failedLabel = copiedLabel.replace(/ copied$/, ' failed to copy')
+  const run = async () => {
+    const ok = await copy()
+    setState(ok === false ? 'failed' : 'copied')
+    announce(ok === false ? failedLabel : copiedLabel)
+    if (ok !== false) onCopy?.()
+    clearTimeout(t.current); t.current = setTimeout(() => setState(null), 2000)
   }
   return (
-    <LTIconButton icon={copied ? Check : Copy} ariaLabel={copyAriaLabel}
-      tooltipText={copied ? 'Copied' : copyAriaLabel} variant={buttonVariant} size={size}
-      tooltipDirection={tooltipDirection} onClick={copy}
-      className={cx(copied && 'is-copied', dark && 'on-dark', className)} />
+    <LTIconButton icon={state === 'copied' ? Check : icon} ariaLabel={ariaLabel}
+      tooltipText={state === 'copied' ? 'Copied' : state === 'failed' ? failedLabel : ariaLabel}
+      variant={variant} size={size} tooltipDirection={tooltipDirection} onClick={run} tabIndex={tabIndex}
+      className={cx(state === 'copied' && 'is-copied', dark && 'on-dark', className)} />
   )
 }
 

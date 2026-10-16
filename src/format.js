@@ -49,16 +49,23 @@ export function fmtMs(ms) {
   return `${+(ms / 1000).toFixed(1)}s`
 }
 
-/** GAP: offset in a command row. Screenshot form: `00:18`. */
-export function fmtOffset(sec) {
+/**
+ * GAP, one form since 17 Oct 2026: a moment in the run, everywhere it shows
+ * (command rows, the timeline axis, the player, the logs, dialogs). The
+ * brief's screenshots used three forms (`00:18`, `0:20`, `2:04`) and Rajat
+ * chose to unify them. `m:ss` [proposed], the form video players use, and
+ * `h:mm:ss` from an hour.
+ */
+export function fmtTime(sec) {
   const s = Math.max(0, Math.floor(sec))
-  return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`
 }
 
-/** GAP: player and timeline axis. Screenshot form: `2:04`, `0:20`. */
-export function fmtClock(sec) {
-  const s = Math.max(0, Math.floor(sec))
-  return `${Math.floor(s / 60)}:${pad(s % 60)}`
+/** A window of the run, with a spaced hyphen as mock-data.md's date ranges use: `1:13 - 1:25`. */
+export function fmtTimeRange(a, b) {
+  return `${fmtTime(a)} - ${fmtTime(b)}`
 }
 
 /** Numbers above 999: `k` and `M`, up to 2 decimals, zeros trimmed (9 Oct 2026). */

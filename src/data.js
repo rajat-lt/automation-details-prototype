@@ -405,16 +405,48 @@ function generic(t, r) {
   return blocks
 }
 
-/** Failure segments for the timelines: failures within 2s merge into one. */
-export function failureSegments(failed) {
+/**
+ * Failure segments for the timelines: failures within `gap` seconds merge into
+ * one. 2 seconds at the whole run; a zoomed timeline passes a gap scaled to
+ * its window, so the merge stays the same on screen and retries separate.
+ */
+export function failureSegments(failed, gap = 2) {
   const segs = []
   for (const c of failed) {
     const end = c.at + c.ms / 1000
     const last = segs[segs.length - 1]
-    if (last && c.at - last.end <= 2) { last.end = Math.max(last.end, end); last.ids.push(c.id) }
+    if (last && c.at - last.end <= gap) { last.end = Math.max(last.end, end); last.ids.push(c.id) }
     else segs.push({ start: c.at, end, ids: [c.id] })
   }
   return segs
+}
+
+/**
+ * The failed command the playhead is on (v2 item 6), or null. A failure
+ * counts for at least 2 seconds, so a 120ms failure stays readable while the
+ * video plays through it [proposed].
+ */
+export function failureAt(segments, byId, t) {
+  for (const s of segments) {
+    if (t < s.start - 0.05 || t > Math.max(s.end, s.start + 2)) continue
+    const cmds = s.ids.map(id => byId.get(id))
+    return [...cmds].reverse().find(c => c.at <= t + 0.05) ?? cmds[0]
+  }
+  return null
+}
+
+/** "Copy payload" (v2 items 2 and 6): the request and the response, as one JSON. */
+export function payloadText(cmd) {
+  const parse = s => { try { return JSON.parse(s) } catch { return s } }
+  return JSON.stringify({
+    request: { ...cmd.request, requestBody: cmd.request.requestBody ? parse(cmd.request.requestBody) : '' },
+    response: { responseStatus: cmd.response.responseStatus, responseBody: parse(cmd.response.responseBody) },
+  }, null, 2)
+}
+
+/** A command's deep link in this test run (v2 item 2): `#/{test}/commands/{command}`. */
+export function commandHref(testId, cmdId) {
+  return `${window.location.origin}${window.location.pathname}#/${testId}/commands/${cmdId}`
 }
 
 /** The command playing at time t: the last one that started at or before t. */

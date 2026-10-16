@@ -2,7 +2,7 @@
 // `jump` is the event behind brief item 9: whenever the video jumps to a time,
 // the command at that time is revealed and highlighted. Continuous playback
 // never emits it, so the list does not scroll under the reader.
-import { useSyncExternalStore } from 'react'
+import { useEffect, useRef, useSyncExternalStore } from 'react'
 
 function createStore(initial) {
   let state = initial
@@ -34,4 +34,35 @@ export function jumpTo(time, { commandId = null, source = 'seek' } = {}) {
 export function seekSilently(time) {
   const { duration } = playback.get()
   playback.set({ time: Math.min(Math.max(0, time), duration || time) })
+}
+
+// Chromium reports "macOS", older engines "MacIntel": match either, any case.
+export const isMac = /mac|iphone|ipad/i.test(navigator.userAgentData?.platform ?? navigator.platform ?? '')
+
+/**
+ * v2 item 14: Cmd (Mac) or Ctrl (Windows) plus the mouse wheel seeks, over
+ * the element `ref` points at: the video and the timeline [proposed scope].
+ * Elsewhere Ctrl and the wheel keep zooming the page, which low-vision users
+ * rely on. One wheel notch (about 100px) moves 1 second; down or right is
+ * later. The list follows once the wheel stops, so it does not scroll under
+ * every notch.
+ */
+export function useWheelSeek(ref) {
+  const settle = useRef(0) // outlives re-renders, so the final jump still fires
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onWheel = e => {
+      if (!(isMac ? e.metaKey : e.ctrlKey)) return
+      e.preventDefault()
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1
+      const d = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit
+      seekSilently(playback.get().time + d / 100)
+      clearTimeout(settle.current)
+      settle.current = setTimeout(() => jumpTo(playback.get().time, { source: 'wheel' }), 250)
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  })
+  useEffect(() => () => clearTimeout(settle.current), [])
 }
