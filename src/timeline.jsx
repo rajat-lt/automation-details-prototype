@@ -8,10 +8,12 @@
 // a double-click on a failure zooms to (v2 item 9). The handles select a
 // window inside it, and the list shows only that window.
 import React, { useEffect, useRef, useState } from 'react'
+import { MessageSquare } from 'lucide-react'
 import { usePlayback, useWheelSeek } from './playback.js'
 import { fmtTime } from './format.js'
 import { cx } from './lt.jsx'
 import { FailureHits } from './failure.jsx'
+import { commentKey, useComments } from './comments.js'
 
 const MIN_GAP = 5 // seconds between the two handles
 
@@ -60,7 +62,8 @@ function Handle({ which, value, min, max, onChange, trackRef, view }) {
   )
 }
 
-export function RangeTimeline({ view, segments, byId, range, onRange, onSeek, onZoom }) {
+export function RangeTimeline({ view, segments, byId, range, onRange, onSeek, onZoom, testId, onStub }) {
+  const comments = useComments()
   const trackRef = useRef(null)
   const time = usePlayback(s => s.time)
   const [hover, setHover] = useState(null)
@@ -107,7 +110,16 @@ export function RangeTimeline({ view, segments, byId, range, onRange, onSeek, on
           )))}
           {time >= v0 && time <= v1 && <span className="tl-playhead" style={{ left: pct(time) }} aria-hidden="true" />}
         </span>
-        <FailureHits segments={segments} byId={byId} view={view} direction="bottom" onDoubleClick={onZoom} />
+        {/* v3 item 6.2: a 10px comment mark over every stretch with a comment.
+            Decorative and not clickable; the comment itself is in the
+            command's details and the stretch's popover. */}
+        {segments.map((s, i) => (s.end < v0 || s.start > v1 || !s.ids.some(id => comments[commentKey(testId, id)]) ? null : (
+          <span key={`note-${i}`} className="tl-note" aria-hidden="true" style={{ left: pct((s.start + s.end) / 2) }}>
+            <MessageSquare size={10} fill="currentColor" strokeWidth={1.5} />
+          </span>
+        )))}
+        <FailureHits segments={segments} byId={byId} view={view} direction="bottom" onDoubleClick={onZoom}
+          testId={testId} onStub={onStub} />
         {hover != null && (
           <span className="tl-hover" style={{ left: pct(hover) }} aria-hidden="true">{fmtTime(hover)}</span>
         )}

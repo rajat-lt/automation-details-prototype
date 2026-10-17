@@ -11,7 +11,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Bug, Download, Ellipsis, GripHorizontal, Maximize, Minimize, PanelRight, PanelRightClose, PanelTop, PanelTopClose,
-  Pause, PictureInPicture2, Play, RotateCwSquare,
+  Pause, PictureInPicture2, Play, RotateCwSquare, MessageSquarePlus, Pencil,
 } from 'lucide-react'
 import {
   LTIconButton, LTButton, LTBlankSlate, LTSkeletonBox, LTCopyToClipboard, StatusGlyph, TruncText, cx, usePortalRoot,
@@ -21,6 +21,7 @@ import { playback, usePlayback, jumpTo, seekSilently, useWheelSeek } from './pla
 import { commandAt, failureAt, payloadText, statusLabel } from './data.js'
 import { fmtTime } from './format.js'
 import { FailureHits } from './failure.jsx'
+import { commentKey, requestComment, useComment } from './comments.js'
 
 const W = 960, H = 540
 
@@ -266,7 +267,7 @@ function ReplayCanvas({ detail, rotation }) {
 }
 
 /* ---------------- control bar ---------------- */
-function SeekBar({ duration, segments, byId }) {
+function SeekBar({ duration, segments, byId, testId, onStub }) {
   const time = usePlayback(s => s.time)
   const ref = useRef(null)
   const dragging = useRef(false)
@@ -301,7 +302,7 @@ function SeekBar({ duration, segments, byId }) {
           className={cx('vc-marker', s.end - s.start < 1 && 'is-dot', s.start < time && 'is-played')}
           style={{ left: pct(s.start), width: s.end - s.start < 1 ? undefined : `max(6px, ${pct(s.end - s.start)})` }} />
       ))}
-      <FailureHits segments={segments} byId={byId} view={[0, duration]} direction="top" />
+      <FailureHits segments={segments} byId={byId} view={[0, duration]} direction="top" testId={testId} onStub={onStub} />
       <span className="vc-thumb" style={{ left: pct(time) }} />
     </div>
   )
@@ -312,10 +313,12 @@ function SeekBar({ duration, segments, byId }) {
    in words (404 Not Found, never a bare code: ux-text-guidelines.md §3) and
    carries Raise a bug and Copy payload. The line keeps its height either way,
    so nothing jumps when a failure starts or ends, and the buttons never
-   crowd the seek bar [proposed]. */
-function NowLine({ commands, segments, byId, onStub }) {
+   crowd the seek bar [proposed]. v3: it also carries the comment action, so
+   a failure offers the same three actions here and in its popover. */
+function NowLine({ commands, segments, byId, onStub, testId }) {
   const time = usePlayback(s => s.time)
   const failed = failureAt(segments, byId, time)
+  const comment = useComment(failed ? commentKey(testId, failed.id) : '')
   const cmd = failed ?? commandAt(commands, time)
   if (!cmd) return <div className="vc-now" />
   if (!failed) {
@@ -340,6 +343,8 @@ function NowLine({ commands, segments, byId, onStub }) {
         onClick={() => onStub(`The bug form opens here, with ${failed.name} at ${fmtTime(failed.at)} attached.`)} />
       <LTCopyToClipboard textToCopy={payloadText(failed)} size="small" tooltipDirection="n"
         copyAriaLabel="Copy payload" copiedAriaLabel="Payload copied" />
+      <LTIconButton icon={comment ? Pencil : MessageSquarePlus} ariaLabel={comment ? 'Edit comment' : 'Add comment'}
+        variant="invisible" size="small" tooltipDirection="n" onClick={() => requestComment(testId, failed.id)} />
     </div>
   )
 }
@@ -386,6 +391,44 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
     return () => document.removeEventListener('fullscreenchange', f)
   }, [])
 
+  // v3 item 7: with the logs docked below the video, the pane is wide and
+  // short, so the controls move to the frame's right and the frame takes the
+  // pane's whole height. It keeps 16:9 and leaves the controls at least
+  // 320px; full screen goes back to controls below.
+  const sideControls = mode === 'docked' && dock === 'bottom' && !fs
+  const [paneSize, setPaneSize] = useState({ width: 0, height: 0 })
+  useLayoutEffect(() => {
+    const el = paneRef.current
+    if (!el || !sideControls) return
+    const measure = () => setPaneSize({ width: el.clientWidth, height: el.clientHeight })
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    window.addEventListener('resize', measure)
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure) }
+  }, [sideControls, hasVideo])
+  // Also on every render: the splitter changes the pane's height through a
+  // re-render, which should never wait on an observer.
+  useLayoutEffect(() => {
+    const el = paneRef.current
+    if (!el || !sideControls) return
+    if (el.clientWidth !== paneSize.width || el.clientHeight !== paneSize.height) {
+      setPaneSize({ width: el.clientWidth, height: el.clientHeight })
+    }
+  })
+  let frame = null
+  if (sideControls && paneSize.width) {
+    const PAD = 16, GAP = 16, CONTROLS_MIN = 320
+    let w = Math.max(0, paneSize.width - 2 * PAD - GAP - CONTROLS_MIN)
+    let h = (w * 9) / 16
+    const maxH = Math.max(0, paneSize.height - 2 * PAD)
+    if (h > maxH) { h = maxH; w = (h * 16) / 9 }
+    frame = { width: Math.floor(w), height: Math.floor(h) }
+  }
+  // Rotate is for mobile recordings only (v3 item 10); web tests get a plain
+  // Download button instead of a one-item menu.
+  const mobile = detail?.test.platform === 'mobile'
+
   const windowControls = mode === 'docked' && (
     <>
       <LTIconButton icon={PictureInPicture2} ariaLabel="Open picture-in-picture" variant="invisible" size="small"
@@ -425,13 +468,14 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
     playback.set({ playing: !s.playing })
   }
   return (
-    <section ref={paneRef} className={cx('vp', `vp--${mode}`, fs && 'is-fullscreen')} aria-label="Video">
-      <div className="vp-stage" onClick={toggle}>
+    <section ref={paneRef} className={cx('vp', `vp--${mode}`, fs && 'is-fullscreen', sideControls && 'has-side-controls')}
+      aria-label="Video">
+      <div className="vp-stage" onClick={toggle} style={frame ?? undefined}>
         <ReplayCanvas detail={detail} rotation={rotation} />
       </div>
       <div className="vc">
-        <NowLine commands={detail.commands} segments={segments} byId={byId} onStub={onStub} />
-        <SeekBar duration={duration} segments={segments} byId={byId} />
+        <NowLine commands={detail.commands} segments={segments} byId={byId} onStub={onStub} testId={detail.test.id} />
+        <SeekBar duration={duration} segments={segments} byId={byId} testId={detail.test.id} onStub={onStub} />
         <div className="vc-row">
           <LTIconButton icon={playing ? Pause : Play} ariaLabel={playing ? 'Pause' : 'Play'} variant="invisible" size="small"
             tooltipDirection="n" onClick={toggle} />
@@ -447,17 +491,22 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
           <LTIconButton icon={fs ? Minimize : Maximize} ariaLabel={fs ? 'Exit full screen' : 'Enter full screen'}
             variant="invisible" size="small" tooltipDirection="n"
             onClick={() => (fs ? document.exitFullscreen() : paneRef.current?.requestFullscreen?.())} />
-          {/* Rare actions leave the bar (NN/g heuristic 8, automation-details.md §7b). */}
-          <LTActionMenu ariaLabel="More video actions" width={200}
-            customAnchor={<LTIconButton icon={Ellipsis} ariaLabel="More video actions" variant="invisible" size="small" tooltipDirection="n" />}
-            onSelect={o => {
-              if (o.value === 'download') onStub('Video download started.')
-              if (o.value === 'rotate') setRotation(r => (r + 90) % 360)
-            }}
-            options={[
-              { value: 'download', label: 'Download video', icon: Download },
-              { value: 'rotate', label: 'Rotate video', icon: RotateCwSquare },
-            ]} />
+          {mobile ? (
+            // Rare actions leave the bar (NN/g heuristic 8, automation-details.md §7b).
+            <LTActionMenu ariaLabel="More video actions" width={200}
+              customAnchor={<LTIconButton icon={Ellipsis} ariaLabel="More video actions" variant="invisible" size="small" tooltipDirection="n" />}
+              onSelect={o => {
+                if (o.value === 'download') onStub('Video download started.')
+                if (o.value === 'rotate') setRotation(r => (r + 90) % 360)
+              }}
+              options={[
+                { value: 'download', label: 'Download video', icon: Download },
+                { value: 'rotate', label: 'Rotate video', icon: RotateCwSquare },
+              ]} />
+          ) : (
+            <LTIconButton icon={Download} ariaLabel="Download video" variant="invisible" size="small" tooltipDirection="n"
+              onClick={() => onStub('Video download started.')} />
+          )}
         </div>
       </div>
     </section>

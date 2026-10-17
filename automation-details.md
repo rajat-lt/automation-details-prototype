@@ -1,4 +1,4 @@
-# Automation test details: 18 UX changes, then 16 more
+# Automation test details: 18 UX changes, then 16, then 11 more
 
 The automation test details page with Rajat's 18 changes of 16 Oct 2026 applied. Written in the `design-context/patterns/` house format, as an amendment proposal for `patterns/automation-details.md`. The working prototype in this repo implements it.
 
@@ -9,6 +9,8 @@ Sources, all read from `design-context` `main` (e014a73) on 16 Oct 2026: `ux-per
 Every component and prop below was read from `COMPONENTS.md`. Proposals carry **[proposed]**.
 
 **v2, 17 Oct 2026.** Rajat's second brief (16 changes) and his answers to §10 are applied. Its items are written *v2 item 1* to *v2 item 16*, beside the first brief's items 1 to 18; §4b, §6 (C20 to C28), §7b and the v2 rows of every other section cover them. Sources were read again from `design-context` `main` (still `e014a73`) on 17 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md`, `guidelines/README.md`, `ltpopover.md`, `ltactionmenu.md`, `lttooltip.md`, `ltunderlinenav.md`, `ltsegmentedcontrol.md`, `lticonbutton.md`, `ltmodal.md`, `notification-messaging.md`, `COMPONENTS.md` (with its story source snippets in `data/raw/components.json`), `patterns/automation-details.md`, `patterns/module-details.md`, `patterns/topbar.md`, `guidelines/ltbreadcrumbs.md`, `mock-data.md` and `icons.md`. Two outside sources were read for v2: NN/g's [10 Usability Heuristics for User Interface Design](https://www.nngroup.com/articles/ten-usability-heuristics/) (Jakob Nielsen, last reviewed Jan 30, 2024) for v2 item 11, and MDN's [Document Picture-in-Picture API](https://developer.mozilla.org/en-US/docs/Web/API/Document_Picture-in-Picture_API) for v2 item 5.
+
+**v3, 18 Oct 2026.** Rajat's third brief: 11 items, two of them reminders (no hallucination; nothing already built may break). Its items are written *v3 item 1* to *v3 item 11*: §4c, conflicts C29 to C33, §7c and the v3 rows of every other section. Sources read again from `design-context` `main` (still `e014a73`) on 18 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md`, `guidelines/lttextarea.md`, `ltpopover.md`, `COMPONENTS.md` (`LTTextarea`, `LTPopover`) and `mock-data.md` (people, devices).
 
 ---
 
@@ -33,6 +35,16 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | Video | Docked, one-row control bar | Picture-in-picture and collapse (v2 item 5); three rows, with a command line that carries Raise a bug and Copy payload at a failure (v2 items 6, 11); failure popovers (v2 item 8); Cmd or Ctrl plus the wheel seeks (v2 item 14) |
 | Screenshot dialog | The image | The command's facts, plus download, bug and link (v2 item 15) |
 | Time | `00:18`, `0:20`, `2:04` | One form, `m:ss` (answer 6) |
+
+**What v3 changes (18 Oct 2026)**
+
+| Region | After v2 | After v3 |
+|---|---|---|
+| Header | Unlink shown on hover, with its space kept; the ID 3px low | Unlink always shown, on the row's baseline (v3 item 1). Remarks under the meta row: one line, **View All** for the rest (v3 item 2) |
+| All Commands | One row height; counts as a readout | Comfortable or condensed rows (v3 item 3); the counts filter by status (v3 item 9); comments on failed commands (v3 item 6); tables on white (v3 item 8) |
+| Failure popovers | Close when the pointer leaves | Stay open to copy from; a single failure carries Raise a bug, Copy payload and a comment action; a new reading order (v3 item 4) |
+| Timeline | Failure stretches | A comment mark above every stretch with a comment (v3 item 6.2) |
+| Video | Controls below the frame everywhere; Rotate for every test | Controls right of the frame while the logs are docked below (v3 item 7); Rotate only for mobile (v3 item 10); a comment action on the failure line |
 
 ## 2. Component inventory
 
@@ -79,6 +91,16 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | `LTModal` with `LTTable` | Keyboard shortcuts [proposed]; the screenshot dialog's command facts | `title`, `isOpen`, `onClose`, `extraStyle={{ width: 480 }}` |
 | `LTCopyToClipboard` | Copy payload on the command line (v2 item 6) | `textToCopy`, `copyAriaLabel`, `copiedAriaLabel` |
 | `LTSegmentedControl` | Dock position, while the video is docked | unchanged; segments renamed to nouns (C27) |
+
+**Added in v3:**
+
+| Component | Where | Props used (all in `COMPONENTS.md`) |
+|---|---|---|
+| `LTTextarea` | Writing a comment (v3 item 6) | `label`, `required`, `rows={3}`, `resize="vertical"`, `value`, `onChange`, `placeholder`, `caption` (the live count), `validationStatus`, `validationMessage`, `forwardRef`. There is no length prop, so the 500-character limit is validation (C33) |
+| `LTButton` | Cancel and Save; the passed and failed counts as toggles (v3 item 9) | `variant`, `size`, `label`, `inactive`, `ariaLabel`, with `aria-pressed` for the toggles |
+| `LTPopover` | Failure popovers, now interactive (v3 item 4) | `containsInteractiveChildElement`, `forceClose`, plus v2's props. With interactive content it follows `ltpopover.md`: a visible close button, Esc and click-outside |
+| `LTIconButton` | Add comment, Edit comment, the density toggle, Download video | as before |
+| `LTAvatar` | The comment's author | `initials`, `name`, `size` |
 
 **Built custom and flagged in v2:** tab reordering around `LTUnderlineNav` (v2 item 1); the right-click menu's anchor (v2 item 2); the floating video window (v2 item 5); copy buttons with another icon or rich content, for Copy link and Copy table (v2 items 2, 10, 15), because `LTCopyToClipboard` has a fixed icon and copies plain text; the "full text when cut" tooltip helper (v2 item 16). See §9.
 
@@ -262,6 +284,20 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 - **Time formats:** one form. `m:ss` [proposed], with `h:mm:ss` from an hour, everywhere a moment of the run shows: rows, the axis, the player, the logs, dialogs (C28).
 - **Unlink Test:** beside the test case ID (v2 item 12).
 
+## 4c. Behaviour, v3 (18 Oct 2026)
+
+1. **Unlink, always shown and aligned.** The test case ID and its *Unlink test case* button now sit on the meta row's text baseline; v2 aligned them to the bottom of the 24px line the status pill sets, which put the ID about 3px below its neighbours. The button is always visible, so there is no empty gap after the ID. Hovering the ID still shows the link's hover; hovering the button still shows its tooltip and hover fill.
+2. **Remarks.** A test run with remarks shows them under the meta row: a muted *Remarks* label, then the text on one line, cut to the width the header has. When that cuts it, **View All** sits at the end of the line; it opens every line, however many, and **Show Less** folds them back. The cut is measured on every resize, so a remark that fits shows no button. A run without remarks shows nothing. The open text keeps to a reading width (about 88 characters). See question 21 on "2 lines".
+3. **Comfortable and condensed rows.** A toggle icon button in the timeline header, beside Reset timeline, switches the list between comfortable (the current rows: 48px, group headers 48px) and condensed (32px rows, 36px group headers). Type stays at 14px and 12px, so every command reads as before. In condensed, group headers take a grey band, so a group still parts from its commands. The icon shows the view it switches to (*Switch to condensed view*); the choice is remembered and announced.
+4. **Failure popovers you can work in.** After a 250ms hover (so a pointer passing over the bar opens nothing), the popover opens and stays open when the pointer leaves the strip. It closes with its close button, Esc, a click outside, or by hovering another failure, which replaces it; one is open at a time. Its text can be selected and copied. A single failure reads, in order: the command; *At 0:32 · 400ms*; the HTTP status as a red tag with the WebDriver error; the error's own message when it adds something; the locator; the comment, when there is one; then **Raise a bug**, **Copy payload** and **Add comment** (or **Edit comment**). A merged stretch lists its failures with counts and offers no actions (v3 item 4.5); on the timeline it says how to reach one: *Double-click to zoom in and act on one command.* The comment action closes the popover and opens the command's details with the comment box focused and in view, switching to All Commands if another tab shows.
+5. **(Reminder: no hallucination.)** Every claim in this round was checked against design-context or the running page.
+6. **Comments on failed commands.** In a failed command's details, *Add comment* (in the details bar, only while there is none) opens a comment box under the bar: `LTTextarea` labelled *Comment*, with a live count (*117 of 500 characters.*), **Cancel** and **Save**. An empty comment is refused with *Enter a comment.*; above 500 characters, with *Comment must be 500 characters or fewer.*; Cmd or Ctrl + Enter saves. A saved comment shows at the top of the details, readable without a click: the author's initials and name, the time (relative, absolute on hover), the text, and *Edit comment*. Each commented failure gets a 10px comment mark above its stretch on the timeline, not clickable.
+7. **Controls right of the frame when the logs are below.** Docked below, the video pane is wide and short, so the command line, seek bar and buttons move to the right of the frame, and the frame takes the pane's whole height at 16:9. The controls keep at least 320px and take whatever width is left; the frame shrinks first. Full screen goes back to controls below.
+8. **Tables on white.** Request and response tables have a white background, also inside a failed command's red tint; the header row keeps its grey.
+9. **Counts that filter.** The passed and failed counts beside *Timeline* are toggle buttons: pressing one shows only that status, pressing it again shows every command, and pressing the other switches. While one is on, passed runs stay unfolded and every group with a match opens, as search does. With only passed commands shown, the failure chevrons are inactive and say why (*Showing passed commands only*). A count of 0 is inactive. An empty result says *Clear the status filter or try a wider time range.*
+10. **Rotate for mobile only.** Web videos lose *Rotate video*; with Download as the only rare action left, it becomes a plain button instead of a one-item menu. Mobile recordings keep both in *More video actions*. Every mock test is web: `mock-data.md` has no mobile devices to stage one with (§9).
+11. **(Reminder: nothing already built may break.)** Every v1 and v2 behaviour was tested again after these changes.
+
 ## 5. States
 
 | Surface | Empty | Loading | Error |
@@ -285,6 +321,16 @@ The review states are linked from the README.
 | Meta row | Unlinked | **Link a Test Case** where the test case ID was |
 | Clipboard | Refused | A danger toast: *{object} failed to copy. Try again.*; copy buttons say *{object} failed to copy* in their tooltip |
 | Tab menu | A move that cannot happen | The item stays, inactive, with its reason |
+
+**Added in v3:**
+
+| Surface | State | What shows |
+|---|---|---|
+| Remarks | None, fits, cut, open | Nothing; one line; one line with **View All**; every line with **Show Less** |
+| Comment | None, writing, saved | *Add comment* in the details bar; the comment box; the comment with *Edit comment* |
+| Comment box | Empty, too long | *Enter a comment.*; *Comment must be 500 characters or fewer.* (with the count) |
+| Command list | Status filter with no match | *0 matching commands* · *Clear the status filter or try a wider time range.* |
+| Status counts | Count of 0 | Inactive, with *0 failed commands* (or passed) |
 
 **Delete confirmation** follows `patterns/modal.md` §5, because deleting a test is permanent: title *Delete test "{name}"?*; for a failed run only, a warning `LTFlash` naming what is specific to it (*This is a failed run. Its video and logs are the record of the failure.*); the consequence, with the reassurance last (*Deleting removes this test's video, logs, and 93 commands from the build. Test case #TC-88904 stays in Test Manager.*); *This action is permanent. Type DELETE to confirm.*; and **Keep Test** beside **Delete Test**, which stays inactive until the word matches. Focus starts on Keep Test, and the backdrop stops closing the dialog once something is typed (modal.md delta 3). After deleting, a toast confirms (*Test "{name}" deleted.*) and the next test opens.
 
@@ -320,6 +366,11 @@ The review states are linked from the README.
 | C26 | Video control bar (v2 item 11) | Screenshot 5: one row with the seek bar between the buttons | v2 item 11: declutter it, with NN/g's heuristics | Three rows (§7b) | The brief's newer instruction wins over the older screenshot |
 | C27 | Dock segment labels | v1 used *Dock left of the video* and *Dock below the video* | `ltsegmentedcontrol.md`: never phrase a segment as an action | *Logs left of the video*, *Logs below the video* | A v1 mistake, corrected |
 | C28 | One time form (answer 6) | Rajat: unify `00:18`, `0:20` and `2:04` | `mock-data.md` has no format for a moment in the run (§9) | `m:ss`, `h:mm:ss` from an hour [proposed] | The form video players use, and two of the three screenshots already did |
+| C29 | Counts as filters (v3 item 9) | Brief: the counts are clickable icon buttons that filter | `guidelines/README.md` §5: a filter with 2 to 5 options is `LTSegmentedControl`; `ltsegmentedcontrol.md`: include a segment for the full list | Two toggle buttons (`aria-pressed`); no button pressed is the full list | Brief wins; the "full list" is the state with nothing pressed |
+| C30 | *View All* (v3 item 2) | Brief: "a truncation icon or view all link" | README §5: an in-page trigger is a button, never a link styled as one | A button with the link's look, as *Show 20 passed logs* (C2) | The brief's link, and one treatment for both in-place expanders on the page |
+| C31 | Popover dismissal (v3 item 4) | Brief: stays open when the pointer leaves the strip | `ltpopover.md`: always a visible dismiss, plus Esc and click-outside | All three, now that it holds actions | Brief and guideline agree here; C20's other half (errors in a popover) stands |
+| C32 | Bug wording, again (v3 item 4.2) | Brief: "create bug" | C21: one term, *Raise a bug* | *Raise a bug* | As C21 |
+| C33 | 500-character limit (v3 item 6.1) | Brief: max 500 characters | `COMPONENTS.md`: `LTTextarea` has no length prop | A validation rule with a live count; Save refuses more | No prop is invented; nothing typed or pasted is cut off silently |
 
 ## 7. Design decisions [proposed]
 
@@ -377,6 +428,21 @@ Every control, ranked by how often a debugging session needs it, decides where i
 - **Clipboard failures are reported**, in the house form *{object} failed to copy*, instead of claiming success.
 - **Full screen now carries its overlays.** Menus, tooltips, popovers, toasts, dialogs and the floating window mount inside whatever is full screen. In v1 they mounted outside it and could not show there.
 
+### 7c. v3 decisions [proposed]
+
+- **The popover opens on a held hover and stays until dismissed.** The 250ms wait keeps a pointer crossing the bar from opening popovers; staying open is what the brief asks for, so text can be copied. Rejected: closing when the pointer leaves both the strip and the popover, which loses the popover the moment the pointer overshoots while selecting text.
+- **One reading order for both popovers**: what (the command, or how many), when, why (status and WebDriver error), where (the locator), what the team knows (the comment), and only then what to do. The close button sits in the heading row, apart from the actions, so closing is never mistaken for one of them.
+- **A merged stretch teaches its way to the actions**: *Double-click to zoom in and act on one command.*, on the timeline only, where the zoom exists.
+- **The single popover previews the comment** in two lines, so the comment mark above a stretch leads somewhere on hover.
+- **The video's failure line gets the comment action too**, so a failure offers the same three actions wherever it shows. Not in the brief; see question 25.
+- **One comment per failed command**, edited in place, shown at the top of the details: it explains the failure, so it comes before the payload. No delete yet (question 22).
+- **The 500-character limit is a validation rule**, not a hard stop (C33): nothing pasted is cut off unseen, the live count shows where the text stands, and Save says what to fix.
+- **Remarks open in place**, at a reading width, with **Show Less** to fold them; the brief's one line is the default (question 21).
+- **A status filter acts like search**: passed runs unfold and groups with a match open, because the filter asks to see those commands.
+- **Condensed keeps the type size.** Height comes out of padding, never out of legibility; the grey group band replaces the distinction the extra height gave.
+- **Docked below, the frame takes the height and the controls the width**, with at least 320px for the controls, since the seek bar needs width more than height.
+- **Download becomes a plain button on web videos**, rather than a menu with one item.
+
 ## 8. Copy
 
 All strings follow `ux-text-guidelines.md`. Rule numbers are that guide's.
@@ -425,6 +491,20 @@ All strings follow `ux-text-guidelines.md`. Rule numbers are that guide's.
 | Shortcuts | Keyboard shortcuts · Shortcut · Action · Bring the next failed command into view · Previous or next command, once a command has focus · Show these shortcuts | §2 sentence case headings and labels |
 | Dock | Logs position · Logs left of the video · Logs below the video | C27 |
 
+**Added in v3:**
+
+| Where | String | Rule |
+|---|---|---|
+| Remarks | Remarks · **View All** · **Show Less** | §2 Title Case for standalone actions |
+| Density | Switch to condensed view · Switch to comfortable view · *Condensed view* · *Comfortable view* (announced) | §3 Tooltips name the action |
+| Counts | Show only passed commands · Show only failed commands · Show all commands · 0 failed commands · Showing passed commands only · *Showing all commands* (announced) | §2 a label that starts with a number stays lowercase |
+| Empty list | Clear the status filter or try a wider time range. | §3 Empty states: teach the next action |
+| Comment box | Comment · Add context for your team · 117 of 500 characters. · Enter a comment. · Comment must be 500 characters or fewer. · **Cancel** · **Save** · *Comment saved* (announced) | §3 Field errors lead with the fix; constraint errors state the rule; `lttextarea.md`: captions end with a full stop |
+| Comment actions | Add comment · Edit comment | §3 Tooltips |
+| Popover | At 0:32 · 400ms · Close · Double-click to zoom in and act on one command. | §2 helper text ends with a full stop |
+| Video | Download video | §3 Tooltips |
+| Shortcuts | Save the comment you are writing | §2 |
+
 ## 9. Gaps found in design-context
 
 Recorded, not changed. Each is a candidate for a design-context pull request once Rajat decides.
@@ -445,6 +525,13 @@ Recorded, not changed. Each is a candidate for a design-context pull request onc
 - **No floating window or picture-in-picture component.**
 - **No keyboard shortcuts pattern**: no `KeybindingHint` yet (README §10) and no shortcuts dialog. The prototype's dialog is a proposal.
 - **`mock-data.md` has no format for a moment in the run.** Answer 6 asks for one; `m:ss` is proposed (C28).
+
+**Found in v3:**
+
+- **`mock-data.md` has no remarks, no comments and no mobile devices.** The remarks and the one seeded comment are written for the mock; the mobile case of v3 item 10 (Rotate video) is built but cannot be staged.
+- **`LTTextarea` has no length prop** (C33), and the library has no comment component; the comment is composed from `LTTextarea`, `LTAvatar`, `LTButton` and `LTIconButton`.
+- **`LTPopover`'s `containsInteractiveChildElement`** is documented by name only; the prototype reads it as "stays open while you work in it".
+- **No guideline on list density** or on status filters made from counts.
 
 ## 10. Open questions
 
@@ -472,6 +559,16 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 19. **A floating window outside the browser**: worth adding the browser's own picture-in-picture for real recordings, beside the in-page window? It would show the video with only the browser's controls.
 20. **`ltpopover.md`**: amend it to allow a hover preview of data, without a close button (C20)?
 
+**New in v3:**
+
+21. **Remarks, 1 line or 2?** The brief says "show 2 lines of remarks" and then "by default, only 1 line is visible". Built: 1 line and **View All**. Two lines is a one-line change.
+22. **Comments**: can they be deleted? Edited by their author only? One per command (as built) or a thread?
+23. **A comment mark in the command's row** as well as on the timeline?
+24. **The popover**: stays open until closed (as built), or closes once the pointer leaves both the strip and the popover?
+25. **The comment action on the video's failure line**, added so a failure offers the same three actions everywhere: keep it?
+26. **Status counts**: one at a time (as built), or both pressed at once?
+27. **Default density**: comfortable (as built)?
+
 ## 11. When this ships into design-context/
 
 - [ ] Amend `patterns/automation-details.md`: header, meta row, actions and menu, the All Commands anatomy, dock and splitters, states, and this file's copy rows in its copy table. Keep the 4 Sep wording visible with dated notes.
@@ -484,3 +581,7 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 - [ ] v2: `guidelines/`: a context-menu recipe (`LTActionMenu` controlled, anchored at the pointer), the reorder-by-menu rule for tabs, the "full text only when cut" tooltip rule, and the hover-preview popover (C20).
 - [ ] v2: `icons.md`, the 69 lucide names this page uses (README).
 - [ ] v2 FE asks: a context menu, drag and drop with its keyboard twin, a floating video window, rich copy in `LTCopyToClipboard`, and a shortcuts dialog with `KeybindingHint`.
+- [ ] v3: amend `patterns/automation-details.md` with §4c; record C29 to C33.
+- [ ] v3: `mock-data.md`, remarks and comments values, and mobile devices once there is a mobile pattern.
+- [ ] v3: `guidelines/`: list density, status filters made from counts, the interactive popover's dismiss rules, the comment pattern.
+- [ ] v3 FE asks: a length limit on `LTTextarea`, a comment component, and the documented behaviour of `containsInteractiveChildElement`.

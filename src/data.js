@@ -30,6 +30,9 @@ const b32 = (r, n) => Array.from({ length: n }, () => 'ABCDEFGHJKMNPQRSTVWXYZ012
 
 export const BUILD = { name: 'Schedule King || 2026-09-03 07:33:26', id: '103558549' }
 
+// The signed-in user: the top bar's avatar (RS), who writes new comments.
+export const CURRENT_USER = 'Ritika Sharma'
+
 // mock-data.md § Browser and OS strings, § Device resolutions
 const CONFIGS = [
   ['Chrome', '120', 'Windows', '12'], ['Firefox', '144', 'macOS', 'Tahoe'],
@@ -41,12 +44,18 @@ const RES = ['1920x1080', '1280x1024', '1024x768', '3840x1600', '1440x900']
 const PEOPLE = ['Ritika Sharma', 'Mahendra Damodardas Baahubali', 'Darth Vader', 'Oppenheimer',
   'Mehmed Dracul', 'George Orwell', 'Gabbar Singh', 'Kokushibo']
 
+// Remarks on a test run (v3 item 2). GAP: mock-data.md has no remarks, so
+// these are written for the mock: one that runs to several lines, one that
+// fits on a line, and none on every other test.
+const REMARKS_LONG = 'Fails on Chrome 120 only. The price filter button moved into the Filters drawer in the Oct 03 release, so the Find Element locator needs an update before the rerun. The 0:32 screenshot error is an infrastructure retry and passes on rerun. Checkout and login failures are tracked in #TC-225 and #TC-56345.'
+const REMARKS_SHORT = 'Units table loads late on Chrome 151. Rerun before triaging.'
+
 // [name, status, durationSec, config, resolution, person, updated ago (ms), extra]
 const ROWS = [
-  ['Verify the siteplan shown on Tourbook property page when property has Leasing and Standard siteplan', 'failed', 200, 0, 0, 0, 6 * HOUR + 12 * MIN, { tc: '#TC-88904' }],
+  ['Verify the siteplan shown on Tourbook property page when property has Leasing and Standard siteplan', 'failed', 200, 0, 0, 0, 6 * HOUR + 12 * MIN, { tc: '#TC-88904', remarks: REMARKS_LONG }],
   ['Filter and Verify Product Search Results', 'passed', 74, 1, 0, 2, 6 * HOUR + 40 * MIN],
   ['Attempt Signup and Verify Preferences Screen Persistence', 'passed', 103, 2, 1, 3, 7 * HOUR],
-  ['Verify the building specification and Units details table on properties details page with source data', 'failed', 151, 6, 0, 1, 7 * HOUR + 25 * MIN, { deepFailure: true }],
+  ['Verify the building specification and Units details table on properties details page with source data', 'failed', 151, 6, 0, 1, 7 * HOUR + 25 * MIN, { deepFailure: true, remarks: REMARKS_SHORT }],
   ['Complete Purchase Using Gift Card and Credit Card', 'passed', 96, 3, 4, 4, 8 * HOUR],
   ['Verify account lock after multiple failed login attempts', 'passed', 48, 0, 0, 5, 8 * HOUR + 30 * MIN],
   ['Paste the shadow and non-shadow propeties in properties filter and verify the diplayed properties', 'failed', 83, 4, 3, 6, 9 * HOUR, { noVideo: true }],
@@ -80,6 +89,10 @@ export const TESTS = ROWS.map(([name, status, dur, cfg, res, person, ago, extra 
     updatedByEmail: emailFor(user),
     video: status !== 'queued' && !extra.noVideo,
     deepFailure: !!extra.deepFailure,
+    remarks: extra.remarks ?? null,
+    // Web or mobile automation. Rotate video is for mobile only (v3 item 10).
+    // GAP: mock-data.md has no mobile devices, so every mock test is web.
+    platform: 'web',
     testId: hex(r, 32), // GAP: no automation test ID format in mock-data.md
   }
 })

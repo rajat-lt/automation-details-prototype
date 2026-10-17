@@ -359,6 +359,39 @@ export function LTInputBox({ value, onChange, placeholder, ariaLabel = 'Search',
   )
 }
 
+/* ---------- LTTextarea ----------
+   Props from COMPONENTS.md: label, caption, value, onChange, placeholder,
+   rows, resize, required, validationStatus, validationMessage, forwardRef,
+   id, readOnly, disabled, extraStyle. The label sits above, the caption and
+   any error below (guidelines/lttextarea.md); an error carries an icon and
+   words, never the border colour alone. There is no maxLength prop, so a
+   length limit is a validation rule. */
+export function LTTextarea({ label, caption, value, onChange, placeholder, rows = 4, resize = 'both', required = false,
+  validationStatus = 'default', validationMessage, forwardRef, id, readOnly = false, disabled = false, extraStyle }) {
+  const autoId = useId()
+  const fid = id || autoId
+  const invalid = validationStatus === 'error'
+  const describedBy = [invalid && validationMessage ? `${fid}-msg` : null, caption ? `${fid}-cap` : null].filter(Boolean).join(' ')
+  return (
+    <div className={cx('lt-textarea', invalid && 'is-error')} style={extraStyle}>
+      {label && (
+        <label className="lt-textarea__label" htmlFor={fid}>
+          {label}{required && <span className="lt-textarea__req" aria-hidden="true">*</span>}
+        </label>
+      )}
+      <textarea ref={forwardRef} id={fid} rows={rows} value={value} placeholder={placeholder} required={required}
+        readOnly={readOnly} disabled={disabled} aria-invalid={invalid || undefined} aria-describedby={describedBy || undefined}
+        style={{ resize }} onChange={e => onChange(e.target.value)} />
+      {invalid && validationMessage && (
+        <p id={`${fid}-msg`} className="lt-textarea__msg">
+          <CircleAlert size={12} aria-hidden="true" className="lt-textarea__msg-icon" />{validationMessage}
+        </p>
+      )}
+      {caption && <p id={`${fid}-cap`} className="lt-textarea__caption">{caption}</p>}
+    </div>
+  )
+}
+
 /* ---------- LTCodeBlock ----------
    Code surfaces carry their own theme and default to dark
    (guidelines/README.md §1). headerActions is the toolbar slot. */
