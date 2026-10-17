@@ -3,18 +3,19 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   Bug, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, Copy, Ellipsis, Image, Link, Moon, Sun,
-  Table, Braces, Undo2, ZoomIn,
+  Table, Braces, Undo2, ZoomIn, MessageSquarePlus, Pencil, Rows2, Rows4,
 } from 'lucide-react'
 import {
   LTButton, LTIconButton, LTTooltip, LTTag, LTInputBox, LTCounterLabel, LTTestStatusLabel, StatusGlyph,
   LTCodeBlock, LTCopyToClipboard, CopyIconButton, LTBlankSlate, LTFlash, LTSkeletonBox, LTTable, LTButtonGroup,
-  TruncText, announce, cx,
+  LTTextarea, LTAvatar, TruncText, announce, cx,
 } from './lt.jsx'
 import { LTActionMenu, LTSegmentedControl } from './overlays.jsx'
 import { RangeTimeline } from './timeline.jsx'
 import { onJump, jumpTo, seekSilently, usePlayback } from './playback.js'
-import { commandAt, commandHref, failureSegments, payloadText, statusLabel } from './data.js'
-import { fmtMs, fmtTime, fmtTimeRange } from './format.js'
+import { commandAt, commandHref, failureSegments, payloadText, statusLabel, CURRENT_USER } from './data.js'
+import { fmtDateTime, fmtMs, fmtRelative, fmtTime, fmtTimeRange, initials } from './format.js'
+import { commentKey, onCommentRequest, saveComment, useComment } from './comments.js'
 import { copyRich, copyText, tableClipboard } from './clipboard.js'
 
 const RUN_MIN = 3 // a passed run collapses from 3 commands up [proposed]
@@ -56,13 +57,79 @@ function payloadOf(cmd, tab) {
 const TABLE_COLUMNS = [{ key: 'k', title: 'Field', mono: true }, { key: 'v', title: 'Value', mono: true, copy: true, copyName: 'k' }]
 const tableRows = data => Object.entries(data).map(([k, v]) => ({ k, v: typeof v === 'string' ? v : JSON.stringify(v) }))
 
-function CommandDetail({ cmd, tab, setTab, view, setView, codeTheme, setCodeTheme, onStub, onScreenshot, link }) {
+/* ---------- comments (v3 item 6) ----------
+   Failed commands only, one comment each. Read without a click: it sits at
+   the top of the open details, above the payload. Written in LTTextarea,
+   500 characters at most, with Cancel and Save. */
+const COMMENT_MAX = 500
+
+function CommentView({ comment, onEdit }) {
+  return (
+    <div className="cmt">
+      <div className="cmt__head">
+        <span aria-hidden="true"><LTAvatar initials={initials(comment.by)} name={comment.by} size={20} /></span>
+        <span className="cmt__by">{comment.by}</span>
+        <span className="meta-dot" aria-hidden="true">·</span>
+        <LTTooltip type="description" text={fmtDateTime(comment.at)} direction="top">
+          <time className="meta-hint" tabIndex={0} dateTime={comment.at.toISOString()}>{fmtRelative(comment.at)}</time>
+        </LTTooltip>
+        <span className="spacer" />
+        <LTIconButton icon={Pencil} ariaLabel="Edit comment" variant="invisible" size="small" onClick={onEdit} />
+      </div>
+      <p className="cmt__text">{comment.text}</p>
+    </div>
+  )
+}
+
+function CommentEditor({ initial, onSave, onCancel, focusKey, scrollOnFocus }) {
+  const [text, setText] = useState(initial)
+  const [error, setError] = useState('')
+  const ref = useRef(null)
+  // Opened from a popover, the list has already scrolled the box into view;
+  // opened from its own button, the box is brought into view if it opened
+  // below the fold.
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.focus({ preventScroll: true })
+    el.setSelectionRange(el.value.length, el.value.length)
+    if (scrollOnFocus) el.closest('.cmt')?.scrollIntoView({ block: 'nearest' })
+  }, [focusKey])
+  const over = text.length > COMMENT_MAX
+  const save = () => {
+    const v = text.trim()
+    const problem = !v ? 'Enter a comment.' : v.length > COMMENT_MAX ? `Comment must be ${COMMENT_MAX} characters or fewer.` : ''
+    if (problem) { setError(problem); ref.current?.focus(); return }
+    onSave(v)
+  }
+  const message = error || (over ? `Comment must be ${COMMENT_MAX} characters or fewer.` : '')
+  return (
+    // Cmd or Ctrl + Enter saves, as comment boxes commonly do.
+    <div className="cmt cmt--edit" onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); save() } }}>
+      <LTTextarea label="Comment" required rows={3} resize="vertical" value={text} forwardRef={ref}
+        placeholder="Add context for your team"
+        onChange={v => { setText(v); if (error) setError('') }}
+        caption={`${text.length} of ${COMMENT_MAX} characters.`}
+        validationStatus={message ? 'error' : 'default'} validationMessage={message} />
+      <div className="cmt__actions">
+        <LTButton variant="outline" size="small" label="Cancel" onClick={onCancel} />
+        <LTButton variant="primary" size="small" label="Save" onClick={save} />
+      </div>
+    </div>
+  )
+}
+
+function CommandDetail({ cmd, tab, setTab, view, setView, codeTheme, setCodeTheme, onStub, onScreenshot, link,
+  testId, editing, setEditing, commentFocus, commentScroll }) {
   const data = payloadOf(cmd, tab)
   const code = cmd.response.responseStatus
   const text = JSON.stringify(data, null, 2)
   const part = tab === 'request' ? 'Request' : 'Response'
+  const failed = cmd.status === 'failed'
+  const key = commentKey(testId, cmd.id)
+  const comment = useComment(key)
   return (
-    <div className={cx('cmd-detail', cmd.status === 'failed' && 'is-failed')} id={`${cmd.id}-detail`}>
+    <div className={cx('cmd-detail', failed && 'is-failed')} id={`${cmd.id}-detail`}>
       <div className="cmd-detail__bar">
         {/* Request and Response: LTSegmentedControl, as hyperexecute-job-details.md
             §3.3 switches panels with one (C12). */}
@@ -72,6 +139,12 @@ function CommandDetail({ cmd, tab, setTab, view, setView, codeTheme, setCodeThem
         <span className="spacer" />
         <LTIconButton icon={Bug} ariaLabel="Raise a bug" variant="invisible" size="small"
           onClick={() => onStub(`The bug form opens here, with ${where(cmd)} attached.`)} />
+        {/* v3 item 6.4: adds the comment while there is none; after that the
+            comment shows below with its own Edit button. */}
+        {failed && !comment && !editing && (
+          <LTIconButton icon={MessageSquarePlus} ariaLabel="Add comment" variant="invisible" size="small"
+            onClick={() => setEditing(true, { scroll: true })} />
+        )}
         <LTIconButton icon={Image} ariaLabel="View screenshot" variant="invisible" size="small"
           onClick={() => onScreenshot(cmd)} />
         {/* The visible twin of the right-click menu's Copy link (v2 item 2). */}
@@ -82,6 +155,12 @@ function CommandDetail({ cmd, tab, setTab, view, setView, codeTheme, setCodeThem
         <LTIconButton icon={view === 'table' ? Braces : Table} ariaLabel={view === 'table' ? 'Show as JSON' : 'Show as table'}
           variant="invisible" size="small" onClick={() => setView(view === 'table' ? 'json' : 'table')} />
       </div>
+      {failed && editing && (
+        <CommentEditor initial={comment?.text ?? ''} focusKey={commentFocus} scrollOnFocus={commentScroll}
+          onCancel={() => setEditing(false)}
+          onSave={v => { saveComment(key, v, CURRENT_USER); setEditing(false); announce('Comment saved') }} />
+      )}
+      {failed && !editing && comment && <CommentView comment={comment} onEdit={() => setEditing(true, { scroll: true })} />}
       {view === 'table' ? (
         <div className="cmd-table">
           <LTTable caption={part} allowValueCopy columns={TABLE_COLUMNS} data={tableRows(data)} />
@@ -196,17 +275,19 @@ function SkeletonRows({ n, depth, label }) {
 /* Previous and next failed command (item 8). Goes by the video's position
    [proposed]; subscribes to the playhead on its own so the list does not
    re-render on every frame. */
-function FailureNav({ failures }) {
+function FailureNav({ failures, reason }) {
   const time = usePlayback(s => s.time)
   const next = failures.find(c => c.at > time + 0.05)
   const prev = [...failures].reverse().find(c => c.at < time - 0.05)
   return (
     <LTButtonGroup ariaLabel="Failed commands">
       <LTIconButton icon={ChevronUp} variant="outline" size="small" inactive={!prev}
-        ariaLabel="Previous failed command" tooltipText={prev ? 'Previous failed command' : 'Showing the first failed command'}
+        ariaLabel="Previous failed command"
+        tooltipText={prev ? 'Previous failed command' : reason ?? 'Showing the first failed command'}
         onClick={() => prev && jumpTo(prev.at, { commandId: prev.id, source: 'nav' })} />
       <LTIconButton icon={ChevronDown} variant="outline" size="small" inactive={!next}
-        ariaLabel="Next failed command" tooltipText={next ? 'Next failed command' : 'Showing the last failed command'}
+        ariaLabel="Next failed command"
+        tooltipText={next ? 'Next failed command' : reason ?? 'Showing the last failed command'}
         onClick={() => next && jumpTo(next.at, { commandId: next.id, source: 'nav' })} />
     </LTButtonGroup>
   )
@@ -214,7 +295,7 @@ function FailureNav({ failures }) {
 
 /* ---------- the tab ---------- */
 export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloadView, setPayloadView, onStub, onToast,
-  onScreenshot, demo, onRetry, isCurrent, focusCommand }) {
+  onScreenshot, demo, onRetry, isCurrent, focusCommand, density, setDensity }) {
   const { commands, tree, durationSec: duration } = detail
   const failedTest = detail.failedCount > 0
   const groups = useMemo(() => tree.filter(n => n.type === 'group'), [tree])
@@ -236,6 +317,9 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
   const [pendingScroll, setPendingScroll] = useState(null)
   const [activeRow, setActiveRow] = useState(null)
   const [ctx, setCtx] = useState(null) // right-click menu: { cmd, x, y }
+  const [statusFilter, setStatusFilter] = useState(null) // v3 item 9: 'passed' | 'failed' | null
+  const [commentEdit, setCommentEdit] = useState(null) // the command whose comment box is open
+  const [commentFocus, setCommentFocus] = useState(0) // bumps to focus that box
 
   const scrollRef = useRef(null)
   const toolbarRef = useRef(null)
@@ -252,8 +336,10 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
   const zoomed = view[0] > 0.01 || view[1] < duration - 0.01
   const tcGroups = groups.filter(g => g.kind === 'testCase')
   const filterGroup = testFilter === 'all' ? null : tcGroups.find(g => g.tc === testFilter)
-  const filtering = !!q || !fullRange || !!filterGroup
-  const disclosureOn = failedTest && !q
+  const filtering = !!q || !fullRange || !!filterGroup || !!statusFilter
+  // A search or a status filter shows every match; collapsing passed runs
+  // would hide the very commands asked for.
+  const disclosureOn = failedTest && !q && !statusFilter
 
   const groupOf = useMemo(() => new Map(groups.flatMap(g => g.children.map(c => [c.id, g]))), [groups])
   const matches = useCallback(c => {
@@ -262,8 +348,8 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     return [c.name, c.strategy, c.value, g?.title, g?.tc].filter(Boolean).join(' ').toLowerCase().includes(q)
   }, [q, groupOf])
   const inRange = useCallback(c => c.at >= range[0] - 1e-6 && c.at <= range[1] + 1e-6, [range])
-  const visible = useCallback(c => matches(c) && inRange(c) && (!filterGroup || c.parentId === filterGroup.id),
-    [matches, inRange, filterGroup])
+  const visible = useCallback(c => matches(c) && inRange(c) && (!filterGroup || c.parentId === filterGroup.id)
+    && (!statusFilter || c.status === statusFilter), [matches, inRange, filterGroup, statusFilter])
 
   /* Layout: top-level runs and groups, each with its runs of passed commands. */
   const layout = useMemo(() => {
@@ -302,7 +388,9 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     return { blocks, runOf }
   }, [tree, visible, filtering, disclosureOn])
 
-  const groupOpen = b => expanded.has(b.node.id) || (!!q && b.kids.length > 0)
+  // A search or a status filter opens every group with a match, so the
+  // matches show without a click.
+  const groupOpen = b => expanded.has(b.node.id) || ((!!q || !!statusFilter) && b.kids.length > 0)
 
   /* The focusable rows, in screen order: group headers, commands, and
      disclosures (v2 item 7). Mirrors the render below. */
@@ -325,8 +413,9 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     const inR = commands.filter(c => inRange(c) && (!filterGroup || c.parentId === filterGroup.id))
     return { passed: inR.filter(c => c.status === 'passed').length, failed: inR.filter(c => c.status === 'failed').length }
   }, [commands, inRange, filterGroup])
-  const failuresForNav = useMemo(() => detail.failed.filter(c => inRange(c) && (!filterGroup || c.parentId === filterGroup.id)),
-    [detail.failed, inRange, filterGroup])
+  const failuresForNav = useMemo(() => (statusFilter === 'passed' ? []
+    : detail.failed.filter(c => inRange(c) && (!filterGroup || c.parentId === filterGroup.id))),
+  [detail.failed, inRange, filterGroup, statusFilter])
   // Zoomed in, failures merge over a proportionally shorter gap, so retries
   // that read as one block across the whole run separate (v2 item 9).
   const segments = useMemo(() => failureSegments(detail.failed, (2 * (view[1] - view[0])) / duration),
@@ -335,7 +424,7 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
   /* Reveal a command (item 9): open its group and its passed run, then scroll
      it under the sticky toolbar and flash it. `focus` also moves keyboard
      focus to it (v2 items 2 and 3). */
-  const reveal = useCallback((cmd, { flashIt = true, focus = false } = {}) => {
+  const reveal = useCallback((cmd, { flashIt = true, focus = false, comment = false } = {}) => {
     if (!cmd || !visible(cmd)) return
     if (cmd.parentId) setExpanded(s => (s.has(cmd.parentId) ? s : new Set(s).add(cmd.parentId)))
     const key = layout.runOf.get(cmd.id)
@@ -343,7 +432,7 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     setActiveRow(cmd.id)
     suppressUntil.current = Date.now() + 1200
     setHidden(false)
-    setPendingScroll({ id: cmd.id, flashIt, focus, n: Date.now() })
+    setPendingScroll({ id: cmd.id, flashIt, focus, comment, n: Date.now() })
   }, [visible, layout])
 
   useLayoutEffect(() => {
@@ -355,10 +444,16 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     const head = row.closest('.cmd-group')?.querySelector('.cmd-group__head')
     const topSpace = (toolbarRef.current?.offsetHeight ?? 0) + (head?.offsetHeight ?? 0) + 8
     const rowTop = rr.top - sr.top
-    if (rowTop < topSpace || rr.bottom > sr.bottom - 8) {
+    // Opening a comment box (v3 item 4.4): the box must be in view too, even
+    // when the row and the box do not both fit under the toolbar.
+    const editor = pendingScroll.comment ? sc.querySelector(`#${CSS.escape(pendingScroll.id)}-detail .cmt--edit`) : null
+    const er = editor?.getBoundingClientRect()
+    if (rowTop < topSpace || rr.bottom > sr.bottom - 8 || (er && er.bottom > sr.bottom - 8)) {
+      let wanted = sc.scrollTop + rowTop - topSpace
+      if (er) wanted = Math.max(wanted, sc.scrollTop + (er.bottom - sr.top) + 8 - sc.clientHeight)
       // Keep the toolbar shown until this scroll lands, however long a smooth
       // scroll takes; 2.5 seconds is the fallback if it stops short.
-      const target = Math.min(sc.scrollTop + rowTop - topSpace, sc.scrollHeight - sc.clientHeight)
+      const target = Math.min(wanted, sc.scrollHeight - sc.clientHeight)
       programmatic.current = target
       suppressUntil.current = Date.now() + 2500
       // Instant in a background tab, where a smooth scroll would wait to be seen.
@@ -373,6 +468,43 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
   useEffect(() => onJump(({ time, commandId }) => {
     reveal(commandId ? byId.get(commandId) : commandAt(commands, time))
   }), [reveal, byId, commands])
+
+  const clearFilters = () => {
+    setQuery(''); setTestFilter('all'); setStatusFilter(null); setView([0, duration]); setRange([0, duration])
+  }
+
+  /* v3 item 4.4: "Add comment" or "Edit comment" in a failure popover (or on
+     the video's command line) brings that command into view with its details
+     open and the comment box focused. Waits until the tab is on screen, since
+     a hidden list can be neither scrolled nor focused. */
+  const pendingComment = useRef(null)
+  const commentScroll = useRef(false) // the box was opened by its own button
+  const openComment = cmdId => {
+    const cmd = byId.get(cmdId)
+    if (!cmd) return
+    commentScroll.current = false
+    setOpenDetails(s => new Set(s).add(cmd.id))
+    setCommentEdit(cmd.id)
+    setCommentFocus(n => n + 1)
+    if (visible(cmd)) { reveal(cmd, { comment: true }); return }
+    deepPending.current = { id: cmd.id, focus: false, comment: true }
+    clearFilters()
+  }
+  const openCommentRef = useRef(openComment)
+  openCommentRef.current = openComment
+  const isCurrentRef = useRef(isCurrent)
+  isCurrentRef.current = isCurrent
+  useEffect(() => onCommentRequest(({ testId, cmdId }) => {
+    if (testId !== detail.test.id) return
+    if (isCurrentRef.current) openCommentRef.current(cmdId)
+    else pendingComment.current = cmdId
+  }), [detail.test.id])
+  useEffect(() => {
+    if (!isCurrent || !pendingComment.current) return
+    const id = pendingComment.current
+    pendingComment.current = null
+    openComment(id)
+  }, [isCurrent])
 
   // Item 16: a failed test opens at its first failure, unless a link named a command.
   useEffect(() => {
@@ -391,12 +523,13 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     seekSilently(cmd.at)
     setOpenDetails(s => new Set(s).add(cmd.id))
     if (visible(cmd)) { reveal(cmd, { focus: true }); return }
-    deepPending.current = cmd.id
-    setQuery(''); setTestFilter('all'); setView([0, duration]); setRange([0, duration])
+    deepPending.current = { id: cmd.id, focus: true }
+    clearFilters()
   }, [focusCommand?.n])
   useEffect(() => {
-    const cmd = deepPending.current && byId.get(deepPending.current)
-    if (cmd && visible(cmd)) { deepPending.current = null; reveal(cmd, { focus: true }) }
+    const p = deepPending.current
+    const cmd = p && byId.get(p.id)
+    if (cmd && visible(cmd)) { deepPending.current = null; reveal(cmd, { focus: p.focus, comment: p.comment }) }
   }, [visible])
 
   // Item 17: the toolbar slides away on scroll down and back on scroll up.
@@ -582,6 +715,16 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     setView: v => { setPayloadView(v); announce(v === 'table' ? 'Payloads show as tables' : 'Payloads show as JSON') },
     codeTheme, setCodeTheme, onStub, onScreenshot,
     link: commandHref(detail.test.id, cmd.id),
+    testId: detail.test.id,
+    editing: commentEdit === cmd.id,
+    setEditing: (on, { scroll = false } = {}) => {
+      commentScroll.current = scroll
+      setCommentEdit(on ? cmd.id : null)
+      if (on) setCommentFocus(n => n + 1)
+      else scrollRef.current?.querySelector(`[data-cmd="${cmd.id}"] .cmd-main`)?.focus({ preventScroll: true })
+    },
+    commentFocus,
+    commentScroll: commentScroll.current,
   })
 
   const renderItems = (items, depth) => items.map(it => {
@@ -633,7 +776,7 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
 
   const filterLabel = filterGroup ? filterGroup.tc : 'All'
   return (
-    <div ref={scrollRef} className="cmd-scroll" onScroll={onScroll}
+    <div ref={scrollRef} className={cx('cmd-scroll', density === 'condensed' && 'is-condensed')} onScroll={onScroll}
       style={{ '--sticky-top': `${hidden ? 0 : toolbarH}px` }}>
       {/* Item 17: the toolbar is sticky, hides on scroll down and returns on
           scroll up. It stays while hovered or focused, and while a scroll it
@@ -647,9 +790,25 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
           {/* Icon plus count, as the base pattern's summary (§3.1); the words
               are announced (C10). Counts follow the selected window. Filled
               glyphs here, as screenshot 6 shows; bare in the group stats, as
-              screenshot 7 shows (C19). */}
-          <span className="cmd-tl-count"><StatusGlyph status="passed" /><LTCounterLabel count={counts.passed} /><span className="vh"> passed</span></span>
-          <span className="cmd-tl-count"><StatusGlyph status="failed" /><LTCounterLabel count={counts.failed} /><span className="vh"> failed</span></span>
+              screenshot 7 shows (C19). v3 item 9: each count is a toggle that
+              shows only its status; pressing it again shows every command
+              (C29). */}
+          {[['passed', counts.passed], ['failed', counts.failed]].map(([st, n]) => {
+            const on = statusFilter === st
+            return (
+              <LTTooltip key={st} direction="bottom"
+                text={on ? 'Show all commands' : n === 0 ? `0 ${st} commands` : `Show only ${st} commands`}>
+                <LTButton variant="invisible" size="small" className={cx('cmd-tl-count', on && 'is-on')}
+                  aria-pressed={on} ariaLabel={`${n} ${st}`} inactive={n === 0 && !on}
+                  onClick={() => {
+                    setStatusFilter(on ? null : st)
+                    announce(on ? 'Showing all commands' : `Showing ${st} commands only`)
+                  }}>
+                  <StatusGlyph status={st} /><LTCounterLabel count={n} />
+                </LTButton>
+              </LTTooltip>
+            )
+          })}
           {/* The zoom is a mode the user chose, so it carries a label
               (ux-persona.md: show the mode, not the motion). */}
           {zoomed && (
@@ -662,11 +821,20 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
           <LTIconButton icon={Undo2} ariaLabel="Reset timeline" variant="invisible" size="small"
             inactive={!zoomed && fullRange} tooltipText={!zoomed && fullRange ? 'Showing the whole run' : 'Reset timeline'}
             onClick={resetTimeline} />
+          {/* v3 item 3: row density, a toggle like the payload view's; the icon
+              shows the view it switches to, and the choice is remembered. */}
+          <LTIconButton icon={density === 'condensed' ? Rows2 : Rows4} variant="invisible" size="small"
+            ariaLabel={density === 'condensed' ? 'Switch to comfortable view' : 'Switch to condensed view'}
+            onClick={() => {
+              const next = density === 'condensed' ? 'comfortable' : 'condensed'
+              setDensity(next)
+              announce(next === 'condensed' ? 'Condensed view' : 'Comfortable view')
+            }} />
           <LTIconButton icon={allOpen ? ChevronsDownUp : ChevronsUpDown} variant="invisible" size="small"
             ariaLabel={allOpen ? 'Collapse all' : 'Expand all'} onClick={allOpen ? collapseAll : expandAll} />
-          <FailureNav failures={failuresForNav} />
+          <FailureNav failures={failuresForNav} reason={statusFilter === 'passed' ? 'Showing passed commands only' : undefined} />
         </div>
-        <RangeTimeline view={view} segments={segments} byId={byId} range={range}
+        <RangeTimeline view={view} segments={segments} byId={byId} range={range} testId={detail.test.id} onStub={onStub}
           onRange={([a, b]) => setRange([Math.max(view[0], a), Math.min(view[1], b)])}
           onSeek={(t, id) => jumpTo(t, { commandId: id, source: 'timeline' })} onZoom={zoomTo} />
         <div className="cmd-filters">
@@ -691,7 +859,9 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
         onFocus={e => { const id = e.target.dataset?.row; if (id) setActiveRow(id) }}>
         {layout.blocks.length === 0 && (
           <LTBlankSlate heading="0 matching commands"
-            description={q ? 'Try a different search term.' : 'Try a wider time range or a different test.'} />
+            description={q ? 'Try a different search term.'
+              : statusFilter ? 'Clear the status filter or try a wider time range.'
+                : 'Try a wider time range or a different test.'} />
         )}
         {layout.blocks.map(b => {
           if (b.type === 'seq') return <React.Fragment key={b.key}>{renderItems(b.items, 0)}</React.Fragment>

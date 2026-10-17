@@ -284,29 +284,54 @@ export function ToastProvider({ children }) {
 /* ---------- LTPopover ----------
    Props from COMPONENTS.md: heading, text, popOverbodyJSX, direction,
    canChangeDirection, openOnClick (false: it opens on hover, as the
-   component's own "Popover" story does), forceClose, onOpen, contentStyles.
+   component's own "Popover" story does), forceClose, onOpen, contentStyles,
+   containsInteractiveChildElement.
    Brief v2 item 8 puts errors in it on hover; guidelines/ltpopover.md says
-   never for errors and always a visible dismiss (conflict C20). It closes
-   when the pointer leaves and on Esc. It carries no controls, so it is not a
-   focus stop; keyboard users get the same facts from the playhead's
-   failed-command chip and the command row. */
+   never for errors (conflict C20).
+   With containsInteractiveChildElement (v3 item 4) it holds actions and text
+   to copy, so it behaves as ltpopover.md asks: a visible close button, Esc
+   and click-outside. It opens after a short hover (so a pointer passing over
+   the bar does not open it), then stays open after the pointer leaves the
+   strip, until one of those closes it or another popover opens. Only one is
+   ever open (ltpopover.md: never stack popovers). */
+let currentPopover = null // the close function of the popover open now
+
 export function LTPopover({ children, heading, text, popOverbodyJSX, direction = 'top', canChangeDirection = false,
-  openOnClick = false, forceClose = false, onOpen, contentStyles }) {
+  openOnClick = false, forceClose = false, onOpen, contentStyles, containsInteractiveChildElement = false }) {
+  const interactive = containsInteractiveChildElement
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState(null)
   const anchorRef = useRef(null)
   const popRef = useRef(null)
   const timer = useRef(0)
+  const closeRef = useRef(null)
+  const headingId = useId()
   const root = usePortalRoot()
   const side = direction.split('-')[0]
   const align = { left: 'start', right: 'end' }[direction.split('-')[1]] ?? 'center'
 
-  useEffect(() => () => clearTimeout(timer.current), [])
+  closeRef.current = () => setOpen(false)
+  const show = () => {
+    if (currentPopover && currentPopover !== closeRef) currentPopover.current()
+    currentPopover = closeRef
+    setOpen(true)
+  }
+  useEffect(() => { if (!open && currentPopover === closeRef) currentPopover = null }, [open])
+  useEffect(() => () => {
+    clearTimeout(timer.current)
+    if (currentPopover === closeRef) currentPopover = null
+  }, [])
   useEffect(() => { if (forceClose) setOpen(false) }, [forceClose])
   useLayoutEffect(() => {
     if (!open || !anchorRef.current || !popRef.current) return
-    const update = () => {
+    const update = e => {
       if (!anchorRef.current || !popRef.current) return
+      // An interactive popover closes when the list holding its strip
+      // scrolls, rather than float away from it.
+      if (interactive && e?.type === 'scroll' && e.target !== document && e.target.contains?.(anchorRef.current)) {
+        setOpen(false)
+        return
+      }
       const p = placeFloating(anchorRef.current, popRef.current, { side, align, offset: 10, flip: canChangeDirection })
       const a = anchorRef.current.getBoundingClientRect()
       const w = popRef.current.offsetWidth, h = popRef.current.offsetHeight
@@ -324,17 +349,26 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
     if (!open) return
     onOpen?.()
     const onKey = e => { if (e.key === 'Escape') setOpen(false) }
+    // Click-outside, for the interactive kind (ltpopover.md).
+    const onDown = e => {
+      if (popRef.current?.contains(e.target) || anchorRef.current?.contains(e.target)) return
+      setOpen(false)
+    }
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    if (interactive) document.addEventListener('pointerdown', onDown, true)
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('pointerdown', onDown, true) }
   }, [open])
 
   const child = React.Children.only(children)
-  const hover = openOnClick ? {} : {
-    onMouseEnter: e => { child.props.onMouseEnter?.(e); clearTimeout(timer.current); timer.current = setTimeout(() => setOpen(true), 150) },
+  const hover = openOnClick ? {} : interactive ? {
+    onMouseEnter: e => { child.props.onMouseEnter?.(e); clearTimeout(timer.current); if (!open) timer.current = setTimeout(show, 250) },
+    onMouseLeave: e => { child.props.onMouseLeave?.(e); clearTimeout(timer.current) },
+  } : {
+    onMouseEnter: e => { child.props.onMouseEnter?.(e); clearTimeout(timer.current); timer.current = setTimeout(show, 150) },
     onMouseLeave: e => { child.props.onMouseLeave?.(e); clearTimeout(timer.current); timer.current = setTimeout(() => setOpen(false), 80) },
     onPointerDown: e => { child.props.onPointerDown?.(e); clearTimeout(timer.current); setOpen(false) },
   }
-  const click = openOnClick ? { onClick: e => { child.props.onClick?.(e); setOpen(o => !o) } } : {}
+  const click = openOnClick ? { onClick: e => { child.props.onClick?.(e); open ? setOpen(false) : show() } } : {}
   const trigger = React.cloneElement(child, {
     ref: node => {
       anchorRef.current = node
@@ -343,17 +377,31 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
     },
     ...hover, ...click,
   })
+  const style = {
+    top: pos?.top ?? -9999, left: pos?.left ?? -9999, '--caret-x': `${pos?.caretX ?? 16}px`,
+    '--caret-y': `${pos?.caretY ?? 16}px`, ...contentStyles,
+  }
   return (
     <>
       {trigger}
-      {open && createPortal(
-        <div ref={popRef} className={cx('lt-popover', pos && `is-${pos.side}`)} aria-hidden="true"
-          style={{ top: pos?.top ?? -9999, left: pos?.left ?? -9999, '--caret-x': `${pos?.caretX ?? 16}px`,
-            '--caret-y': `${pos?.caretY ?? 16}px`, ...contentStyles }}>
+      {open && createPortal(interactive ? (
+        <div ref={popRef} role="dialog" aria-labelledby={heading ? headingId : undefined}
+          className={cx('lt-popover', 'is-interactive', pos && `is-${pos.side}`)} style={style}>
+          <div className="lt-popover__head">
+            {heading && <p id={headingId} className="lt-popover__heading">{heading}</p>}
+            <LTIconButton icon={X} ariaLabel="Close" variant="invisible" size="xsmall" tooltipDirection="n"
+              className="lt-popover__close" onClick={() => setOpen(false)} />
+          </div>
+          {text && <p className="lt-popover__text">{text}</p>}
+          {popOverbodyJSX}
+        </div>
+      ) : (
+        <div ref={popRef} className={cx('lt-popover', pos && `is-${pos.side}`)} aria-hidden="true" style={style}>
           {heading && <p className="lt-popover__heading">{heading}</p>}
           {text && <p className="lt-popover__text">{text}</p>}
           {popOverbodyJSX}
-        </div>, root)}
+        </div>
+      ), root)}
     </>
   )
 }

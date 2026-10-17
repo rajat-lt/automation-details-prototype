@@ -1,10 +1,10 @@
 # Automation test details · prototype
 
-A working prototype of LambdaTest's automation test details page with Rajat's 18 UX changes of 16 Oct 2026 and his 16 more of 17 Oct 2026 (v2), built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
+A working prototype of LambdaTest's automation test details page with Rajat's 18 UX changes of 16 Oct 2026, his 16 more of 17 Oct 2026 (v2) and 11 more of 18 Oct 2026 (v3), built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
 
 **Live:** https://rajat-lt.github.io/automation-details-prototype/
 
-**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers.
+**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33.
 
 ## Where to see each change
 
@@ -51,6 +51,20 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | v2 16 | Full text of cut text | Hover a cut group title, command, tag or value; text that fits shows nothing |
 | Answers | Expand all, one time form | The double chevron opens every group and command; every time reads `m:ss`. Press `?` for all shortcuts |
 
+**v3, 18 Oct 2026**
+
+| # | Change | Try it |
+|---|---|---|
+| v3 1 | Unlink, aligned and always shown | The meta row: `#TC-88904` and its unlink button sit on the row's text line |
+| v3 2 | Remarks | Under the meta row of [`#/t-01`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/commands): **View All**, then **Show Less**. [`#/t-04`](https://rajat-lt.github.io/automation-details-prototype/#/t-04/commands) has one that fits; most tests have none |
+| v3 3 | Comfortable and condensed rows | The rows icon in the timeline header, beside the undo icon |
+| v3 4 | Popovers to work in | Hover a red stretch for a moment, then move into the popover: copy text, Raise a bug, Copy payload, Edit or Add comment. Close it with ×, Esc or a click outside. The stretch at 0:32 is a single failure; the one at 1:16 is merged |
+| v3 6 | Comments | Open a failed command: Add comment (or read the one on Create New Session at 0:32). Commented stretches carry a mark above the timeline |
+| v3 7 | Controls right of the frame | Dock the logs below the video (the second icon at the end of the tab bar) |
+| v3 8 | White tables | Open a command and switch to the table view |
+| v3 9 | Counts that filter | Press the passed or failed count beside *Timeline*; press it again for all |
+| v3 10 | No Rotate on web videos | The video row ends with Download video |
+
 ## Review states
 
 | State | Link |
@@ -68,7 +82,7 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | Video loading | [`?demo=video-loading`](https://rajat-lt.github.io/automation-details-prototype/?demo=video-loading#/t-01/commands) |
 | A command's link (v2) | [`#/t-01/commands/c45`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/commands/c45) |
 
-Pane sizes, the dock position, the code theme, the payload view, the tab order, the video mode and the floating window's place are remembered in the browser. Renames, deletes and unlinks last until a reload.
+Pane sizes, the dock position, the code theme, the payload view, the row density, the tab order, the video mode and the floating window's place are remembered in the browser. Renames, deletes, unlinks and comments last until a reload.
 
 ## Simulated in this prototype
 
@@ -78,13 +92,15 @@ Pane sizes, the dock position, the code theme, the payload view, the tab order, 
 - **Share** copies the page link. **Delete** removes the test until the next reload.
 - **Copy payload**, **Copy link** and **Copy table** really copy. **Download screenshot** saves a real PNG of the replay frame. **Unlink** and **Link a Test Case** change nothing outside the page.
 - **Picture-in-picture** is a window inside the page, not the browser's own (spec §7b).
+- **Comments** are kept in the page until a reload. The one on Create New Session at 0:32 is seeded mock data, by the signed-in user.
+- **Rotate video** is built for mobile recordings, but every mock test is web: `mock-data.md` has no mobile devices.
 
 ## How it is built from design-context
 
 - **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file was generated from `main` at `e014a73`.
 - **Components:** each one is a look-alike of the private `lt-components` library under its real name, using only props documented in `COMPONENTS.md`, styled from the tokens and used as `guidelines/` says.
 - **Layout, copy and data:** `patterns/automation-details.md` is the base. `ux-text-guidelines.md` governs every string. `mock-data.md` supplies the cast, names, formats and IDs, and everything it lacks is listed in the spec's §9.
-- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 69 used: Accessibility, ArrowLeft, ArrowRight, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, Globe, GripHorizontal, History, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, Maximize, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, PictureInPicture2, Play, RotateCcw, RotateCwSquare, ScanEye, Search, Settings, Share2, Smartphone, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
+- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 74 used: Accessibility, ArrowLeft, ArrowRight, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, Globe, GripHorizontal, History, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, Smartphone, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
 
 ## Run it
 
@@ -116,6 +132,7 @@ Build for GitHub Pages with `npm run build`; the site is served from the `gh-pag
 | `src/tabbar.jsx` | Tab reordering (v2 item 1) |
 | `src/shortcuts.jsx` | Keyboard shortcuts dialog [proposed] |
 | `src/clipboard.js` | Plain and rich copy (v2 item 10) |
+| `src/comments.js` | Comments on failed commands, and requests to open one (v3 items 4 and 6) |
 | `src/layout.jsx` | Splitters (item 14) |
 | `src/tabs.jsx` | Logs, Network, Meta Data, tests pane |
 | `src/data.js`, `src/format.js` | Mock data and the `mock-data.md` formats |

@@ -21,6 +21,7 @@ import { BUILD, TESTS, getDetail, failureSegments, historyFor, commandHref, stat
 import { fmtCount, fmtDateTime, fmtDuration, fmtMs, fmtRelative, fmtTime } from './format.js'
 import { playback } from './playback.js'
 import { copyText } from './clipboard.js'
+import { onCommentRequest } from './comments.js'
 
 const TAB_IDS = ['commands', 'logs', 'network', 'metadata']
 const TAB_LABELS = { commands: 'All Commands', logs: 'Logs', network: 'Network', metadata: 'Meta Data' }
@@ -97,6 +98,7 @@ function Page() {
   const [codeTheme, setCodeTheme] = usePref('codeTheme', 'dark')
   const [logTheme, setLogTheme] = usePref('logTheme', 'dark')
   const [payloadView, setPayloadView] = usePref('payloadView', 'json') // v2 item 4: one setting for every command
+  const [density, setDensity] = usePref('density', 'comfortable') // v3 item 3: comfortable or condensed rows
   const [fullscreen, setFullscreen] = useState(false)
   const [modal, setModal] = useState(null) // 'delete' | 'history' | 'shortcuts' | { shot: cmd }
   const [typed, setTyped] = useState('')
@@ -130,6 +132,14 @@ function Page() {
     playback.set({ time: 0, playing: false, duration: detail.durationSec })
   }, [test.id])
   useEffect(() => { document.title = `${name} · Automation` }, [name])
+
+  // v3 item 4.4: a comment asked for from the video while another tab shows
+  // brings All Commands back, where the comment box opens.
+  const tabRef = useRef(tab)
+  tabRef.current = tab
+  useEffect(() => onCommentRequest(({ testId }) => {
+    if (tabRef.current !== 'commands') window.location.hash = `#/${testId}/commands`
+  }), [])
 
   useEffect(() => {
     const f = () => setFullscreen(document.fullscreenElement === detailRef.current)
@@ -258,6 +268,7 @@ function Page() {
         <div className="tab-host" hidden={tab !== 'commands'}>
           <CommandsTab key={`${test.id}:${demo}`} detail={detail} searchRef={searchRef} codeTheme={codeTheme}
             setCodeTheme={setCodeTheme} payloadView={payloadView} setPayloadView={setPayloadView}
+            density={density} setDensity={setDensity}
             onStub={onStub} onToast={toast} onScreenshot={cmd => setModal({ shot: cmd })}
             isCurrent={tab === 'commands' && !modal}
             focusCommand={route.testId === test.id && route.commandId ? { id: route.commandId, n: route.n } : null}

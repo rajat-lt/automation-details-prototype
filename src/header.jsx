@@ -1,12 +1,50 @@
 // Test header: brief items 1 to 5, v2 items 12 and 13. Spec:
 // automation-details.md §3, §4 and §4b.
-import React, { useState } from 'react'
+import React, { useId, useLayoutEffect, useRef, useState } from 'react'
 import {
   Bug, Clock, Ellipsis, History, Keyboard, Maximize, Minimize, Monitor, PanelLeftOpen, Share2, Trash2, Unlink, Zap,
 } from 'lucide-react'
 import { LTButton, LTIconButton, LTTooltip, LTCopyToClipboard, LTTestStatusLabel, LTMetaData, LTLink, cx } from './lt.jsx'
 import { LTActionMenu, LTInlineTextInput } from './overlays.jsx'
 import { fmtDateTime, fmtDuration, fmtRelative } from './format.js'
+
+/* v3 item 2: the test run's remarks, under the meta row, only when there
+   are some. One line by default, cut to the width the header has; when that
+   cuts it, View All at the end of the line shows every line, and Show Less
+   folds it back. Measured on every resize, so a remark that fits shows no
+   button. */
+function Remarks({ text }) {
+  const [open, setOpen] = useState(false)
+  const [cut, setCut] = useState(false)
+  const ref = useRef(null)
+  const id = useId()
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || open) return
+    const measure = () => setCut(el.scrollWidth > el.clientWidth + 1)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    window.addEventListener('resize', measure)
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure) }
+  }, [text, open])
+  return (
+    <div className={cx('td-remarks', open && 'is-open')}>
+      <span className="td-remarks__label">Remarks</span>
+      <span ref={ref} id={id} className="td-remarks__text">{text}</span>
+      {(cut || open) && (
+        // The brief's "view all link": a link's look on a button, since it
+        // acts in place (guidelines/README.md §5), the same treatment as
+        // "Show 20 passed logs" (C2). Standalone, so Title Case
+        // (ux-text-guidelines.md §2).
+        <button type="button" className="td-remarks__toggle" aria-expanded={open} aria-controls={id}
+          onClick={() => setOpen(o => !o)}>
+          {open ? 'Show Less' : 'View All'}
+        </button>
+      )}
+    </div>
+  )
+}
 
 export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleFullscreen, onStub,
   testsCollapsed, onExpandTests, linked, onUnlink, onLink }) {
@@ -74,9 +112,8 @@ export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleF
         {test.status !== 'queued' && <LTMetaData leadingIcon={Clock} label="Duration" value={fmtDuration(test.durationSec)} />}
         <LTMetaData>
           {linked ? (
-            // v2 item 12: Unlink sits right beside the test case ID, shown on
-            // hover and on keyboard focus. Its space is kept even while
-            // hidden, so nothing in the row moves when it appears.
+            // v2 item 12: Unlink sits right beside the test case ID. v3 item 1:
+            // always shown, aligned to the row's text, with no empty gap.
             <span className="tc-link">
               <LTLink href="#test-case" muted aria-label={`Test case ${test.testCaseId}`}
                 onClick={e => { e.preventDefault(); onStub(`Test case ${test.testCaseId} opens in Test Manager.`) }}>
@@ -109,6 +146,7 @@ export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleF
           </LTTooltip>
         </LTMetaData>
       </p>
+      {test.remarks && <Remarks key={test.id} text={test.remarks} />}
     </header>
   )
 }

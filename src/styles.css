@@ -189,11 +189,29 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .td-meta .lt-link--muted { color: var(--fg-muted); }
 /* v2 item 12: Unlink beside the test case ID. Its space is kept while hidden,
    so the row never shifts; it shows on hover and on keyboard focus. */
-.tc-link { display: inline-flex; align-items: center; gap: var(--space-1); vertical-align: bottom; }
-.tc-unlink { opacity: 0; pointer-events: none; transition: opacity 120ms; }
-.tc-link:hover .tc-unlink, .tc-link:focus-within .tc-unlink { opacity: 1; pointer-events: auto; }
+/* v3 item 1: Unlink is always shown, and the pair sits on the row's text
+   baseline. v2 aligned it to the bottom of a 24px line (the status pill sets
+   the height), which put the ID about 3px below its neighbours. */
+.tc-link { display: inline-flex; align-items: center; gap: var(--space-1); vertical-align: baseline; }
 .meta-linkbtn { border: 0; background: none; padding: 0; font: inherit; cursor: pointer; }
 .meta-linkbtn:hover { text-decoration: underline; }
+
+/* v3 item 2: remarks. One line, cut to the width there is; open, every line,
+   kept to a reading width (ux-text-guidelines.md: lines around 80 characters). */
+.td-remarks { display: flex; align-items: baseline; gap: var(--space-2); margin-top: var(--space-1); min-width: 0; }
+.td-remarks__label {
+  flex: none; font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-bold); color: var(--fg-muted);
+}
+.td-remarks__text { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--fg-default); }
+.td-remarks__toggle {
+  flex: none; border: 0; background: transparent; padding: 0; color: var(--link); font: inherit; font-weight: var(--weight-semibold);
+  white-space: nowrap; cursor: pointer; border-radius: var(--radius-1);
+}
+.td-remarks__toggle:hover { text-decoration: underline; }
+.td-remarks.is-open { display: block; max-width: 88ch; }
+.td-remarks.is-open .td-remarks__label { margin-right: var(--space-2); }
+.td-remarks.is-open .td-remarks__text { white-space: normal; overflow: visible; }
+.td-remarks.is-open .td-remarks__toggle { margin-left: var(--space-2); }
 
 /* LTInlineTextInput: reads as text; hover draws the border (screenshot 2). */
 .lt-inline { position: relative; display: inline-flex; flex-direction: column; min-width: 0; max-width: 100%; }
@@ -347,6 +365,21 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-input--dark .lt-input__lead, .lt-input--dark .lt-input__clear { color: var(--log-text-muted); }
 .lt-input--dark input::placeholder { color: var(--log-text-muted); }
 
+/* LTTextarea: label above, caption and error below (guidelines/lttextarea.md). */
+.lt-textarea { display: flex; flex-direction: column; gap: var(--space-1); }
+.lt-textarea__label { font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-semibold); color: var(--fg-default); }
+.lt-textarea__req { margin-left: var(--space-1); }
+.lt-textarea textarea {
+  min-height: 64px; padding: var(--space-2) var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-2);
+  background: var(--canvas-default); color: var(--fg-default); font: inherit; font-size: var(--font-14); line-height: var(--lh-14);
+}
+.lt-textarea textarea::placeholder { color: var(--fg-subtle); }
+.lt-textarea textarea:focus { outline: none; border-color: var(--accent-emphasis); box-shadow: inset 0 0 0 1px var(--accent-emphasis); }
+.lt-textarea.is-error textarea { border-color: var(--danger-emphasis); box-shadow: inset 0 0 0 1px var(--danger-emphasis); }
+.lt-textarea__msg { display: flex; align-items: center; gap: var(--space-1); margin: 0; font-size: var(--font-12); line-height: var(--lh-12); color: var(--danger-fg); }
+.lt-textarea__msg-icon { flex: none; }
+.lt-textarea__caption { margin: 0; font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+
 .lt-skeleton {
   display: inline-block; flex: none;
   background: linear-gradient(90deg, var(--neutral-muted) 25%, var(--neutral-subtle) 50%, var(--neutral-muted) 75%);
@@ -371,6 +404,7 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-flash--warning .lt-flash__icon { color: var(--attention-fg); }
 
 .lt-table {
+  background: var(--canvas-default); /* v3 item 8: white, even inside a failed command's tint */
   width: 100%; border-collapse: separate; border-spacing: 0;
   border: 1px solid var(--border-default); border-radius: var(--radius-2); overflow: hidden;
 }
@@ -493,15 +527,37 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-popover.is-right::after { left: -6px; top: calc(var(--caret-y) - 5px); border-top: 0; border-right: 0; }
 .lt-popover__heading { margin: 0 0 var(--space-2); font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
 .lt-popover__text { margin: 0; }
-.fs { display: flex; flex-direction: column; gap: var(--space-3); }
-.fs__item { display: flex; flex-direction: column; gap: var(--space-1); }
-.fs__type { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
-.fs__error { color: var(--danger-fg); }
-.fs__times { color: var(--fg-muted); }
-.fs__cmd { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }
-.fs__strategy { color: var(--fg-muted); }
-.fs__value { font-family: var(--font-mono); font-size: var(--font-12); color: var(--fg-muted); overflow-wrap: anywhere; }
-.fs__more { margin: 0; color: var(--fg-muted); }
+/* v3 item 4: the interactive kind holds actions and text to copy. */
+.lt-popover.is-interactive { pointer-events: auto; min-width: 280px; padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); }
+.lt-popover__head { display: flex; align-items: flex-start; gap: var(--space-2); }
+.lt-popover.is-interactive .lt-popover__heading { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.lt-popover__close { flex: none; }
+/* Failure popover content, most important first (failure.jsx). */
+.fp { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-1); }
+.fp__meta { margin: 0; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+.fp__type { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+.fp__error { color: var(--danger-fg); }
+.fp__message { margin: 0; color: var(--fg-default); overflow-wrap: anywhere; }
+.fp__locator { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }
+.fp__strategy { color: var(--fg-muted); }
+.fp__value { font-family: var(--font-mono); font-size: var(--font-12); color: var(--fg-muted); overflow-wrap: anywhere; }
+.fp__comment { display: flex; gap: var(--space-2); padding: var(--space-2); border-radius: var(--radius-2); background: var(--canvas-subtle); }
+.fp__comment-icon { flex: none; margin-top: var(--space-1); color: var(--fg-muted); }
+.fp__comment-text { margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fp__comment-by { font-weight: var(--weight-semibold); }
+.fp__actions {
+  display: flex; gap: var(--space-1); margin: var(--space-1) 0 calc(var(--space-1) * -1) calc(var(--space-1) * -1);
+  padding-top: var(--space-2); border-top: 1px solid var(--border-muted);
+}
+.fp__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.fp__item { display: flex; flex-direction: column; gap: var(--space-1); }
+.fp__item + .fp__item { padding-top: var(--space-3); border-top: 1px solid var(--border-muted); }
+.fp__item-head { margin: 0; display: flex; align-items: center; gap: var(--space-2); }
+.fp__name { font-weight: var(--weight-semibold); }
+.fp__times, .fp__more { color: var(--fg-muted); }
+.fp__noted { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--fg-muted); }
+.fp__more { margin: 0; }
+.fp__hint { margin: 0; padding-top: var(--space-2); border-top: 1px solid var(--border-muted); color: var(--fg-muted); }
 
 .lt-seg { display: inline-flex; flex: none; background: var(--seg-bg); border-radius: var(--radius-2); }
 .lt-seg__btn {
@@ -599,7 +655,12 @@ kbd {
 .cmd-toolbar.is-hidden { transform: translateY(-100%); }
 .cmd-tl-head { display: flex; align-items: center; gap: var(--space-3); }
 .cmd-tl-title { margin: 0; font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
-.cmd-tl-count { display: inline-flex; align-items: center; gap: var(--space-1); }
+/* v3 item 9: each count is a toggle filter. Pressed reads as chosen: a grey
+   fill with a border, like a selected segment. */
+.cmd-tl-count.lt-btn { padding: 0 var(--space-1); gap: 0; }
+.cmd-tl-count .lt-btn__label { display: inline-flex; align-items: center; gap: var(--space-1); overflow: visible; }
+.cmd-tl-count.is-on { background: var(--seg-button-bg); border-color: var(--seg-selected-border); }
+.cmd-tl-count.is-inactive, .cmd-tl-count.is-inactive:hover { background: transparent; border-color: transparent; }
 .cmd-filters { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
 .cmd-search { flex: 1; }
 .cmd-testfilter { max-width: 240px; }
@@ -617,6 +678,8 @@ kbd {
   transition: left 300ms var(--ease-out), width 300ms var(--ease-out);
 }
 .cmd-tl-zoom { display: inline-flex; min-width: 0; }
+/* v3 item 6.2: a 10px comment mark above a stretch with a comment; not clickable. */
+.tl-note { position: absolute; top: -12px; z-index: 1; display: flex; transform: translateX(-50%); color: var(--fg-muted); pointer-events: none; }
 .tl-base { position: absolute; left: 0; right: 0; top: 6px; height: 12px; border-radius: var(--radius-1); background: var(--bg-neutral-subtle); }
 .tl-range { position: absolute; top: 6px; height: 12px; background: var(--timeline-bar); }
 .tl-fail {
@@ -727,6 +790,29 @@ kbd {
   width: 1px; background: var(--border-muted); z-index: 1; pointer-events: none;
 }
 
+/* v3 item 3: condensed rows. Rows drop from 48px to 32px and group headers
+   to 36px; type stays at 14px and 12px so every command stays readable.
+   Group headers take a grey band, so groups still part from their commands. */
+.cmd-scroll.is-condensed .cmd-row { min-height: 32px; }
+.cmd-scroll.is-condensed .cmd-row--disclosure { min-height: 28px; }
+.cmd-scroll.is-condensed .cmd-group__head { min-height: 36px; background: var(--canvas-subtle); }
+.cmd-scroll.is-condensed .cmd-group__toggle { height: 36px; }
+.cmd-scroll.is-condensed .cmd-detail { padding-bottom: var(--space-3); }
+
+/* v3 item 6: a comment on a failed command, read at the top of its details,
+   or written there. */
+.cmt {
+  margin: 0 0 var(--space-2); padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-muted); border-radius: var(--radius-2); background: var(--canvas-default);
+}
+.cmt--edit { padding: var(--space-3); }
+.cmt__head { display: flex; align-items: center; gap: var(--space-1); min-height: 28px; font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); }
+.cmt__head .lt-avatar { width: 20px; height: 20px; }
+.cmt__by { margin-left: var(--space-1); color: var(--fg-default); font-weight: var(--weight-semibold); }
+.cmt__head .meta-dot { margin: 0 var(--space-1); }
+.cmt__text { margin: var(--space-1) 0 0; max-width: 88ch; color: var(--fg-default); white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmt__actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+
 /* Expanded command: payload grows to its height, no inner scroll (item 17). */
 .cmd-detail { padding: 0 var(--space-4) var(--space-4) 40px; border-bottom: 1px solid var(--neutral-subtle); }
 .cmd-row.depth-1 + .cmd-detail { padding-left: 72px; }
@@ -771,6 +857,12 @@ kbd {
 .ws--bottom .vp-stage { flex: 1; min-height: 0; display: flex; justify-content: center; }
 .vp-canvas { display: block; width: 100%; height: 100%; border: 1px solid var(--border-muted); border-radius: var(--radius-2); background: var(--canvas-subtle); transition: transform 200ms var(--ease-out); }
 .ws--bottom .vp-canvas { width: auto; max-width: 100%; aspect-ratio: 16 / 9; }
+/* v3 item 7: with the logs below, the controls sit right of the frame, which
+   takes the pane's whole height at 16:9 (its size is set in video.jsx). */
+.vp.has-side-controls { flex-direction: row; align-items: flex-end; gap: var(--space-4); }
+.vp.has-side-controls .vp-stage { flex: none; display: block; min-height: 0; }
+.vp.has-side-controls .vp-canvas { width: 100%; height: 100%; max-width: none; aspect-ratio: auto; }
+.vp.has-side-controls .vc { flex: 1 1 320px; min-width: 320px; }
 .vp.is-fullscreen { padding: var(--space-6); }
 .vp.is-fullscreen .vp-stage { flex: 1; min-height: 0; aspect-ratio: auto; display: flex; justify-content: center; }
 .vp.is-fullscreen .vp-canvas { width: auto; max-width: 100%; height: 100%; aspect-ratio: 16 / 9; }
