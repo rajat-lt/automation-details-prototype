@@ -3,25 +3,22 @@
 // the "video" is a synthetic session replay drawn on canvas from the command
 // data: the page the test is on, the element each command targets (blue when
 // it passes, red when it fails), the text it types. The control bar started
-// from the brief's screenshot 5 (conflict C3) and was rebuilt for v2 item 11:
-// the seek bar on its own full-width row, playback on the left, the
-// failed-command slot in the middle, the window controls on the right, and
-// rare actions in a menu (automation-details.md §4b and §7b).
+// from the brief's screenshot 5 (conflict C3), was rebuilt for v2 item 11
+// (three rows) and went back to one row for v4 item 9: play, the seek bar,
+// the time, the speed, the window controls and More video actions, the same
+// in every mode (automation-details.md §4b, §4d and §7b).
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  Bug, Download, Ellipsis, GripHorizontal, Maximize, Minimize, PanelRight, PanelRightClose, PanelTop, PanelTopClose,
-  Pause, PictureInPicture2, Play, RotateCwSquare, MessageSquarePlus, Pencil,
+  Download, Ellipsis, GripHorizontal, Maximize, Minimize, PanelRight, PanelRightClose, PanelTop, PanelTopClose,
+  Pause, PictureInPicture2, Play, RotateCwSquare,
 } from 'lucide-react'
-import {
-  LTIconButton, LTButton, LTBlankSlate, LTSkeletonBox, LTCopyToClipboard, StatusGlyph, TruncText, cx, usePortalRoot,
-} from './lt.jsx'
+import { LTIconButton, LTButton, LTBlankSlate, LTSkeletonBox, TruncText, cx, usePortalRoot } from './lt.jsx'
 import { LTActionMenu } from './overlays.jsx'
 import { playback, usePlayback, jumpTo, seekSilently, useWheelSeek } from './playback.js'
-import { commandAt, failureAt, payloadText, statusLabel } from './data.js'
+import { commandAt } from './data.js'
 import { fmtTime } from './format.js'
 import { FailureHits } from './failure.jsx'
-import { commentKey, requestComment, useComment } from './comments.js'
 
 const W = 960, H = 540
 
@@ -308,47 +305,6 @@ function SeekBar({ duration, segments, byId, testId, onStub }) {
   )
 }
 
-/* v2 items 6 and 11: one line above the seek bar names the command the
-   playhead is on. When that is a failure, the line turns red, gives the type
-   in words (404 Not Found, never a bare code: ux-text-guidelines.md §3) and
-   carries Raise a bug and Copy payload. The line keeps its height either way,
-   so nothing jumps when a failure starts or ends, and the buttons never
-   crowd the seek bar [proposed]. v3: it also carries the comment action, so
-   a failure offers the same three actions here and in its popover. */
-function NowLine({ commands, segments, byId, onStub, testId }) {
-  const time = usePlayback(s => s.time)
-  const failed = failureAt(segments, byId, time)
-  const comment = useComment(failed ? commentKey(testId, failed.id) : '')
-  const cmd = failed ?? commandAt(commands, time)
-  if (!cmd) return <div className="vc-now" />
-  if (!failed) {
-    return (
-      <div className="vc-now">
-        <StatusGlyph status={cmd.status} bare size={14} />
-        <TruncText className="vc-now__name" text={cmd.name} />
-        {cmd.value && <TruncText className="vc-now__value" text={cmd.value} />}
-      </div>
-    )
-  }
-  return (
-    <div className="vc-now is-failed" role="group" aria-label={`Failed command at ${fmtTime(failed.at)}`}>
-      <span className="vc-now__fail">
-        <StatusGlyph status="failed" bare size={14} />
-        <TruncText className="vc-now__type" text={statusLabel(failed.response.responseStatus)} />
-        <span className="meta-dot" aria-hidden="true">·</span>
-        <TruncText className="vc-now__name" text={failed.name} />
-        {failed.value && <TruncText className="vc-now__value" text={failed.value} />}
-      </span>
-      <LTIconButton icon={Bug} ariaLabel="Raise a bug" variant="invisible" size="small" tooltipDirection="n"
-        onClick={() => onStub(`The bug form opens here, with ${failed.name} at ${fmtTime(failed.at)} attached.`)} />
-      <LTCopyToClipboard textToCopy={payloadText(failed)} size="small" tooltipDirection="n"
-        copyAriaLabel="Copy payload" copiedAriaLabel="Payload copied" />
-      <LTIconButton icon={comment ? Pencil : MessageSquarePlus} ariaLabel={comment ? 'Edit comment' : 'Add comment'}
-        variant="invisible" size="small" tooltipDirection="n" onClick={() => requestComment(testId, failed.id)} />
-    </div>
-  )
-}
-
 function useClock(duration) {
   useEffect(() => {
     let raf = 0, last = 0
@@ -370,11 +326,13 @@ function useClock(duration) {
 
 /**
  * mode "docked": in the page, beside or above the logs (brief item 13).
- * mode "pip": inside PipWindow (v2 item 5), which carries Dock and Collapse
- * in its own header. One VideoPane is mounted at a time, so there is one
- * clock; every surface reads and moves the same playhead (playback.js).
+ * mode "pip": inside PipWindow (v2 item 5). Both carry the same control bar,
+ * whose window controls switch between the two (v4 item 9.4). One VideoPane
+ * is mounted at a time, so there is one clock; every surface reads and
+ * moves the same playhead (playback.js).
  */
-export function VideoPane({ detail, segments, byId, onStub, loading = false, mode = 'docked', dock = 'side', onPip, onCollapse }) {
+export function VideoPane({ detail, segments, byId, onStub, loading = false, mode = 'docked', dock = 'side', onPip, onDock,
+  onCollapse }) {
   const hasVideo = detail && detail.test.video && detail.commands.length > 0
   const duration = detail?.durationSec ?? 0
   const playing = usePlayback(s => s.playing)
@@ -391,50 +349,25 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
     return () => document.removeEventListener('fullscreenchange', f)
   }, [])
 
-  // v3 item 7: with the logs docked below the video, the pane is wide and
-  // short, so the controls move to the frame's right and the frame takes the
-  // pane's whole height. It keeps 16:9 and leaves the controls at least
-  // 320px; full screen goes back to controls below.
-  const sideControls = mode === 'docked' && dock === 'bottom' && !fs
-  const [paneSize, setPaneSize] = useState({ width: 0, height: 0 })
-  useLayoutEffect(() => {
-    const el = paneRef.current
-    if (!el || !sideControls) return
-    const measure = () => setPaneSize({ width: el.clientWidth, height: el.clientHeight })
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    window.addEventListener('resize', measure)
-    return () => { ro.disconnect(); window.removeEventListener('resize', measure) }
-  }, [sideControls, hasVideo])
-  // Also on every render: the splitter changes the pane's height through a
-  // re-render, which should never wait on an observer.
-  useLayoutEffect(() => {
-    const el = paneRef.current
-    if (!el || !sideControls) return
-    if (el.clientWidth !== paneSize.width || el.clientHeight !== paneSize.height) {
-      setPaneSize({ width: el.clientWidth, height: el.clientHeight })
-    }
-  })
-  let frame = null
-  if (sideControls && paneSize.width) {
-    const PAD = 16, GAP = 16, CONTROLS_MIN = 320
-    let w = Math.max(0, paneSize.width - 2 * PAD - GAP - CONTROLS_MIN)
-    let h = (w * 9) / 16
-    const maxH = Math.max(0, paneSize.height - 2 * PAD)
-    if (h > maxH) { h = maxH; w = (h * 16) / 9 }
-    frame = { width: Math.floor(w), height: Math.floor(h) }
-  }
-  // Rotate is for mobile recordings only (v3 item 10); web tests get a plain
-  // Download button instead of a one-item menu.
+  // Rotate is for mobile recordings only (v3 item 10).
   const mobile = detail?.test.platform === 'mobile'
+  // A switch of window while the pane is full screen leaves full screen first.
+  const leaveFullscreen = () => { if (document.fullscreenElement) document.exitFullscreen?.() }
 
-  const windowControls = mode === 'docked' && (
+  /* v4 items 9.2 and 9.4: the window controls sit in the bar in every mode.
+     Docked, the first opens picture-in-picture; floating, it docks the video
+     back. The floating window's header keeps only its grip and title. */
+  const windowControls = (
     <>
-      <LTIconButton icon={PictureInPicture2} ariaLabel="Open picture-in-picture" variant="invisible" size="small"
-        tooltipDirection="n" onClick={onPip} data-focus="video-pip" />
+      {mode === 'pip' ? (
+        <LTIconButton icon={dock === 'side' ? PanelRight : PanelTop} ariaLabel="Dock video" variant="invisible" size="small"
+          tooltipDirection="n" onClick={() => { leaveFullscreen(); onDock() }} data-focus="pip-dock" />
+      ) : hasVideo && (
+        <LTIconButton icon={PictureInPicture2} ariaLabel="Open picture-in-picture" variant="invisible" size="small"
+          tooltipDirection="n" onClick={() => { leaveFullscreen(); onPip() }} data-focus="video-pip" />
+      )}
       <LTIconButton icon={dock === 'side' ? PanelRightClose : PanelTopClose} ariaLabel="Collapse video" variant="invisible"
-        size="small" tooltipDirection="n" onClick={onCollapse} data-focus="video-collapse" />
+        size="small" tooltipDirection="n" onClick={() => { leaveFullscreen(); onCollapse() }} data-focus="video-collapse" />
     </>
   )
 
@@ -453,12 +386,7 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
           <LTBlankSlate heading={queued ? 'Waiting for the session' : 'Video unavailable'}
             description={queued ? 'The video appears here once the test starts.' : 'This session ended without a recording.'} />
         </div>
-        {mode === 'docked' && (
-          <div className="vc-row vc-row--empty">
-            <LTIconButton icon={dock === 'side' ? PanelRightClose : PanelTopClose} ariaLabel="Collapse video" variant="invisible"
-              size="small" tooltipDirection="n" onClick={onCollapse} data-focus="video-collapse" />
-          </div>
-        )}
+        <div className="vc-row vc-row--empty">{windowControls}</div>
       </section>
     )
   }
@@ -468,46 +396,41 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
     playback.set({ playing: !s.playing })
   }
   return (
-    <section ref={paneRef} className={cx('vp', `vp--${mode}`, fs && 'is-fullscreen', sideControls && 'has-side-controls')}
-      aria-label="Video">
-      <div className="vp-stage" onClick={toggle} style={frame ?? undefined}>
+    <section ref={paneRef} className={cx('vp', `vp--${mode}`, fs && 'is-fullscreen')} aria-label="Video">
+      <div className="vp-stage" onClick={toggle}>
         <ReplayCanvas detail={detail} rotation={rotation} />
       </div>
+      {/* v4 item 9: one row, in this order. The failed stretches stay on the
+          seek bar, with their popovers (9.1). */}
       <div className="vc">
-        <NowLine commands={detail.commands} segments={segments} byId={byId} onStub={onStub} testId={detail.test.id} />
+        <LTIconButton icon={playing ? Pause : Play} ariaLabel={playing ? 'Pause' : 'Play'} variant="invisible" size="small"
+          tooltipDirection="n" onClick={toggle} data-focus="video-play" />
         <SeekBar duration={duration} segments={segments} byId={byId} testId={detail.test.id} onStub={onStub} />
-        <div className="vc-row">
-          <LTIconButton icon={playing ? Pause : Play} ariaLabel={playing ? 'Pause' : 'Play'} variant="invisible" size="small"
-            tooltipDirection="n" onClick={toggle} />
-          <span className="vc-time" aria-hidden="true">{`${fmtTime(time)} / ${fmtTime(duration)}`}</span>
-          {/* The speed shows its value: the state is visible, not behind a gear. */}
-          <LTActionMenu ariaLabel="Playback speed" width={120} selectionVariant="single" activeId={rate}
-            customAnchor={<LTButton variant="invisible" size="small" label={`${rate}x`} ariaLabel={`${rate}x playback speed`}
-              className="vc-speed" />}
-            onSelect={o => playback.set({ rate: o.value })}
-            options={[0.5, 1, 1.5, 2].map(r => ({ value: r, label: `${r}x` }))} />
-          <span className="spacer" />
-          {windowControls}
-          <LTIconButton icon={fs ? Minimize : Maximize} ariaLabel={fs ? 'Exit full screen' : 'Enter full screen'}
-            variant="invisible" size="small" tooltipDirection="n"
-            onClick={() => (fs ? document.exitFullscreen() : paneRef.current?.requestFullscreen?.())} />
-          {mobile ? (
-            // Rare actions leave the bar (NN/g heuristic 8, automation-details.md §7b).
-            <LTActionMenu ariaLabel="More video actions" width={200}
-              customAnchor={<LTIconButton icon={Ellipsis} ariaLabel="More video actions" variant="invisible" size="small" tooltipDirection="n" />}
-              onSelect={o => {
-                if (o.value === 'download') onStub('Video download started.')
-                if (o.value === 'rotate') setRotation(r => (r + 90) % 360)
-              }}
-              options={[
-                { value: 'download', label: 'Download video', icon: Download },
-                { value: 'rotate', label: 'Rotate video', icon: RotateCwSquare },
-              ]} />
-          ) : (
-            <LTIconButton icon={Download} ariaLabel="Download video" variant="invisible" size="small" tooltipDirection="n"
-              onClick={() => onStub('Video download started.')} />
-          )}
-        </div>
+        {/* The seek bar announces the time; below 360px the total gives way. */}
+        <span className="vc-time" aria-hidden="true">
+          {fmtTime(time)}<span className="vc-total">{` / ${fmtTime(duration)}`}</span>
+        </span>
+        {/* The speed shows its value: the state is visible, not behind a gear. */}
+        <LTActionMenu ariaLabel="Playback speed" width={120} selectionVariant="single" activeId={rate}
+          customAnchor={<LTButton variant="invisible" size="small" label={`${rate}x`} ariaLabel={`${rate}x playback speed`}
+            className="vc-speed" />}
+          onSelect={o => playback.set({ rate: o.value })}
+          options={[0.5, 1, 1.5, 2].map(r => ({ value: r, label: `${r}x` }))} />
+        {windowControls}
+        {/* v4 item 9.3: Download and full screen move into the menu, last in
+            the bar (NN/g heuristic 8, automation-details.md §7b). */}
+        <LTActionMenu ariaLabel="More video actions" width={200}
+          customAnchor={<LTIconButton icon={Ellipsis} ariaLabel="More video actions" variant="invisible" size="small" tooltipDirection="n" />}
+          onSelect={o => {
+            if (o.value === 'download') onStub('Video download started.')
+            if (o.value === 'fullscreen') (fs ? document.exitFullscreen() : paneRef.current?.requestFullscreen?.())
+            if (o.value === 'rotate') setRotation(r => (r + 90) % 360)
+          }}
+          options={[
+            { value: 'download', label: 'Download video', icon: Download },
+            { value: 'fullscreen', label: fs ? 'Exit full screen' : 'Enter full screen', icon: fs ? Minimize : Maximize },
+            ...(mobile ? [{ value: 'rotate', label: 'Rotate video', icon: RotateCwSquare }] : []),
+          ]} />
       </div>
     </section>
   )
@@ -519,13 +442,15 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
    controls, so it could not carry this seek bar, its failure markers or the
    failed-command slot. It moves by its header (or the grip and arrow keys)
    and resizes from its top-left corner between 320px and the smaller of
-   640px and half the window [proposed thresholds]. */
+   640px and half the window [proposed thresholds]. v4 item 9.4: Dock and
+   Collapse live in the video's own bar, as everywhere else, so the header
+   keeps only the grip and the title. */
 export const PIP = { min: 320, max: 640, gap: 16 }
 export function pipMaxWidth() {
   return Math.max(PIP.min, Math.min(PIP.max, Math.floor(window.innerWidth / 2)))
 }
 
-export function PipWindow({ rect, setRect, title, dock, onDock, onCollapse, children }) {
+export function PipWindow({ rect, setRect, title, children }) {
   const root = usePortalRoot()
   const ref = useRef(null)
   const drag = useRef(null)
@@ -596,10 +521,6 @@ export function PipWindow({ rect, setRect, title, dock, onDock, onCollapse, chil
         <LTIconButton icon={GripHorizontal} ariaLabel="Move video" variant="invisible" size="small" className="pip-grip"
           tooltipDirection="n" onKeyDown={moveKeys} />
         <TruncText className="pip-title" text={title} />
-        <LTIconButton icon={dock === 'side' ? PanelRight : PanelTop} ariaLabel="Dock video" variant="invisible" size="small"
-          tooltipDirection="n" onClick={onDock} data-focus="pip-dock" />
-        <LTIconButton icon={dock === 'side' ? PanelRightClose : PanelTopClose} ariaLabel="Collapse video" variant="invisible"
-          size="small" tooltipDirection="n" onClick={onCollapse} />
       </div>
       {children}
       <span role="slider" tabIndex={0} className="pip-resize" aria-label="Resize video"

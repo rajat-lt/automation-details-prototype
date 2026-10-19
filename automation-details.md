@@ -1,4 +1,4 @@
-# Automation test details: 18 UX changes, then 16, then 11 more
+# Automation test details: 18 UX changes, then 16, then 11, then 12 more
 
 The automation test details page with Rajat's 18 changes of 16 Oct 2026 applied. Written in the `design-context/patterns/` house format, as an amendment proposal for `patterns/automation-details.md`. The working prototype in this repo implements it.
 
@@ -11,6 +11,8 @@ Every component and prop below was read from `COMPONENTS.md`. Proposals carry **
 **v2, 17 Oct 2026.** Rajat's second brief (16 changes) and his answers to §10 are applied. Its items are written *v2 item 1* to *v2 item 16*, beside the first brief's items 1 to 18; §4b, §6 (C20 to C28), §7b and the v2 rows of every other section cover them. Sources were read again from `design-context` `main` (still `e014a73`) on 17 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md`, `guidelines/README.md`, `ltpopover.md`, `ltactionmenu.md`, `lttooltip.md`, `ltunderlinenav.md`, `ltsegmentedcontrol.md`, `lticonbutton.md`, `ltmodal.md`, `notification-messaging.md`, `COMPONENTS.md` (with its story source snippets in `data/raw/components.json`), `patterns/automation-details.md`, `patterns/module-details.md`, `patterns/topbar.md`, `guidelines/ltbreadcrumbs.md`, `mock-data.md` and `icons.md`. Two outside sources were read for v2: NN/g's [10 Usability Heuristics for User Interface Design](https://www.nngroup.com/articles/ten-usability-heuristics/) (Jakob Nielsen, last reviewed Jan 30, 2024) for v2 item 11, and MDN's [Document Picture-in-Picture API](https://developer.mozilla.org/en-US/docs/Web/API/Document_Picture-in-Picture_API) for v2 item 5.
 
 **v3, 18 Oct 2026.** Rajat's third brief: 11 items, two of them reminders (no hallucination; nothing already built may break). Its items are written *v3 item 1* to *v3 item 11*: §4c, conflicts C29 to C33, §7c and the v3 rows of every other section. Sources read again from `design-context` `main` (still `e014a73`) on 18 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md`, `guidelines/lttextarea.md`, `ltpopover.md`, `COMPONENTS.md` (`LTTextarea`, `LTPopover`) and `mock-data.md` (people, devices).
+
+**v4, 19 Oct 2026.** Rajat's fourth brief: 12 items, the last a reminder to double-check every point. Its items are written *v4 item 1* to *v4 item 12*, and item 8's ten points *8.1* to *8.10*: §3c, §4d, conflicts C34 to C39, §7d and the v4 rows of every other section. Sources read again from `design-context` `main` (still `e014a73`) on 19 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md` (§2 punctuation on labels, §3 never a bare error code), `guidelines/README.md` (§3 hierarchy), `ltbutton.md`, `ltactionmenu.md`, `ltunderlinenav.md`, `COMPONENTS.md` (`LTButton` variants), `patterns/automation-details.md` (§3.3, §6 layout notes, open question 2) and `mock-data.md` (test case IDs). The brief's first screenshots were measured again: 7 and 8 for the indent rule, 5 for the control row, 6 for the toolbar.
 
 ---
 
@@ -45,6 +47,17 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | Failure popovers | Close when the pointer leaves | Stay open to copy from; a single failure carries Raise a bug, Copy payload and a comment action; a new reading order (v3 item 4) |
 | Timeline | Failure stretches | A comment mark above every stretch with a comment (v3 item 6.2) |
 | Video | Controls below the frame everywhere; Rotate for every test | Controls right of the frame while the logs are docked below (v3 item 7); Rotate only for mobile (v3 item 10); a comment action on the failure line |
+
+**What v4 changes (19 Oct 2026)**
+
+| Region | After v3 | After v4 |
+|---|---|---|
+| Header | *Remarks*; with the tests pane collapsed, the meta row and the remarks start under the expand button | *Remarks:* (v4 item 3); the meta row and the remarks start where the test name starts (v4 item 4) |
+| All Commands | One level of test case; comfortable rows by default; the whole toolbar slides away | A test case can hold one more (v4 item 10); condensed by default (v4 item 7); only the heading and the timeline slide away (v4 item 11); the indent rule starts 4px under the chevron and ends on the last row's bottom border (v4 item 6) |
+| A command's details | The comment above the payload; up to six icon buttons | The comment below the payload, with **Delete Comment** (v4 items 1, 2); Copy link and Pop out payload in a ⋯ menu, last (v4 items 8.8, 8.9); the status gives way when the bar is narrow (8.10) |
+| Failure popovers | Raise a bug, Copy payload, comment | **Copy link** third (v4 item 5) |
+| Video | A command line, the seek bar, then buttons; controls right of the frame when docked below | One row in every mode: play, seek bar, time, speed, picture-in-picture or dock, collapse, ⋯ (v4 item 9). The command line is gone; the failure marks stay |
+| The video's side | The video | Payloads popped out of the list open as tabs beside a Video tab: up to 5, reorderable, closable (v4 item 8) |
 
 ## 2. Component inventory
 
@@ -101,6 +114,15 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | `LTPopover` | Failure popovers, now interactive (v3 item 4) | `containsInteractiveChildElement`, `forceClose`, plus v2's props. With interactive content it follows `ltpopover.md`: a visible close button, Esc and click-outside |
 | `LTIconButton` | Add comment, Edit comment, the density toggle, Download video | as before |
 | `LTAvatar` | The comment's author | `initials`, `name`, `size` |
+
+**Added in v4:**
+
+| Component | Where | Props used (all in `COMPONENTS.md`) |
+|---|---|---|
+| `LTButton` | **Delete Comment** (v4 item 2); **More** at the end of the media tabs | `variant="danger"` (`ltbutton.md`: destructive; C36), `size="small"`, `label`; `variant="invisible"` and `trailingIcon` for More |
+| `LTActionMenu` | ⋯ in a command's details (Copy link, Pop out payload; Show in All Commands in a payload tab); ⋯ in the video's row (Download video, Enter full screen, Rotate video on mobile); More (folded media tabs); each media tab's menu | `customAnchor`, `options` with `icon`, `inactive` and `description`; `open` and `onMenuToggle` for the tab menu |
+| `LTIconButton` | Copy link in the failure popovers (the composed copy button of v2); Close tab (`size="xsmall"`) | `ariaLabel`, `icon`, `size`, `variant`, `tooltipDirection` |
+| Media tabs | The Video tab and the payload tabs (v4 item 8) | Composed: a `tablist` styled like `LTUnderlineNav`. No component switches panels in place at this level (C34, §9) |
 
 **Built custom and flagged in v2:** tab reordering around `LTUnderlineNav` (v2 item 1); the right-click menu's anchor (v2 item 2); the floating video window (v2 item 5); copy buttons with another icon or rich content, for Copy link and Copy table (v2 items 2, 10, 15), because `LTCopyToClipboard` has a fixed icon and copies plain text; the "full text when cut" tooltip helper (v2 item 16). See §9.
 
@@ -234,6 +256,50 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 </PipWindow>
 ```
 
+### 3c. Structure after v4
+
+```jsx
+<CommandsScroll>
+  <Toolbar>                         {/* v4 item 11: the first two rows slide away */}
+    <TimelineHeading />
+    <RangeTimeline />
+    <Filters>Search commands (/) · Tests: All</Filters>   {/* stays */}
+  </Toolbar>
+  <Group kind="testCase" tc="#TC-7742" depth={0}>          {/* rule at 24px */}
+    <Disclosure n={10} depth={1} />
+    <Group kind="testCase" tc="#TC-8" depth={1}>           {/* v4 item 10: rule at 56px, sticks under its parent */}
+      <CommandRow depth={2} />
+    </Group>
+    <CommandRow depth={1} name="Get Current URL" />        {/* the parent goes on after the child ends */}
+  </Group>
+</CommandsScroll>
+
+<CommandDetail>
+  <Bar>
+    Request | Response · <LTTag text="500 Internal Server Error" />   {/* gives way first, 8.10 */}
+    <Actions>Raise a bug · Add comment · View screenshot · Show as table · ⋯ (Copy link, Pop out payload)</Actions>
+  </Bar>
+  <Payload />
+  <Comment />                       {/* v4 item 1; its box has Delete Comment on the left (v4 item 2) */}
+</CommandDetail>
+
+<VideoSide>
+  {payloadTabs.length > 0 && (
+    <MediaTabs>Video · ✗ Find Element 1:16 × · ✗ Find Element 1:16 (2) × · More ▾</MediaTabs>
+  )}
+  <VideoPane>                       {/* a tab panel once tabs exist */}
+    <Stage />
+    <Row>Play · SeekBar · 0:32 / 3:20 · 1x · Open picture-in-picture · Collapse video · ⋯ (Download video, Enter full screen)</Row>
+  </VideoPane>
+  <PayloadPanel />                  {/* one per payload tab */}
+</VideoSide>
+
+<PipWindow>
+  <Header>Move video · {test name}</Header>
+  <VideoPane mode="pip" />          {/* Dock video in place of Open picture-in-picture */}
+</PipWindow>
+```
+
 ## 4. Behaviour, item by item
 
 1. **Condensed meta row.** One line under the title, items joined by a middle dot (`LTMetaData showLeadingDot`). Order follows the brief's screenshot: status pill, duration, linked test case, browser, OS, resolution, framework, tunnel, updated by. When space runs out the row ends in an ellipsis and stays one line.
@@ -250,10 +316,10 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 12. **Lighter rows.** Dividers drop to `neutral.subtle`, rows grow to 48px and align on one rail. The failed row tint is `danger.subtle` at about 40%, as measured in the brief.
 13. **Dock.** An icon-only segmented control at the end of the tab bar puts the logs left of the video (default) or below it, like Chrome DevTools. The choice is remembered.
 14. **Resizable sections.** Every boundary between sections has a splitter, draggable and keyboard operable (arrow keys move 16px, Home and End go to the limits, double-click restores the default). Limits **[proposed]**: tests pane 320 to 480px; video 320px wide to whatever leaves the logs 480px; docked below, the video is 200px tall up to 60% of the space.
-15. **Test case as a parent.** A command's parent is either an annotation or a test case, one level deep. A test case header leads with its ID (`#TC-7742`) in muted text; an annotation header shows its name only. Both show `{n} total · {passed} · {failed}`.
+15. **Test case as a parent.** A command's parent is either an annotation or a test case, one level deep (*v4 item 10: two levels*). A test case header leads with its ID (`#TC-7742`) in muted text; an annotation header shows its name only. Both show `{n} total · {passed} · {failed}`.
 16. **Failed tests open at the failure.** On load, passed runs are collapsed (item 6) and the list scrolls the first failed command into view, under the sticky toolbar, and highlights it once (item 9).
-17. **One scroll.** The All Commands tab has a single vertical scroll, and nothing inside it scrolls on its own (payloads grow to their height). Scrolling down slides the timeline and search away and keeps the current group's header pinned at the top. Scrolling up brings the timeline and search back, with the group header pinned below them. The toolbar stays while it has focus or hover, and while a scroll it started is running, so pressing Next failed command twice still works **[proposed]**.
-18. **Indent rule.** An expanded group draws a vertical line from its chevron to its last command (`border.muted`, measured), so a group's start and end read at a glance.
+17. **One scroll.** The All Commands tab has a single vertical scroll, and nothing inside it scrolls on its own (payloads grow to their height). Scrolling down slides the timeline and search away (*v4 item 11: search and the filter now stay*) and keeps the current group's header pinned at the top. Scrolling up brings the timeline and search back, with the group header pinned below them. The toolbar stays while it has focus or hover, and while a scroll it started is running, so pressing Next failed command twice still works **[proposed]**.
+18. **Indent rule.** An expanded group draws a vertical line from its chevron to its last command (`border.muted`, measured), so a group's start and end read at a glance. *v4 item 6: from 4px under the chevron to the last row's bottom border.*
 
 ## 4b. Behaviour, v2 (17 Oct 2026)
 
@@ -261,13 +327,13 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 2. **Right-click on a command.** On a command row, never on its group, the browser's menu gives way to *Copy payload*, *Copy link* and, after a divider, *Raise a bug*. From the keyboard, Shift + F10 or the menu key opens it under the focused row. Copy payload copies the request and the response as one JSON [proposed] (C25). Copy link copies the command's link in this test run, `#/{test}/commands/{command}`. The menu closes, so a toast says what happened: *Payload of Find Element at 1:16 copied.* If the clipboard refuses, the toast says so and what to do: *... failed to copy. Try again.* Opening a command's link opens the test at that command: filters that would hide it are cleared, its group and passed run open, its details open, the video moves to its moment, and the row is focused and highlighted. The link never opens the screenshot dialog: `ltmodal.md` says not to deep-link straight into a modal. The visible twin is a *Copy link* button in every command's details.
 3. **Space.** Brings the next failed command into view and focuses it; after the last it starts again from the first (cyclic). Shift + Space goes back [proposed]. Only the list moves; the video stays where it is, as the brief asks ("it simply bring them in-view"); the timeline's chevrons are the controls that also move the video. It works on the All Commands tab whenever focus is on the page, on a row, or on anything else in the list. Inside the list Space means this on every row, buttons included, and Enter activates. Elsewhere (the toolbar, the video, a field) Space keeps its usual meaning. Screen readers hear *Failed command 3 of 20: Find Element at 1:16*. A passed test answers *All commands passed*.
 4. **One payload view for every command.** Switching one command between JSON and table switches them all and is remembered, like the code theme. The button names the view it switches to: *Show as table*, *Show as JSON* (the brief's "show json"; v1 said *Show as code*).
-5. **Picture-in-picture and collapse.** Two buttons on the video's control row. *Open picture-in-picture* floats the video in a small window over the page; the logs take the whole width. The window carries the same seek bar, failure markers, command line and controls, and it shares the one playhead, so every jump from the list moves it and every jump in it reveals its command (item 9). It moves by its header (or its grip and the arrow keys), resizes from its top-left corner between 320px and the smaller of 640px and half the window [proposed thresholds], always stays fully on screen, and remembers where it was. Its header holds *Dock video* and *Collapse video*. *Collapse video* hides the video and pauses it; the end of the tab bar then shows **Show Video**, which brings back the docked view, at its dock position and size. Each change moves focus to the control that reverses it and is announced (*Video collapsed. Show Video brings it back.*). Why a window in the page rather than the browser's own: §7b.
-6. **Actions at a failure.** When the playhead is on a failure (seeked there, or playing through it), the command line above the seek bar turns red and reads *404 Not Found · Find Element* with the locator, followed by **Raise a bug** and **Copy payload**. A failure counts for at least 2 seconds, so a 120ms one stays readable while the video plays [proposed]. Away from failures the line names the command the video is on.
+5. **Picture-in-picture and collapse.** Two buttons on the video's control row. *Open picture-in-picture* floats the video in a small window over the page; the logs take the whole width. The window carries the same seek bar, failure markers, command line and controls, and it shares the one playhead, so every jump from the list moves it and every jump in it reveals its command (item 9). It moves by its header (or its grip and the arrow keys), resizes from its top-left corner between 320px and the smaller of 640px and half the window [proposed thresholds], always stays fully on screen, and remembers where it was. Its header holds *Dock video* and *Collapse video* (*v4 item 9.4: they moved into the video's row*). *Collapse video* hides the video and pauses it; the end of the tab bar then shows **Show Video**, which brings back the docked view, at its dock position and size. Each change moves focus to the control that reverses it and is announced (*Video collapsed. Show Video brings it back.*). Why a window in the page rather than the browser's own: §7b.
+6. **Actions at a failure.** When the playhead is on a failure (seeked there, or playing through it), the command line above the seek bar turns red and reads *404 Not Found · Find Element* with the locator, followed by **Raise a bug** and **Copy payload**. A failure counts for at least 2 seconds, so a 120ms one stays readable while the video plays [proposed]. Away from failures the line names the command the video is on. *Superseded by v4 item 9.1: the line is gone.*
 7. **Arrow keys between commands.** The list is one tab stop. Up and Down move focus to the previous or next row (group headers, commands and *Show n passed logs* rows, in screen order); Home and End go to the ends; Enter opens or closes a command's details. The focused row keeps itself in view under the sticky toolbar and group header, and keyboard movement never slides the toolbar away. Only the focused row's controls are in the tab order.
 8. **Failure popovers.** Hovering a red stretch of the video's seek bar or the timeline opens an `LTPopover` with the failure's command line and type: *Failed at 0:32* · **500 Internal Server Error** · *unknown error* · *Create New Session · xpath · /Users/ltadmin/...*. A stretch that merges retries says *8 failed commands · 1:16 - 1:21* and folds identical failures into one line with *8 times*. Hover targets are at least 12px wide. It closes when the pointer leaves, and on Esc (C20).
 9. **Double-click zoom.** Double-clicking a red stretch on the timeline zooms the bar to it, with a margin on both sides: a quarter of its length, at least 3 seconds each side, and a window of at least 10 seconds [proposed]. The zoom animates, the axis relabels (*1:13 ... 1:25*), retries that read as one block across the whole run separate, a tag beside the counts says *1:13 - 1:25*, and the list shows that window. Reset timeline undoes it, and is inactive with *Showing the whole run* when there is nothing to reset.
 10. **Copy a table.** In table view, a copy button in the table's corner copies it with its rows and columns: HTML for rich editors (Docs, Notion, Confluence, email) and tab-separated text for spreadsheets and plain editors, header row first.
-11. **Video controls, decluttered.** Three rows: the command line, the seek bar across the whole width, then Play, *1:16 / 3:20* and the speed (*1x*) on the left, and *Open picture-in-picture*, *Collapse video*, *Enter full screen* and *More video actions* (Download video, Rotate video) on the right. The reasoning, heuristic by heuristic, is in §7b.
+11. **Video controls, decluttered.** Three rows: the command line, the seek bar across the whole width, then Play, *1:16 / 3:20* and the speed (*1x*) on the left, and *Open picture-in-picture*, *Collapse video*, *Enter full screen* and *More video actions* (Download video, Rotate video) on the right. The reasoning, heuristic by heuristic, is in §7b. *Superseded by v4 item 9: one row again (C37).*
 12. **Unlink.** Hovering or focusing the test case ID in the meta row shows an *Unlink test case* button right beside it. Its space is kept while hidden, so nothing in the row moves. Unlinking happens at once, because it can be undone: the toast reads *Test case #TC-88904 unlinked.* with **Undo** [proposed]. The meta row then offers **Link a Test Case**, the base pattern's wording.
 13. **The name uses the space it has.** The title keeps the width the header leaves it, recomputed on every resize, so it shows in full whenever the viewport, the tests pane (collapsed or narrowed) and the actions leave room, and ends in an ellipsis only when they do not. The breadcrumb's current crumb, the same name, did not: v1 capped it at 420px at every width. It now takes whatever the top bar has left. Both show the full name on hover when cut (v2 item 16).
 14. **Cmd or Ctrl plus the wheel seeks.** Over the video (docked or floating) or the timeline: Cmd on a Mac, Ctrl elsewhere. One wheel notch moves 1 second; down or right is later. The list reveals the command once the wheel stops, so it does not scroll under every notch. Elsewhere on the page the browser keeps the gesture, so Ctrl and the wheel still zoom the page on Windows (C23).
@@ -291,12 +357,54 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 3. **Comfortable and condensed rows.** A toggle icon button in the timeline header, beside Reset timeline, switches the list between comfortable (the current rows: 48px, group headers 48px) and condensed (32px rows, 36px group headers). Type stays at 14px and 12px, so every command reads as before. In condensed, group headers take a grey band, so a group still parts from its commands. The icon shows the view it switches to (*Switch to condensed view*); the choice is remembered and announced.
 4. **Failure popovers you can work in.** After a 250ms hover (so a pointer passing over the bar opens nothing), the popover opens and stays open when the pointer leaves the strip. It closes with its close button, Esc, a click outside, or by hovering another failure, which replaces it; one is open at a time. Its text can be selected and copied. A single failure reads, in order: the command; *At 0:32 · 400ms*; the HTTP status as a red tag with the WebDriver error; the error's own message when it adds something; the locator; the comment, when there is one; then **Raise a bug**, **Copy payload** and **Add comment** (or **Edit comment**). A merged stretch lists its failures with counts and offers no actions (v3 item 4.5); on the timeline it says how to reach one: *Double-click to zoom in and act on one command.* The comment action closes the popover and opens the command's details with the comment box focused and in view, switching to All Commands if another tab shows.
 5. **(Reminder: no hallucination.)** Every claim in this round was checked against design-context or the running page.
-6. **Comments on failed commands.** In a failed command's details, *Add comment* (in the details bar, only while there is none) opens a comment box under the bar: `LTTextarea` labelled *Comment*, with a live count (*117 of 500 characters.*), **Cancel** and **Save**. An empty comment is refused with *Enter a comment.*; above 500 characters, with *Comment must be 500 characters or fewer.*; Cmd or Ctrl + Enter saves. A saved comment shows at the top of the details, readable without a click: the author's initials and name, the time (relative, absolute on hover), the text, and *Edit comment*. Each commented failure gets a 10px comment mark above its stretch on the timeline, not clickable.
-7. **Controls right of the frame when the logs are below.** Docked below, the video pane is wide and short, so the command line, seek bar and buttons move to the right of the frame, and the frame takes the pane's whole height at 16:9. The controls keep at least 320px and take whatever width is left; the frame shrinks first. Full screen goes back to controls below.
+6. **Comments on failed commands.** In a failed command's details, *Add comment* (in the details bar, only while there is none) opens a comment box under the bar: `LTTextarea` labelled *Comment*, with a live count (*117 of 500 characters.*), **Cancel** and **Save**. An empty comment is refused with *Enter a comment.*; above 500 characters, with *Comment must be 500 characters or fewer.*; Cmd or Ctrl + Enter saves. A saved comment shows at the top of the details (*v4 item 1: below the payload now*), readable without a click: the author's initials and name, the time (relative, absolute on hover), the text, and *Edit comment*. Each commented failure gets a 10px comment mark above its stretch on the timeline, not clickable.
+7. **Controls right of the frame when the logs are below.** Docked below, the video pane is wide and short, so the command line, seek bar and buttons move to the right of the frame, and the frame takes the pane's whole height at 16:9. The controls keep at least 320px and take whatever width is left; the frame shrinks first. Full screen goes back to controls below. *Superseded by v4 item 9.4.*
 8. **Tables on white.** Request and response tables have a white background, also inside a failed command's red tint; the header row keeps its grey.
 9. **Counts that filter.** The passed and failed counts beside *Timeline* are toggle buttons: pressing one shows only that status, pressing it again shows every command, and pressing the other switches. While one is on, passed runs stay unfolded and every group with a match opens, as search does. With only passed commands shown, the failure chevrons are inactive and say why (*Showing passed commands only*). A count of 0 is inactive. An empty result says *Clear the status filter or try a wider time range.*
-10. **Rotate for mobile only.** Web videos lose *Rotate video*; with Download as the only rare action left, it becomes a plain button instead of a one-item menu. Mobile recordings keep both in *More video actions*. Every mock test is web: `mock-data.md` has no mobile devices to stage one with (§9).
+10. **Rotate for mobile only.** Web videos lose *Rotate video*; with Download as the only rare action left, it becomes a plain button instead of a one-item menu (*v4 item 9.3: Download is in More video actions again*). Mobile recordings keep both in *More video actions*. Every mock test is web: `mock-data.md` has no mobile devices to stage one with (§9).
 11. **(Reminder: nothing already built may break.)** Every v1 and v2 behaviour was tested again after these changes.
+
+## 4d. Behaviour, v4 (19 Oct 2026)
+
+1. **The comment comes after the payload.** In a failed command's details the order is now: the bar, the payload (table or JSON), then the comment, read or being written. Opening the comment box from a popover still brings the box itself into view.
+2. **Delete a comment.** The box of a saved comment has **Delete Comment** on the left of its action row, in the danger variant, apart from **Cancel** and **Save** on the right. It deletes at once, with no confirmation, as the brief asks for now (C36). The box closes, focus returns to the command, screen readers hear *Comment deleted*, the comment mark leaves the timeline, and *Add comment* is back in the bar. A first comment being written has no Delete Comment: there is nothing saved to delete.
+3. **Remarks:** The label reads *Remarks:* (C35).
+4. **One left edge for the header's text.** With the tests pane collapsed, its expand button has a column of its own, as tall as the title row, and the title, the meta row and the remarks share the next column, so all three start where the test name starts. With the pane open there is no button, and all three start at the header's text edge, as before.
+5. **Copy link in the popovers.** A single failure's popover, on the video's seek bar and on the timeline alike, carries four actions: Raise a bug, Copy payload, **Copy link** (third: the command's own link, as in its right-click menu) and Add or Edit comment. Copying turns the icon into a tick and the tooltip into *Copied*, and screen readers hear *Link to Create New Session at 0:32 copied*.
+6. **The indent rule, as the design draws it.** Measured on the brief's screenshots 7 and 8: the rule sits under the chevron's centre (24px in) and starts 4px below the chevron's 16px box, so its first few pixels sit inside the group's header. It runs down to the bottom border of the group's last row, whether that is a command, an open command's details, a *Show n passed logs* row or a nested test case. v1 started it under the header and stopped it 12px short.
+7. **Condensed by default.** New visitors get condensed rows. The toggle stays, and a choice made with it is still remembered. The default v3 stored for every visitor is not carried over (§7d).
+8. **Payloads in tabs beside the video.**
+   1. A failed command's ⋯ menu offers **Pop out payload**; passed commands do not.
+   2. Choosing it opens the payload as a tab beside the video. The first time, the video moves into a tab too: **Video**, then the payload's tab, styled like the page's tabs (C34). The new tab opens at once and the video pauses, since it can no longer be seen. Focus stays on the ⋯ button, and screen readers hear *Payload of Create New Session at 0:32 opened in a tab*.
+   3. The Video tab cannot close. Floating the video (picture-in-picture) or collapsing it takes its tab out of the row; **Dock Video** or **Show Video** brings it back where it was, open. Payload tabs stay whatever the video does: with the video away, its side of the page shows just them. Payload tabs close; they never float or collapse.
+   4. Up to 5 payload tabs. With 5 open, Pop out payload stays in the menu, inactive, with *Available after you close a payload tab*. Every tab, Video included, reorders: drag it sideways (Esc cancels), or open its menu (right-click, Shift + F10 or the menu key) for **Move left** and **Move right**, plus **Close tab** on a payload.
+   5. Before the first payload opens there are no tabs, and the video shows as it always has. Closing the last payload tab returns to that.
+   6. While a payload is open in a tab, Pop out payload is gone from its menu. The tab's × (or Delete on the focused tab, or Close tab in its menu) is the way back: it closes the tab, and Pop out payload returns. Closing the open tab opens the one to its left. Closing from the keyboard moves focus to the tab that opens or, after the last payload tab, to the video's Play button (or to **Dock Video** or **Show Video** when the video is away).
+   7. The payload shows in both places: under the command, when its details are open, and in its tab. The tab shows what failed and when (*Create New Session · /Users/... · At 0:32 · 400ms*), then the same bar, payload and comment as under the command. The payload view, the code theme and the comment are shared, so a comment saved in the tab shows under the command too. The tab's ⋯ menu has **Copy link** and **Show in All Commands**, which opens the command in the list the way its link does [proposed].
+   8. Six icon buttons did not fit the details bar, so **Copy link** and **Pop out payload** move into a ⋯ menu.
+   9. The ⋯ menu is last in the bar, and on every command, so Copy link is always in the same place.
+   10. When the bar runs out of width, the status gives way first: it shrinks to 48px (*500…*, the whole label on hover) while the segmented control and the buttons keep their size and place. Where even 48px is not left (a command inside a nested test case with the logs at their narrowest), the status hides; the payload right below states it, and a bare code is never shown (C39). Only when the buttons alone do not fit (a payload tab in a 320px pane) do they move, as one group, to a line of their own under the segmented control, right-aligned.
+
+   **Tab labels.** The failed mark, the command's name (cut past 160px, whole on hover), its time and ×. Retries in the same second read alike, so the later ones get *(2)*, *(3)* by run order. The open tab is bold with the orange underline; a hidden bold copy holds every tab's width, so opening one moves nothing.
+
+   **When tabs outgrow the pane.** Tabs never scroll sideways (`ltunderlinenav.md`): those that do not fit fold into **More ▾** at the end of the row, as the base pattern's own tab bar does, and the open tab always stays in the row. Choosing a tab from More opens it.
+
+   **Keyboard.** The tabs are a tablist and one tab stop. Left and Right move between tabs, Home and End go to the ends, Enter or Space opens the focused tab (so passing over Video never pauses or plays it), and Delete closes a payload tab. × is the mouse's twin and stays out of the tab order.
+
+   **Per test.** Payload tabs belong to their test, for the session: another test has its own (or none), and they come back on returning.
+9. **The video's controls: one row, in every mode.**
+   1. The command line above the seek bar is gone. The failure marks on the seek bar, and their popovers, stay.
+   2. One row, in the brief's order: Play or Pause, the seek bar (it takes the room left), *0:32 / 3:20*, the speed (*1x*), then the icon buttons.
+   3. Download video and full screen move into **More video actions** (⋯), last in the row; Rotate video joins them for mobile recordings only. The row's other icon buttons are **Open picture-in-picture** and **Collapse video**.
+   4. The row is the same docked beside the logs, docked above them, floating and in full screen. Floating, its first icon button docks the video (**Dock video**, focused when the window opens), and the floating window's header keeps only its grip and the test's name: Dock and Collapse are no longer repeated there. Switching windows from full screen leaves full screen first. Docked above the logs, the frame takes the height left after the row, at 16:9, and the row matches the frame's width, centred, with at least 320px so its controls fit. A row under 360px (a floating window made smaller than its default) drops the total and keeps the elapsed time; the seek bar announces both.
+10. **A test case inside a test case.**
+    1. A test case can hold another, two levels at most: test case, test case, commands, payload. #TC-7742 holds #TC-8 in its middle, so #TC-7742 goes on after #TC-8 ends; #TC-56345 holds #TC-4410 last, so both end together.
+    2. The nested test case has its parent's anatomy: chevron, muted ID, bold title, `{n} total · {passed} · {failed}`, a sticky header, the condensed grey band, its own indent rule.
+    3. Each level is 32px further in. Commands sit at 16px on the page, 48px in a test case and 80px in a nested one; the nested header's chevron sits at 48px, in line with its siblings' status icons; an open command's details line up with its name (40, 72 and 104px).
+    4. Each open group draws its own rule under its own chevron (24px and 56px), so the page shows where a test case starts, where its child starts, where the child ends (its rule stops and the rows step back 32px) and where the parent ends (its rule stops). The outer rule runs on through the nested header. Scrolled into a nested test case, both headers stay pinned, the child's under its parent's.
+    5. Counts take in the nested test case's commands (#TC-7742: *20 total*, 9 of them in #TC-8). Search matches a command on its own words or on any group around it. The Tests filter lists the nested test cases too, with *Inside #TC-7742*; choosing a test case opens it and the one it runs inside, and choosing #TC-7742 includes #TC-8's commands. A command's link, Space and the arrow keys open and walk every level, in screen order.
+11. **Search and the filter never slide away.** Scrolling down slides away only the Timeline heading and the timeline; search and the Tests filter stay pinned at the top, with the group headers pinned right under them, in the order screenshot 6 shows. Scrolling up brings the rest back. Focus in search or the filter leaves the timeline where it is; focus on anything above them brings it back.
+12. **(Reminder: double-check every point.)** Every item was checked in the running page at 1512 × 900 and 1280 × 800, with layout measured in the page, and every v1 to v3 behaviour was tested again.
 
 ## 5. States
 
@@ -331,6 +439,18 @@ The review states are linked from the README.
 | Comment box | Empty, too long | *Enter a comment.*; *Comment must be 500 characters or fewer.* (with the count) |
 | Command list | Status filter with no match | *0 matching commands* · *Clear the status filter or try a wider time range.* |
 | Status counts | Count of 0 | Inactive, with *0 failed commands* (or passed) |
+
+**Added in v4:**
+
+| Surface | State | What shows |
+|---|---|---|
+| The video's side | No payload tabs | No tabs; the video as before |
+| The video's side | Payload tabs, video floating or collapsed | The payload tabs only; **Dock Video** or **Show Video** at the end of the logs' tab bar |
+| Pop out payload | 5 tabs open | Inactive, with *Available after you close a payload tab* |
+| Media tabs | More than fit | **More ▾** at the end of the row, with the folded tabs; the open tab stays in the row |
+| Details bar | Narrow | The status cut to 48px; narrower, hidden; the buttons on a second line only when they alone do not fit |
+| Comment box | Editing a saved comment | **Delete Comment** on the left |
+| Toolbar | Scrolled down | Search and the Tests filter only |
 
 **Delete confirmation** follows `patterns/modal.md` §5, because deleting a test is permanent: title *Delete test "{name}"?*; for a failed run only, a warning `LTFlash` naming what is specific to it (*This is a failed run. Its video and logs are the record of the failure.*); the consequence, with the reassurance last (*Deleting removes this test's video, logs, and 93 commands from the build. Test case #TC-88904 stays in Test Manager.*); *This action is permanent. Type DELETE to confirm.*; and **Keep Test** beside **Delete Test**, which stays inactive until the word matches. Focus starts on Keep Test, and the backdrop stops closing the dialog once something is typed (modal.md delta 3). After deleting, a toast confirms (*Test "{name}" deleted.*) and the next test opens.
 
@@ -371,6 +491,12 @@ The review states are linked from the README.
 | C31 | Popover dismissal (v3 item 4) | Brief: stays open when the pointer leaves the strip | `ltpopover.md`: always a visible dismiss, plus Esc and click-outside | All three, now that it holds actions | Brief and guideline agree here; C20's other half (errors in a popover) stands |
 | C32 | Bug wording, again (v3 item 4.2) | Brief: "create bug" | C21: one term, *Raise a bug* | *Raise a bug* | As C21 |
 | C33 | 500-character limit (v3 item 6.1) | Brief: max 500 characters | `COMPONENTS.md`: `LTTextarea` has no length prop | A validation rule with a live count; Save refuses more | No prop is invented; nothing typed or pasted is cut off silently |
+| C34 | Media tabs (v4 item 8.2) | Brief: put the video in a tab "similar to 'all commands' tabs" | `ltunderlinenav.md`: one `LTUnderlineNav` per page; a second tab structure is `LTTabNav`, always below it; every tab has its own URL | A tablist styled like the page's tab bar, at the top of the video's side, without URLs | Brief wins on the look. The tabs switch panels in place, so they are a tablist, not navigation. Their overflow follows the same file: More ▾, never sideways scrolling |
+| C35 | *Remarks:* (v4 item 3) | Brief: "Remarks:" | `ux-text-guidelines.md` §2: no punctuation on headings, labels and buttons; form labels take no trailing colon | *Remarks:* | Brief wins |
+| C36 | Deleting a comment (v4 item 2) | Brief: no confirmation, for now | `ltbutton.md`: danger, sparingly, typically behind a confirmation dialog | **Delete Comment**, danger, no confirmation | Brief wins, for now; question 35 asks about the real product |
+| C37 | The video's controls, again (v4 item 9) | Brief: one row, controls inline with the seek bar, the same in every mode | C26 (v2: three rows) and v3 item 7 (controls right of the frame when docked below) | One row in every mode | The newest brief wins; it reverses C26's outcome and v3 item 7 |
+| C38 | One rail per level (v4 item 10) | Brief: nested test cases, with clear starts and ends | `patterns/automation-details.md` §6: one left rail for the status icon, so the tree reads vertically | One rail per level (16, 48, 80px) | Brief wins; within a level the rail holds |
+| C39 | A narrow status label (v4 item 8.10) | Brief: truncate the label when the buttons do not fit | `ux-text-guidelines.md` §3: never a bare error code | Cut to 48px (*500…*, whole on hover), hidden below that | Below 48px a cut label shows less than the code; the payload under it carries the status |
 
 ## 7. Design decisions [proposed]
 
@@ -435,13 +561,33 @@ Every control, ranked by how often a debugging session needs it, decides where i
 - **A merged stretch teaches its way to the actions**: *Double-click to zoom in and act on one command.*, on the timeline only, where the zoom exists.
 - **The single popover previews the comment** in two lines, so the comment mark above a stretch leads somewhere on hover.
 - **The video's failure line gets the comment action too**, so a failure offers the same three actions wherever it shows. Not in the brief; see question 25.
-- **One comment per failed command**, edited in place, shown at the top of the details: it explains the failure, so it comes before the payload. No delete yet (question 22).
+- **One comment per failed command**, edited in place, shown at the top of the details: it explains the failure, so it comes before the payload. No delete yet (question 22). *v4 items 1 and 2: below the payload, and deletable.*
 - **The 500-character limit is a validation rule**, not a hard stop (C33): nothing pasted is cut off unseen, the live count shows where the text stands, and Save says what to fix.
 - **Remarks open in place**, at a reading width, with **Show Less** to fold them; the brief's one line is the default (question 21).
 - **A status filter acts like search**: passed runs unfold and groups with a match open, because the filter asks to see those commands.
 - **Condensed keeps the type size.** Height comes out of padding, never out of legibility; the grey group band replaces the distinction the extra height gave.
-- **Docked below, the frame takes the height and the controls the width**, with at least 320px for the controls, since the seek bar needs width more than height.
-- **Download becomes a plain button on web videos**, rather than a menu with one item.
+- **Docked below, the frame takes the height and the controls the width**, with at least 320px for the controls, since the seek bar needs width more than height. *Superseded by v4 item 9.4.*
+- **Download becomes a plain button on web videos**, rather than a menu with one item. *Superseded by v4 item 9.3.*
+
+### 7d. v4 decisions [proposed]
+
+- **The Video tab leaves the row while the video floats or is collapsed**, and comes back where it was. Rejected: a Video tab that only says the video is elsewhere, a tab with nothing in it.
+- **Docking the video opens its tab**: **Dock Video** and **Show Video** say the user wants to see it.
+- **A new payload tab opens, the video pauses, and focus stays where it was**: the tab appears away from the eye, so it opens itself; focus stays so the user keeps their place in the list.
+- **Manual activation in the media tabs**: moving focus across the Video tab never pauses or plays it.
+- **Closing the open tab opens the one to its left**, as browsers do.
+- **Payload tabs per test, for the session**: not remembered across reloads, like comments and renames in this prototype.
+- **Show in All Commands** in a payload tab's menu: not in the brief, added so the two places a payload shows lead to each other.
+- **More ▾ rather than sideways scrolling** when tabs outgrow the pane. A scrolling row was built first and replaced: `ltunderlinenav.md` forbids it (C34).
+- **Same-second retries get (2), (3)** by run order, so a tab's name never changes when tabs move.
+- **The floating window's header keeps only its grip and the name**: Dock and Collapse now live in the video's own row, the same in every mode (C37).
+- **Docked above the logs, the row matches the frame's width**, so the controls stay with the video; at least 320px, the narrowest video anywhere (`guidelines/README.md` §2).
+- **The total gives way only below 360px** of row; a floating window at its default 400px shows both.
+- **The new density default needs a new stored key.** v3 stored *comfortable* for every visitor, so condensed (v4 item 7) lives under a new key; anyone who picks comfortable keeps it.
+- **The nested header sticks under its parent's**, so inside #TC-8 both #TC-7742 and #TC-8 stay in view.
+- **A test case's counts include its nested test case**: the parent's result includes its child's.
+- **Choosing a test case in the filter opens it and its parent**: the user asked to see it.
+- **The status hides rather than shrink past 48px**, and the buttons wrap only as the last step (C39).
 
 ## 8. Copy
 
@@ -505,6 +651,20 @@ All strings follow `ux-text-guidelines.md`. Rule numbers are that guide's.
 | Video | Download video | §3 Tooltips |
 | Shortcuts | Save the comment you are writing | §2 |
 
+**Added in v4:**
+
+| Where | String | Rule |
+|---|---|---|
+| Remarks | Remarks: | C35 |
+| Comment box | **Delete Comment** · *Comment deleted* (announced) | §2 Title Case button that names its object (`ltbutton.md`); §3 Silent success still speaks |
+| Details menu | More actions · Copy link · Pop out payload · Available after you close a payload tab · Show in All Commands | §2 sentence case menu items; `ltactionmenu.md`: the reason in the item, positive |
+| Pop out | *Payload of Create New Session at 0:32 opened in a tab* (announced) | §3 Silent success still speaks |
+| Media tabs | Video and payloads (the tablist) · Video · Find Element at 1:16 (2) · Close Find Element at 1:16 tab · Close tab · Move left · Move right · More · More tabs · *Find Element tab closed* (announced) | §3 Tooltips; §2 sentence case menu items |
+| Popover | Copy link · *Link to Create New Session at 0:32 copied* | §3 Tooltips; §5 *{object} failed to {verb}* on failure |
+| Video row | Open picture-in-picture · Dock video · Collapse video · More video actions · Download video · Enter full screen · Exit full screen · Rotate video | §3 Tooltips; §2 sentence case menu items |
+| Tests filter | Inside #TC-7742 | `ltactionmenu.md` item description |
+| Nested group | *, test case, inside #TC-7742* (screen readers) | §1 rule 1 |
+
 ## 9. Gaps found in design-context
 
 Recorded, not changed. Each is a candidate for a design-context pull request once Rajat decides.
@@ -533,6 +693,13 @@ Recorded, not changed. Each is a candidate for a design-context pull request onc
 - **`LTPopover`'s `containsInteractiveChildElement`** is documented by name only; the prototype reads it as "stays open while you work in it".
 - **No guideline on list density** or on status filters made from counts.
 
+**Found in v4:**
+
+- **No guidance on nested lists**: indentation per level, a rule per level, stacked sticky headers. The prototype's are proposals (C38).
+- **No component switches panels in place at the first level.** `LTUnderlineNav` is navigation with URLs, `LTTabNav` sits below it (C34), and neither documents closable tabs. `LTUnderlineNav` still has no overflow (the base pattern's open question 2), so More ▾ is composed.
+- **`mock-data.md` has no nested test cases.** #TC-8 is its own example ID, #TC-4410 follows its `#TC-` format, and the two nested names are its own extra test-case-shaped titles (its *Test instance names* list).
+- **No rule for a danger action without a confirmation.** Unlink offers Undo; Delete Comment, for now, nothing (C36).
+
 ## 10. Open questions
 
 1. **`LTTestHeader`**: does it accept an editable title, a copy button, and tooltips on `timeSince` and `username`? If yes, it replaces the composed header. Story `lttestheader--test-header`.
@@ -552,7 +719,7 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 
 13. **Tab order**: kept per user account in the real product, or per browser, as the prototype does?
 14. **Copy payload**: the request and the response together (as built), or only the side the details show?
-15. **The command line above the seek bar** names the current command whenever there is no failure. Keep that, or show the line only at failures (with its space kept empty)?
+15. **The command line above the seek bar** names the current command whenever there is no failure. Keep that, or show the line only at failures (with its space kept empty)? **Answered 19 Oct 2026:** the line is gone (v4 item 9.1).
 16. **Space** overrides the video players' play and pause, and button activation inside the list (C22). Acceptable?
 17. **`m:ss`** as the one time form (C28), for `mock-data.md`?
 18. **Keyboard shortcuts dialog** and the `?` shortcut: keep? It is not in the brief; it answers the persona's rule that every shortcut has a visible twin.
@@ -562,12 +729,24 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 **New in v3:**
 
 21. **Remarks, 1 line or 2?** The brief says "show 2 lines of remarks" and then "by default, only 1 line is visible". Built: 1 line and **View All**. Two lines is a one-line change.
-22. **Comments**: can they be deleted? Edited by their author only? One per command (as built) or a thread?
+22. **Comments**: can they be deleted? Edited by their author only? One per command (as built) or a thread? **Answered in part 19 Oct 2026:** they can be deleted, with no confirmation for now (v4 item 2).
 23. **A comment mark in the command's row** as well as on the timeline?
 24. **The popover**: stays open until closed (as built), or closes once the pointer leaves both the strip and the popover?
-25. **The comment action on the video's failure line**, added so a failure offers the same three actions everywhere: keep it?
+25. **The comment action on the video's failure line**, added so a failure offers the same three actions everywhere: keep it? **Moot since 19 Oct 2026:** the line is gone (v4 item 9.1).
 26. **Status counts**: one at a time (as built), or both pressed at once?
-27. **Default density**: comfortable (as built)?
+27. **Default density**: comfortable (as built)? **Answered 19 Oct 2026:** condensed (v4 item 7).
+
+**New in v4:**
+
+28. **The Video tab while the video floats or is collapsed**: it leaves the row (as built), or stays, with the way back in its panel?
+29. **Payload tabs**: kept per test for the session (as built), or remembered across reloads and carried in the page's link?
+30. **Show in All Commands** in a payload tab's menu: keep it? It is not in the brief.
+31. **The floating window's header** lost Dock and Collapse, which now sit in the video's row: keep them in both places?
+32. **A narrow details bar**: below 48px the status hides, and in a 320px payload tab the buttons wrap under the segmented control. Acceptable, or should the logs and the video's side get wider minimums instead?
+33. **A test case's counts**: include its nested test case's commands (as built), or only its own?
+34. **The second row of tabs** (C34): the brief's look, at the top of the video's side (as built), or `LTTabNav`, per `ltunderlinenav.md`?
+35. **Deleting a comment, for real**: an Undo toast, as Unlink has, rather than a confirmation (`ux-persona.md`: recovery beats confirmation)?
+36. **Nesting deeper than two levels**: never, or folded into the second level?
 
 ## 11. When this ships into design-context/
 
@@ -585,3 +764,8 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 - [ ] v3: `mock-data.md`, remarks and comments values, and mobile devices once there is a mobile pattern.
 - [ ] v3: `guidelines/`: list density, status filters made from counts, the interactive popover's dismiss rules, the comment pattern.
 - [ ] v3 FE asks: a length limit on `LTTextarea`, a comment component, and the documented behaviour of `containsInteractiveChildElement`.
+- [ ] v4: amend `patterns/automation-details.md` with §4d; record C34 to C39.
+- [ ] v4: `guidelines/`: nested lists (indent per level, a rule per level, stacked sticky headers), the media tab row and its overflow, the order in which a narrow bar gives way.
+- [ ] v4: `mock-data.md`, nested test cases.
+- [ ] v4 FE asks: closable in-place tabs with overflow, and a video player whose control row works in every mode.
+- [ ] v4: `icons.md`, add SquareArrowOutUpRight and LocateFixed to this page's names (README).

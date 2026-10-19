@@ -1,15 +1,15 @@
-// Automation test details: Rajat's 18 changes of 16 Oct 2026 and the 16 of
-// 17 Oct 2026 (v2). Spec: automation-details.md. Shell, tokens, components and
-// copy come from design-context (main e014a73); every departure is recorded in
-// the spec.
+// Automation test details: Rajat's 18 changes of 16 Oct 2026, the 16 of
+// 17 Oct 2026 (v2), the 11 of 18 Oct 2026 (v3) and the 12 of 19 Oct 2026 (v4).
+// Spec: automation-details.md. Shell, tokens, components and copy come from
+// design-context (main e014a73); every departure is recorded in the spec.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Bug, Download, Link, PanelBottom, PanelLeft, PanelRight, PanelRightOpen, PanelTop, PanelTopOpen } from 'lucide-react'
 import { PlatformSidebar, TopBar } from './shell.jsx'
 import { TestHeader } from './header.jsx'
-import { CommandsTab } from './commands.jsx'
+import { CommandsTab, PayloadPanel } from './commands.jsx'
 import { VideoPane, PipWindow, frameDataURL } from './video.jsx'
 import { LogsTab, NetworkTab, MetaDataTab, TestsPane } from './tabs.jsx'
-import { ReorderTabs } from './tabbar.jsx'
+import { MediaTabs, ReorderTabs } from './tabbar.jsx'
 import { ShortcutsDialog } from './shortcuts.jsx'
 import { Splitter, usePref, useSize } from './layout.jsx'
 import {
@@ -42,6 +42,8 @@ const VIDEO_W = { min: 320, def: 480 }
 const LOGS_MIN_W = 480
 const VIDEO_H = { min: 200, def: 360 }
 const LOGS_MIN_H = 240
+const PAYLOAD_TABS_MAX = 5 // v4 item 8.4
+const NO_MEDIA_TABS = { order: ['video'], active: 'video' }
 
 /* v2 item 15: the screenshot keeps its command's context, and its own
    download, bug and link actions. */
@@ -98,9 +100,14 @@ function Page() {
   const [codeTheme, setCodeTheme] = usePref('codeTheme', 'dark')
   const [logTheme, setLogTheme] = usePref('logTheme', 'dark')
   const [payloadView, setPayloadView] = usePref('payloadView', 'json') // v2 item 4: one setting for every command
-  const [density, setDensity] = usePref('density', 'comfortable') // v3 item 3: comfortable or condensed rows
+  // v3 item 3: comfortable or condensed rows. v4 item 7: condensed by
+  // default. A new key, since usePref stored v3's default for every visitor.
+  const [density, setDensity] = usePref('rowDensity', 'condensed')
   const [fullscreen, setFullscreen] = useState(false)
   const [modal, setModal] = useState(null) // 'delete' | 'history' | 'shortcuts' | { shot: cmd }
+  // v4 item 8: payloads popped out into tabs beside the video, per test, for
+  // the session: { [testId]: { order: ['video', ...command ids], active } }.
+  const [media, setMedia] = useState({})
   const [typed, setTyped] = useState('')
   const searchRef = useRef(null)
   const focusSearch = useRef(false)
@@ -218,15 +225,70 @@ function Page() {
     })
   }
 
+  /* v4 item 8: the media tabs. The video tab leaves the row while the video
+     floats or is collapsed, and comes back where it was (8.3); payload tabs
+     stay whatever the video does. Before the first payload opens there are no
+     tabs at all, and the video shows as before (8.5). */
+  const docked = videoMode === 'docked'
+  const mediaState = media[test.id] ?? NO_MEDIA_TABS
+  const payloadIds = mediaState.order.filter(id => id !== 'video')
+  const mediaTabs = docked ? mediaState.order : payloadIds
+  const activeMedia = mediaTabs.includes(mediaState.active) ? mediaState.active : (mediaTabs[0] ?? 'video')
+  const hasMediaTabs = payloadIds.length > 0
+  const mediaVisible = docked || hasMediaTabs
+  const updateMedia = (testId, f) => setMedia(all => ({ ...all, [testId]: f(all[testId] ?? NO_MEDIA_TABS) }))
+  // Leaving the video tab pauses it, since it can no longer be seen.
+  const activateMedia = id => {
+    if (activeMedia === 'video' && id !== 'video' && docked) playback.set({ playing: false })
+    updateMedia(test.id, m => ({ ...m, active: id }))
+  }
+  const popOut = {
+    isOpen: id => payloadIds.includes(id),
+    full: payloadIds.length >= PAYLOAD_TABS_MAX,
+    open: cmd => {
+      if (payloadIds.includes(cmd.id) || payloadIds.length >= PAYLOAD_TABS_MAX) return
+      if (docked) playback.set({ playing: false })
+      updateMedia(test.id, m => ({ order: [...m.order, cmd.id], active: cmd.id }))
+      announce(`Payload of ${cmd.name} at ${fmtTime(cmd.at)} opened in a tab`)
+    },
+  }
+  // 8.6: closing the tab is the only way back, and it brings Pop out payload
+  // back to the command's menu. The tab to the left opens next; with the
+  // last payload tab closed, the tabs go and the video shows as before.
+  const closeMediaTab = (id, { keyboard = false } = {}) => {
+    const cmd = byId.get(id)
+    const rest = mediaTabs.filter(t => t !== id)
+    const next = activeMedia === id ? rest[Math.max(0, mediaTabs.indexOf(id) - 1)] : activeMedia
+    updateMedia(test.id, m => ({ order: m.order.filter(t => t !== id), active: next ?? 'video' }))
+    announce(`${cmd ? cmd.name : 'Payload'} tab closed`)
+    if (keyboard) {
+      focusNext.current = rest.some(t => t !== 'video') ? `mtab-${next}`
+        : docked ? 'video-play' : videoMode === 'pip' ? 'tab-dock' : 'show-video'
+    }
+  }
+  // Reordered while the video floats: the video keeps its place among the rest.
+  const setMediaOrder = o => updateMedia(test.id, m => {
+    if (docked) return { ...m, order: o }
+    const at = m.order.indexOf('video')
+    return { ...m, order: [...o.slice(0, at), 'video', ...o.slice(at)] }
+  })
+  // "Show in All Commands" from a payload tab: the command's own link, so it
+  // opens the same way a shared link does (v2 item 2).
+  const showInList = cmd => {
+    const h = `#/${test.id}/commands/${cmd.id}`
+    if (window.location.hash === h) setRoute(parseHash())
+    else window.location.hash = h
+  }
+
   // v2 item 5. Each change moves focus to the control that reverses it, since
-  // the button that was pressed disappears.
+  // the button that was pressed disappears. Docking the video opens its tab.
   const changeVideoMode = (mode, focusKey) => {
     if (mode === 'collapsed') playback.set({ playing: false })
+    if (mode === 'docked') updateMedia(test.id, m => ({ ...m, active: 'video' }))
     setVideoMode(mode)
     focusNext.current = focusKey
     announce({ docked: 'Video docked', pip: 'Video in picture-in-picture', collapsed: 'Video collapsed. Show Video brings it back.' }[mode])
   }
-  const docked = videoMode === 'docked'
 
   // Limits that depend on the space available.
   const videoWMax = Math.max(VIDEO_W.min, (ws.width || 1200) - LOGS_MIN_W - 8)
@@ -268,7 +330,7 @@ function Page() {
         <div className="tab-host" hidden={tab !== 'commands'}>
           <CommandsTab key={`${test.id}:${demo}`} detail={detail} searchRef={searchRef} codeTheme={codeTheme}
             setCodeTheme={setCodeTheme} payloadView={payloadView} setPayloadView={setPayloadView}
-            density={density} setDensity={setDensity}
+            density={density} setDensity={setDensity} popOut={popOut}
             onStub={onStub} onToast={toast} onScreenshot={cmd => setModal({ shot: cmd })}
             isCurrent={tab === 'commands' && !modal}
             focusCommand={route.testId === test.id && route.commandId ? { id: route.commandId, n: route.n } : null}
@@ -287,11 +349,33 @@ function Page() {
   const videoPane = mode => (
     <VideoPane key={test.id} detail={detail} segments={segments} byId={byId} onStub={onStub}
       loading={demo === 'video-loading'} mode={mode} dock={dock}
-      onPip={() => changeVideoMode('pip', 'pip-dock')} onCollapse={() => changeVideoMode('collapsed', 'show-video')} />
+      onPip={() => changeVideoMode('pip', 'pip-dock')} onDock={() => changeVideoMode('docked', 'video-pip')}
+      onCollapse={() => changeVideoMode('collapsed', 'show-video')} />
   )
+  // The tab row comes and goes above the video without remounting it: the
+  // video's host keeps its place among this pane's children.
   const video = (
     <div className={cx('vp-wrap', `vp-wrap--${dock}`)} style={dock === 'side' ? { width: videoWNow } : { height: videoHNow }}>
-      {videoPane('docked')}
+      <div className="mp">
+        {hasMediaTabs && (
+          <MediaTabs order={mediaTabs} active={activeMedia} byId={byId} onActivate={activateMedia} onClose={closeMediaTab}
+            setOrder={setMediaOrder} />
+        )}
+        {docked && (
+          <div className="vp-host" role={hasMediaTabs ? 'tabpanel' : undefined} id="mpanel-video"
+            aria-labelledby={hasMediaTabs ? 'mtab-video' : undefined} hidden={hasMediaTabs && activeMedia !== 'video'}>
+            {videoPane('docked')}
+          </div>
+        )}
+        {payloadIds.map(id => (
+          <div key={id} className="mp-panel" role="tabpanel" id={`mpanel-${id}`} aria-labelledby={`mtab-${id}`}
+            hidden={activeMedia !== id}>
+            <PayloadPanel cmd={byId.get(id)} testId={test.id} payloadView={payloadView} setPayloadView={setPayloadView}
+              codeTheme={codeTheme} setCodeTheme={setCodeTheme} onStub={onStub} onToast={toast}
+              onScreenshot={cmd => setModal({ shot: cmd })} onShowInList={showInList} />
+          </div>
+        ))}
+      </div>
     </div>
   )
 
@@ -321,11 +405,12 @@ function Page() {
               onToggleFullscreen={() => (fullscreen ? document.exitFullscreen() : detailRef.current?.requestFullscreen?.())}
               onMenu={onMenu} linked={linked} onUnlink={unlink}
               onLink={() => onStub('Test Manager opens here, to pick the test case to link.')} />
-            <div ref={wsRef} className={cx('ws', `ws--${docked ? dock : 'solo'}`)}>
+            <div ref={wsRef} className={cx('ws', `ws--${mediaVisible ? dock : 'solo'}`)}>
               {/* Keyed so a dock or mode switch moves the panes instead of
                   remounting them: open payloads, revealed runs and playback
-                  survive it. */}
-              {!docked ? [
+                  survive it. The video's side stays while payload tabs are
+                  open, even with the video floating or collapsed (v4 item 8). */}
+              {!mediaVisible ? [
                 <React.Fragment key="panel">{panel}</React.Fragment>,
               ] : dock === 'side' ? [
                 <React.Fragment key="panel">{panel}</React.Fragment>,
@@ -344,8 +429,7 @@ function Page() {
       </div>
 
       {videoMode === 'pip' && (
-        <PipWindow rect={pipRect} setRect={setPipRect} title={name} dock={dock}
-          onDock={() => changeVideoMode('docked', 'video-pip')} onCollapse={() => changeVideoMode('collapsed', 'show-video')}>
+        <PipWindow rect={pipRect} setRect={setPipRect} title={name}>
           {videoPane('pip')}
         </PipWindow>
       )}
