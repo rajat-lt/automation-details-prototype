@@ -27,10 +27,16 @@ export function saveComment(key, text, by) {
   state = { ...state, [key]: { text, by, at: new Date() } }
   emit()
 }
+/* v4 item 2: deleting needs no confirmation for now; the brief keeps it to
+   the idea. */
+export function deleteComment(key) {
+  const { [key]: _gone, ...rest } = state
+  state = rest
+  emit()
+}
 
-/* "Add comment" or "Edit comment" from a failure popover or the video's
-   command line: the All Commands tab opens that command's details with the
-   comment box focused (v3 item 4). */
+/* "Add comment" or "Edit comment" from a failure popover: the All Commands
+   tab opens that command's details with the comment box focused (v3 item 4). */
 const reqSubs = new Set()
 export function onCommentRequest(f) { reqSubs.add(f); return () => reqSubs.delete(f) }
 export function requestComment(testId, cmdId) { reqSubs.forEach(f => f({ testId, cmdId, n: Date.now() })) }

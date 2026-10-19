@@ -1,8 +1,8 @@
 // Failures on the two time bars: hovering a red stretch of the video's seek
 // bar or the timeline opens an LTPopover (v2 item 8). v3 item 4 makes it
 // interactive: it stays open to copy from, and a single failure carries
-// Raise a bug, Copy payload and a comment action. Shared by video.jsx and
-// timeline.jsx.
+// Raise a bug, Copy payload and a comment action; v4 item 5 adds Copy link,
+// third. Shared by video.jsx and timeline.jsx.
 //
 // Reading order, most important first (v3 item 4.3):
 //   heading   what failed: the command, or "8 failed commands"
@@ -13,12 +13,13 @@
 //   comment   what the team already knows, when there is one
 //   actions   what to do next, last, after the facts that decide it
 import React, { useState } from 'react'
-import { Bug, MessageSquare, MessageSquarePlus, Pencil } from 'lucide-react'
-import { LTTag, LTIconButton, LTCopyToClipboard } from './lt.jsx'
+import { Bug, Link, MessageSquare, MessageSquarePlus, Pencil } from 'lucide-react'
+import { LTTag, LTIconButton, LTCopyToClipboard, CopyIconButton } from './lt.jsx'
 import { LTPopover } from './overlays.jsx'
-import { payloadText, statusLabel } from './data.js'
+import { commandHref, payloadText, statusLabel } from './data.js'
 import { fmtMs, fmtTime, fmtTimeRange } from './format.js'
 import { commentKey, requestComment, useComment, useComments } from './comments.js'
+import { copyText } from './clipboard.js'
 
 const errorOf = c => {
   try { return JSON.parse(c.response.responseBody).value ?? {} } catch { return {} }
@@ -44,7 +45,7 @@ function Locator({ cmd }) {
   )
 }
 
-/* One failed command: the facts, the comment if any, then three actions. */
+/* One failed command: the facts, the comment if any, then four actions. */
 function SingleFailure({ cmd, testId, onStub, close }) {
   const comment = useComment(commentKey(testId, cmd.id))
   const { message } = errorOf(cmd)
@@ -68,6 +69,10 @@ function SingleFailure({ cmd, testId, onStub, close }) {
           onClick={() => { close(); onStub(`The bug form opens here, with ${cmd.name} at ${fmtTime(cmd.at)} attached.`) }} />
         <LTCopyToClipboard textToCopy={payloadText(cmd)} size="small" tooltipDirection="s"
           copyAriaLabel="Copy payload" copiedAriaLabel="Payload copied" />
+        {/* v4 item 5: the command's deep link, the same one as Copy link in
+            the list's menus (v2 item 2). */}
+        <CopyIconButton icon={Link} ariaLabel="Copy link" copiedLabel={`Link to ${cmd.name} at ${fmtTime(cmd.at)} copied`}
+          copy={() => copyText(commandHref(testId, cmd.id))} />
         <LTIconButton icon={comment ? Pencil : MessageSquarePlus} ariaLabel={comment ? 'Edit comment' : 'Add comment'}
           variant="invisible" size="small" tooltipDirection="s"
           onClick={() => { close(); requestComment(testId, cmd.id) }} />

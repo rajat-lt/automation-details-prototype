@@ -137,6 +137,12 @@ const FAILURES = {
  * / urlBox at 00:18 and the failed Create New Session / xpath at 00:32
  * (screenshot 7); a 20-command passed run ("Show 20 passed logs", the brief).
  * Columns: name, at (s), ms, strategy, value, extras.
+ *
+ * v4 item 10: a test case can hold a test case, two levels at most. A nested
+ * one is an object among its parent's rows. #TC-7742 holds #TC-8 in its
+ * middle (the price filter failures), so the parent goes on after the child
+ * ends; #TC-56345 holds #TC-4410 at its very end, so both end on the same
+ * command. Child names come from mock-data.md's test-case-shaped titles.
  */
 const T01 = [
   { top: true, rows: [
@@ -161,9 +167,11 @@ const T01 = [
     ['Is Element Displayed', 55, 22, null, null, { target: 'results' }],
     ['Execute Script', 61.4, 30, null, 'window.scrollBy(0, 640)'],
     ['Get Element Text', 68.2, 26, null, null, { target: 'results' }],
-    ...[76, 76.8, 77.6, 78.4, 79.2, 80, 80.8, 81.6].map(t =>
-      ['Find Element', t, 500, 'css selector', "[data-testid='price-filter-button']", { target: 'price', fail: 'noSuchElement' }]),
-    ['Take Screenshot', 84, 380],
+    { kind: 'testCase', tc: '#TC-8', title: 'Check filter chips clear individually and via Clear all', rows: [
+      ...[76, 76.8, 77.6, 78.4, 79.2, 80, 80.8, 81.6].map(t =>
+        ['Find Element', t, 500, 'css selector', "[data-testid='price-filter-button']", { target: 'price', fail: 'noSuchElement' }]),
+      ['Take Screenshot', 84, 380],
+    ] },
     ['Get Current URL', 88.5, 10],
   ] },
   { top: true, page: 'search', rows: [
@@ -205,10 +213,12 @@ const T01 = [
     ['Send Keys To Element', 135.5, 160, null, '********', { target: 'password', typed: '********' }],
     ['Click Element', 138, 160, null, null, { target: 'login' }],
     ...[141.2, 141.5, 141.8, 142.1].map(t => ['Take Screenshot', t, 240, null, null, { fail: 'server', lockError: true }]),
-    ['Get Element Text', 144, 26, 'css selector', '.login-error', { target: 'error', lockError: true }],
-    ['Is Element Displayed', 146.5, 20, null, null, { target: 'error', lockError: true }],
-    ['Get Current URL', 148, 11, null, null, { lockError: true }],
-    ['Get Title', 150.2, 36, null, null, { lockError: true }],
+    { kind: 'testCase', tc: '#TC-4410', title: 'Verify session timeout redirects to login with the return URL preserved', rows: [
+      ['Get Element Text', 144, 26, 'css selector', '.login-error', { target: 'error', lockError: true }],
+      ['Is Element Displayed', 146.5, 20, null, null, { target: 'error', lockError: true }],
+      ['Get Current URL', 148, 11, null, null, { lockError: true }],
+      ['Get Title', 150.2, 36, null, null, { lockError: true }],
+    ] },
   ] },
   // Annotation name invented for the mock (GAP), echoing the test's own name.
   { kind: 'annotation', title: 'Verify the siteplan on the property page', page: 'listing', rows: [
@@ -346,25 +356,44 @@ export function getDetail(testId) {
   else if (t.id === 't-01') blocks = T01
   else blocks = generic(t, r)
 
+  // A group's `items` are its direct children in order: commands as
+  // { type: 'command', cmd } and nested groups. `children` are every command
+  // inside it, nested ones included, for its counts. A command's `path` is
+  // its groups from the outermost in; `parentId` is the innermost.
   const commands = []
   const tree = []
+  const groups = []
+  const makeGroup = (b, id, parent) => {
+    const g = { type: 'group', id, kind: b.kind, tc: b.tc ?? null, title: b.title, items: [], children: [],
+      depth: parent ? parent.depth + 1 : 0, parentId: parent?.id ?? null }
+    groups.push(g) // outer before inner, in screen order
+    return g
+  }
+  const addRows = (rows, group, page, path) => rows.forEach((spec, i) => {
+    if (!Array.isArray(spec)) {
+      const child = makeGroup(spec, `${group.id}-${i}`, group)
+      addRows(spec.rows, child, spec.page ?? page, [...path, child.id])
+      group.items.push(child)
+      group.children.push(...child.children)
+      return
+    }
+    const cmd = row(spec, { page })
+    cmd.idx = commands.length
+    cmd.id = `c${cmd.idx}`
+    cmd.status = cmd.fail ? 'failed' : 'passed'
+    cmd.parentId = group?.id ?? null
+    cmd.path = path
+    cmd.request = buildRequest(cmd, t, sessionId, r, startNs)
+    cmd.response = buildResponse(cmd, sessionId)
+    commands.push(cmd)
+    if (group) { group.items.push({ type: 'command', cmd }); group.children.push(cmd) }
+    else tree.push({ type: 'command', cmd })
+  })
   for (const [bi, b] of blocks.entries()) {
-    const group = b.top ? null : {
-      type: 'group', id: `g${bi}`, kind: b.kind, tc: b.tc ?? null, title: b.title, children: [],
-    }
-    for (const spec of b.rows) {
-      const cmd = row(spec, { page: b.page ?? 'blank' })
-      cmd.idx = commands.length
-      cmd.id = `c${cmd.idx}`
-      cmd.status = cmd.fail ? 'failed' : 'passed'
-      cmd.parentId = group?.id ?? null
-      cmd.request = buildRequest(cmd, t, sessionId, r, startNs)
-      cmd.response = buildResponse(cmd, sessionId)
-      commands.push(cmd)
-      if (group) group.children.push(cmd)
-      else tree.push({ type: 'command', cmd })
-    }
-    if (group) tree.push(group)
+    if (b.top) { addRows(b.rows, null, b.page ?? 'blank', []); continue }
+    const g = makeGroup(b, `g${bi}`, null)
+    addRows(b.rows, g, b.page ?? 'blank', [g.id])
+    tree.push(g)
   }
 
   const failed = commands.filter(c => c.status === 'failed')
@@ -373,6 +402,7 @@ export function getDetail(testId) {
     sessionId,
     commands,
     tree,
+    groups,
     failed,
     passedCount: commands.length - failed.length,
     failedCount: failed.length,
@@ -432,20 +462,6 @@ export function failureSegments(failed, gap = 2) {
     else segs.push({ start: c.at, end, ids: [c.id] })
   }
   return segs
-}
-
-/**
- * The failed command the playhead is on (v2 item 6), or null. A failure
- * counts for at least 2 seconds, so a 120ms failure stays readable while the
- * video plays through it [proposed].
- */
-export function failureAt(segments, byId, t) {
-  for (const s of segments) {
-    if (t < s.start - 0.05 || t > Math.max(s.end, s.start + 2)) continue
-    const cmds = s.ids.map(id => byId.get(id))
-    return [...cmds].reverse().find(c => c.at <= t + 0.05) ?? cmds[0]
-  }
-  return null
 }
 
 /** "Copy payload" (v2 items 2 and 6): the request and the response, as one JSON. */
