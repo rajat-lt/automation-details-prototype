@@ -503,13 +503,18 @@ export function historyFor(test) {
   }))
 }
 
+/* v5: network capture is on for every test but one, which keeps the
+   "capture is off" state reachable (the failed test without a video). */
+const NETWORK_OFF = new Set(['t-07'])
+export const networkOn = t => !NETWORK_OFF.has(t.id)
+
 /** Capabilities for the Meta Data tab: LambdaTest W3C `LT:Options` keys. */
 export function capabilitiesFor(t) {
   return [
     ['browserName', t.browser], ['browserVersion', t.browserVersion],
     ['platformName', `${t.os} ${t.osVersion}`], ['resolution', t.resolution],
     ['build', BUILD.name], ['name', t.name],
-    ['tunnel', String(t.tunnel)], ['network', 'false'], ['console', 'true'],
+    ['tunnel', String(t.tunnel)], ['network', String(networkOn(t))], ['console', 'true'],
     ['video', String(t.video)],
   ]
 }

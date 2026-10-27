@@ -1,4 +1,4 @@
-# Automation test details: 18 UX changes, then 16, then 11, then 12 more
+# Automation test details: 18 UX changes, then 16, then 11, then 12, then the Network tab
 
 The automation test details page with Rajat's 18 changes of 16 Oct 2026 applied. Written in the `design-context/patterns/` house format, as an amendment proposal for `patterns/automation-details.md`. The working prototype in this repo implements it.
 
@@ -13,6 +13,8 @@ Every component and prop below was read from `COMPONENTS.md`. Proposals carry **
 **v3, 18 Oct 2026.** Rajat's third brief: 11 items, two of them reminders (no hallucination; nothing already built may break). Its items are written *v3 item 1* to *v3 item 11*: §4c, conflicts C29 to C33, §7c and the v3 rows of every other section. Sources read again from `design-context` `main` (still `e014a73`) on 18 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md`, `guidelines/lttextarea.md`, `ltpopover.md`, `COMPONENTS.md` (`LTTextarea`, `LTPopover`) and `mock-data.md` (people, devices).
 
 **v4, 19 Oct 2026.** Rajat's fourth brief: 12 items, the last a reminder to double-check every point. Its items are written *v4 item 1* to *v4 item 12*, and item 8's ten points *8.1* to *8.10*: §3c, §4d, conflicts C34 to C39, §7d and the v4 rows of every other section. Sources read again from `design-context` `main` (still `e014a73`) on 19 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md` (§2 punctuation on labels, §3 never a bare error code), `guidelines/README.md` (§3 hierarchy), `ltbutton.md`, `ltactionmenu.md`, `ltunderlinenav.md`, `COMPONENTS.md` (`LTButton` variants), `patterns/automation-details.md` (§3.3, §6 layout notes, open question 2) and `mock-data.md` (test case IDs). The brief's first screenshots were measured again: 7 and 8 for the indent rule, 5 for the control row, 6 for the toolbar.
+
+**v5, 27 Oct 2026.** Rajat's fifth brief: a revamp of the Network tab in 11 items, with two screenshots: *screenshot N1*, the product's Network tab in dark mode, and *screenshot N2*, a light reference table whose last column draws each request's phases. Its items are written *v5 item 1* to *v5 item 11*. Item 4 reached us cut off ("on clicking a network log row, a"); Rajat answered on 27 Oct 2026: a details panel beside the table, as browser developer tools have, with Headers, Payload, Response and Timing, the table narrowing while it is open. Covered by §3d, §4e, conflicts C40 to C47, §7e and the v5 rows of every other section. Sources read from `design-context` `main` (`618b4b8`) on 27 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md` (§1 rule 2 no negation, §2 casing and punctuation), `guidelines/README.md` (§1 tables and their three states, §3 type for tables, §5 component choice), `ltswitch.md`, `ltpopover.md`, `ltmodal.md` (side sheets), `COMPONENTS.md` (`LTSwitch`, `LTSelect`, `LTTabNav`, `LTTable`, `LTPopover`), `icons.md`, `mock-data.md` and `data/tokens.json` (through `scripts/tokens.mjs`, now 142 tokens). The phase colours were chosen and checked with the dataviz skill's palette validator (§7e).
 
 ---
 
@@ -58,6 +60,14 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | Failure popovers | Raise a bug, Copy payload, comment | **Copy link** third (v4 item 5) |
 | Video | A command line, the seek bar, then buttons; controls right of the frame when docked below | One row in every mode: play, seek bar, time, speed, picture-in-picture or dock, collapse, ⋯ (v4 item 9). The command line is gone; the failure marks stay |
 | The video's side | The video | Payloads popped out of the list open as tabs beside a Video tab: up to 5, reorderable, closable (v4 item 8) |
+
+**What v5 changes (27 Oct 2026)**
+
+| Region | After v4 | After v5 |
+|---|---|---|
+| Network tab | *Network capture is off* on every test | The product's request list, rebuilt in light mode (v5 item 1): eight type segments, Download HAR, the search's field, *Search all fields*, *Errors only* and *Show CONNECT*; a table with Name, Status, Method, Domain, Type, Size, Start time, Duration and Waterfall that sorts on every header (items 2, 3, 5, 6, 7); the product's footer |
+| A request | Nothing | Hovering its Waterfall bar opens its exact phase times to the right of the table, and they stay to copy from (items 7 to 9); clicking the row opens its details beside the table: Headers, Payload, Response, Timing (item 4) |
+| Data | No requests | Each test's own page loads, from its Navigate To commands and its search (§4e); capture stays off for one test, t-07, which keeps that state; the Meta Data tab's `network` capability follows |
 
 ## 2. Component inventory
 
@@ -123,6 +133,25 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | `LTActionMenu` | ⋯ in a command's details (Copy link, Pop out payload; Show in All Commands in a payload tab); ⋯ in the video's row (Download video, Enter full screen, Rotate video on mobile); More (folded media tabs); each media tab's menu | `customAnchor`, `options` with `icon`, `inactive` and `description`; `open` and `onMenuToggle` for the tab menu |
 | `LTIconButton` | Copy link in the failure popovers (the composed copy button of v2); Close tab (`size="xsmall"`) | `ariaLabel`, `icon`, `size`, `variant`, `tooltipDirection` |
 | Media tabs | The Video tab and the payload tabs (v4 item 8) | Composed: a `tablist` styled like `LTUnderlineNav`. No component switches panels in place at this level (C34, §9) |
+
+**Added in v5:**
+
+| Component | Where | Props used (all in `COMPONENTS.md`) |
+|---|---|---|
+| `LTSegmentedControl` | Request type: All, JS, CSS, Img, Media, Font, Doc, WS (v5 item 1) | `options`, `selectedValue`, `onChange`, `ariaLabel`. Eight options against README §5's five (C40) |
+| `LTButton` with `LTActionMenu` | The search's field: All, Name, URL, Status, Method, Domain, Type | `variant="outline"`, `size="medium"`, `trailingIcon`, `label`; `selectionVariant="single"`, `activeId`, `customAnchor`, `width`, `align="start"`. README §5's filter dropdown, as *Tests: All* (C11) |
+| `LTInputBox` | *Search all fields* | `value`, `onChange`, `placeholder`, `ariaLabel`, `forwardRef`, `allowClearSearch` |
+| `LTSwitch` | *Errors only*, *Show CONNECT* | `label`, `labelPosition` (its default, END: the switch, then the label; C46), `checked`, `onValueChange`, `size="small"` |
+| `LTTable` | The request list; General and the headers in the details; the Timing table | `columns`, `data`, `allowValueCopy`. Sortable headers, rendered cells, row handlers and fixed widths are composed (§9) |
+| `LTPopover` | Each Waterfall bar's phase times; the Waterfall legend | `heading`, `popOverbodyJSX`, `direction="right"` (bar) and `"right-top"` (legend), `containsInteractiveChildElement`, `openOnClick` (legend only), `forceClose` (C42) |
+| `LTTabNav` | Headers, Payload, Response, Timing in a request's details | `items`, `activeTab`, `onSelect`, `ariaLabel`, `size="small"`. README §5: the second tab layer, below the page's `LTUnderlineNav` |
+| `LTCodeBlock` | Request payload, response body | `title`, `headerActions` (the page's theme toggle and copy), `theme` |
+| `LTCopyToClipboard`, composed copy | Copy URL, Copy payload, Copy response, each header value; Copy timings | `textToCopy`, `copyAriaLabel`, `copiedAriaLabel`; Copy timings is the composed copy of v2 |
+| `LTIconButton` | Download HAR, Previous request, Next request, Close details, Waterfall phases | `ariaLabel`, `icon`, `variant`, `size`, `inactive`, `tooltipText` |
+| `LTCounterLabel` | Header counts in the details | `count` |
+| `LTBlankSlate`, `LTFlash`, `LTSkeletonBox` | The tab's states (§5) | as before |
+
+**Built custom and flagged in v5:** the Waterfall bar and its legend (no chart component), the details panel beside the table (the v1 splitter, not `LTDrawer`: C45), and the composed `LTTable` parts above. See §9.
 
 **Built custom and flagged in v2:** tab reordering around `LTUnderlineNav` (v2 item 1); the right-click menu's anchor (v2 item 2); the floating video window (v2 item 5); copy buttons with another icon or rich content, for Copy link and Copy table (v2 items 2, 10, 15), because `LTCopyToClipboard` has a fixed icon and copies plain text; the "full text when cut" tooltip helper (v2 item 16). See §9.
 
@@ -300,6 +329,49 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 </PipWindow>
 ```
 
+### 3d. Structure after v5: the Network tab
+
+```jsx
+<NetworkTab>                        {/* kept mounted, like All Commands; fresh for each test */}
+  <Toolbar>
+    <LTSegmentedControl>All · JS · CSS · Img · Media · Font · Doc · WS</LTSegmentedControl>
+    <LTIconButton ariaLabel="Download HAR" variant="outline" />
+    <LTButton label="All" trailingIcon={ChevronDown} />   {/* the search's field, 100px wide whatever it says */}
+    <LTInputBox placeholder="Search all fields" />
+    <LTSwitch label="Errors only" /> <LTSwitch label="Show CONNECT" />
+  </Toolbar>
+  <Body>
+    <Scroll>                         {/* both ways: the header sticks to the top, Name to the left */}
+      <LTTable sort={{ key: 'name', dir: 'asc' }}>
+        Name ↑ · Status ↕ · Method ↕ · Domain ↕ · Type ↕ · Size ↕ · Start time ↕ · Duration ↕ · Waterfall ↕ ⓘ
+        <Row>favicon.ico · 200 · GET · www.airbnb.com · vnd.microsoft.icon · 24.6 KB · 00:05 · 34.77ms · <WaterfallBar /></Row>
+      </LTTable>
+    </Scroll>
+    {open && <Splitter label="Resize request details" />}
+    {open && (
+      <RequestDetails>               {/* v5 item 4; the table keeps Name and Status */}
+        <Head>favicon.ico · 34 of 61 · Previous request · Next request · Close details</Head>
+        <Url>GET 200 https://www.airbnb.com/favicon.ico · Copy URL</Url>
+        <LTTabNav>Headers · Payload · Response · Timing</LTTabNav>
+        <Panel />
+      </RequestDetails>
+    )}
+  </Body>
+  <Footer>61 requests · 1.7 MB transferred · 4.3 MB resources · Finished in 2m 37s</Footer>
+</NetworkTab>
+
+<LTPopover direction="right">       {/* beside the bar, right of the table's edge */}
+  <Heading>favicon.ico ×</Heading>
+  ■ Queueing 2.21ms · ■ DNS lookup 0.00ms · ■ Initial connection 0.00ms · ■ SSL 0.00ms
+  ■ Request sent 0.30ms · ■ Waiting (TTFB) 22.88ms · ■ Content download 9.38ms
+  Total 34.77ms
+  The connection was already open, so DNS lookup, initial connection and SSL took 0ms.
+  Copy timings
+</LTPopover>
+```
+
+Column widths: Name takes what is left, at least 224px; Status 76, Method 80, Domain 128, Type 104, Size 80, Start time 96, Duration 88, Waterfall 160; 1,036px in all, each fitting its header and sort icon. Gutters are 16px, the outer ones in line with the toolbar. Rows are 32px, as condensed All Commands. At 1512 × 900 with the logs beside the video, the logs are 574px wide, so the table scrolls sideways under the sticky Name; with the logs below the video they are 1,055px wide and every column shows.
+
 ## 4. Behaviour, item by item
 
 1. **Condensed meta row.** One line under the title, items joined by a middle dot (`LTMetaData showLeadingDot`). Order follows the brief's screenshot: status pill, duration, linked test case, browser, OS, resolution, framework, tunnel, updated by. When space runs out the row ends in an ellipsis and stays one line.
@@ -406,6 +478,30 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 11. **Search and the filter never slide away.** Scrolling down slides away only the Timeline heading and the timeline; search and the Tests filter stay pinned at the top, with the group headers pinned right under them, in the order screenshot 6 shows. Scrolling up brings the rest back. Focus in search or the filter leaves the timeline where it is; focus on anything above them brings it back.
 12. **(Reminder: double-check every point.)** Every item was checked in the running page at 1512 × 900 and 1280 × 800, with layout measured in the page, and every v1 to v3 behaviour was tested again.
 
+## 4e. Behaviour, v5: the Network tab (27 Oct 2026)
+
+1. **The existing list first.** Screenshot N1's tab, rebuilt in light mode from the page's tokens and components: the type segments (All, JS, CSS, Img, Media, Font, Doc, WS) with Download HAR on the right; the search's field (*All*) and *Search all fields*; *Errors only* and *Show CONNECT*; the table; and the footer.
+   - **The requests** are each test's own page loads: every Navigate To, and the results page its search submits to, so the list lines up with the commands and the video. The default test, t-01, loads 5 pages in 61 requests (64 with the CONNECT tunnels): the first page fetches the screenshots' files fresh, later pages revalidate most of them (304) and fetch the rest, and every page sends a RUM beacon. Two fail: the checkout page's beacon (*500*, at 01:36) and the login page's banner image (*404*, at 02:10). Names, types, sizes and durations of the first page are the screenshots' own (§9).
+   - **Type segments** filter by what was requested, so the missing image stays under Img while its Type shows *html*, what came back. Media and WS find 0 requests in this mock and say so (§5).
+   - **Search** looks in the chosen field, ignoring case: *All* (every text column and the URL), Name, URL, Status (code and its text), Method, Domain, Type (the subtype and the MIME type). Matches are marked in the cells that field covers; a URL search also marks names and domains. Choosing a field puts focus back in the search, whose placeholder follows (*Search URLs*). Esc clears it.
+   - **Errors only** keeps status 400 and up. **Show CONNECT** adds the CONNECT tunnels, which count in the footer only while shown (§7e).
+   - **Download HAR** saves `{test ID}-network.har`: HAR 1.2, the whole log whatever the filters, CONNECT included, one page per page load, with headers, text bodies and the phases (HAR's `connect` includes `ssl`; a phase that does not apply is `-1`).
+   - **The footer** reads *61 requests · 1.7 MB transferred · 4.3 MB resources · Finished in 2m 37s*. Filtered, the count says *15 of 61 requests* and the sizes add up what shows. *Finished in* is when the last request ended, from the start of the run, for the whole log.
+2. **Column names.** Screenshot N1 has a header row whose text is nearly invisible in dark mode; enhanced, it reads *Name, Status, Method, Domain, Type, Size, Time*. Those names stay, with Time renamed (item 5), *Start time* added (item 6) and *Waterfall* last (item 7). Header text is `SMALL_BOLD`, 12px, muted, on the grey header row (README §3), readable in light mode.
+3. **Sorting.** Every header is a button. A click sorts its column ascending, the next click on it descending, the next ascending again; a click on another column sorts that one ascending. The default is Name ascending. Ties keep run order, earliest first, whichever way the column sorts, so the five `_app-fb6ea908a8e8fe2c.js` rows read in the order they loaded. The sorted column shows ↑ or ↓; the others show ↕ in a lighter grey. `aria-sort` sits on the sorted header only, and screen readers hear *Sorted by Duration, descending*. Waterfall sorts by its waiting phase, and says so on hover (*Sorts by waiting time (TTFB)*; question 40).
+4. **A request's details** (Rajat's answer). Clicking a row, or Enter on its name, opens the details beside the table, as developer tools do; the table narrows to Name and Status (Name alone when that would leave it under 220px, as at 1280px wide), and the row takes the selection: the orange bar plus the grey fill (README §1).
+   - The head: the name, its place (*34 of 61*), **Previous request**, **Next request** (inactive at the ends, with *This is the first request*) and **Close details**; then the method, the status code (red from 400) and the URL, with **Copy URL**.
+   - `LTTabNav`: **Headers** (General, which also holds what the hidden columns show: URL, method, status code, content type, transferred, resource size, start time, duration; then the response and request headers, each with its count and a copy button per value), **Payload** (the request body, or *Empty payload*), **Response** (the body in a code block with the page's theme toggle and copy, or why there is none, or that it is binary), **Timing** (§4e item 7's phases, each on the request's own timeline, with the total, the note and **Copy timings**). Left and Right move between the tabs, Home and End go to the ends. The tab chosen stays for the next request.
+   - A splitter resizes the details from 320px up to what leaves the table 220px, and the width is remembered. Clicking a Waterfall bar opens the details on Timing.
+   - Esc, **Close details**, or a filter that hides the request closes them, and focus goes back to its row.
+5. **Duration.** The product's Time, renamed, with its two decimals: *34.77ms* (§9 on the form).
+6. **Start time.** When the request started in the run, `mm:ss` as the brief writes it: *00:05*, *02:10* (C41).
+7. **Waterfall.** The last column draws each request's own breakdown, as screenshot N2 does: every phase that took time, in time order, 2px apart, the whole bar standing for the request's duration (§7e). The phases are HAR 1.2's: Queueing, DNS lookup, Initial connection, SSL, Request sent, Waiting (TTFB), Content download. Hovering a bar for 250ms opens a popover with every phase's exact time, phases that took 0ms in muted text, the total, one line on why some took 0ms (*The connection was already open, so DNS lookup, initial connection and SSL took 0ms.*), and **Copy timings**. The ⓘ in the header opens the legend: each phase, its colour, and what it is.
+8. **The popover opens on the right.** Never above or below the bar: it opens right of the table's edge, centred on the row with its caret on it, and the legend hangs down from the header row (`right-top`). With the logs beside the video, the table's edge is the video's, so the popover sits over the video and covers no row. When part of the Waterfall column is scrolled out of view, it opens beside the part in view. When the table reaches the window's edge (logs below the video, or the video floating or collapsed), there is no room to its right: it keeps to the window's edge, still to the right, and covers the end of nearby rows (question 41).
+9. **It stays open.** Leaving the bar leaves the popover open, so values can be selected and copied. It closes with its close button, Esc, a click outside, scrolling the table, switching tabs, or hovering another bar for 250ms, which replaces it: one at a time (`ltpopover.md`). A pointer that only crosses other bars on its way to the popover opens nothing.
+10. **Visual hierarchy.** Name, Status, Size and Duration in default text; Method, Domain, Type and Start time in muted text. Error rows take the failed command's tint and a red, semibold status code; the code is the label, so colour is never alone. The selection is the orange bar plus the grey fill. Name sticks with a hairline while the rest scrolls under it. Numbers sit right, in tabular figures. The phase colours are validated (§7e).
+11. **Everything works.** Every control works on every test: segments, search, field, switches, sort, the popover and the legend, the details and their tabs, every copy button, the splitter, Download HAR, and the states (§5). The list is one tab stop: Up and Down move between requests, Home and End go to the ends, Enter opens one; with the details open, the open request follows the arrows. The tab keeps its filters, sort, open request and scroll while another tab shows, and starts fresh for another test.
+
 ## 5. States
 
 | Surface | Empty | Loading | Error |
@@ -414,7 +510,7 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | Command list | Queued test: *Queued to run* · *Commands, logs, and the video appear here once the test starts.* Search or range with no hits: *0 matching commands* · *Try a different search term.* | Skeleton rows | *Command list failed to load.* with **Try Again** |
 | Disclosure | n/a | Skeleton rows, announced as *Loading 20 passed logs* | n/a |
 | Video | *Video unavailable* · *This session ended without a recording.* (base pattern) | Skeleton frame | as empty |
-| Network tab | *Network capture is off* · *Set the network capability to true to record requests on the next run.* | n/a | n/a |
+| Network tab | *Network capture is off* · *Set the network capability to true to record requests on the next run.* (*v5: one test, t-07; the others have requests, and their states follow below*) | n/a (*v5: skeleton rows*) | n/a (*v5: an error flash*) |
 
 The review states are linked from the README.
 
@@ -451,6 +547,22 @@ The review states are linked from the README.
 | Details bar | Narrow | The status cut to 48px; narrower, hidden; the buttons on a second line only when they alone do not fit |
 | Comment box | Editing a saved comment | **Delete Comment** on the left |
 | Toolbar | Scrolled down | Search and the Tests filter only |
+
+**Added in v5:**
+
+| Surface | State | What shows |
+|---|---|---|
+| Network tab | Capture off (t-07) | *Network capture is off* · *Set the network capability to true to record requests on the next run.* |
+| Network tab | Queued (t-12) | *Queued to run* · *Network requests appear here once the test starts.* |
+| Network tab | Loading (`?demo=network-loading`) | Skeleton toolbar and rows |
+| Network tab | Error (`?demo=network-error`) | `LTFlash` danger: *Network logs failed to load.* with **Try Again** |
+| Network tab | Empty (`?demo=network-empty`) | *0 network requests* · *Capture was on, and this run made 0 requests.* |
+| Request list | Filters that match nothing | *0 matching requests*, then the most specific reason: *Try a different search term or field.* · *Every CSS request in this run succeeded.* · *Every request in this run succeeded.* · *This run made 0 media requests.*; and **Clear Filters** |
+| Request list | Error rows | The failed tint and a red, semibold code |
+| Request list | A request open | Name and Status only, the open row selected; the details beside |
+| Details | Nothing to show | *Empty payload* · *This GET request sent only its URL and headers.*; *Empty response body* with its reason (*The server answered 304 Not Modified, so the browser used its cached copy.*, *The server answered 204 No Content.*, or for CONNECT *A CONNECT request opens a tunnel. Its answer is a status line only.*); *Binary response* · *Previews show text responses. This one is image/webp, 430 B.* |
+| Details | The first or last request | Previous or Next inactive, with *This is the first request* or *This is the last request* |
+| Popover | Phases that took 0ms | Muted rows, and the note on why |
 
 **Delete confirmation** follows `patterns/modal.md` §5, because deleting a test is permanent: title *Delete test "{name}"?*; for a failed run only, a warning `LTFlash` naming what is specific to it (*This is a failed run. Its video and logs are the record of the failure.*); the consequence, with the reassurance last (*Deleting removes this test's video, logs, and 93 commands from the build. Test case #TC-88904 stays in Test Manager.*); *This action is permanent. Type DELETE to confirm.*; and **Keep Test** beside **Delete Test**, which stays inactive until the word matches. Focus starts on Keep Test, and the backdrop stops closing the dialog once something is typed (modal.md delta 3). After deleting, a toast confirms (*Test "{name}" deleted.*) and the next test opens.
 
@@ -497,6 +609,14 @@ The review states are linked from the README.
 | C37 | The video's controls, again (v4 item 9) | Brief: one row, controls inline with the seek bar, the same in every mode | C26 (v2: three rows) and v3 item 7 (controls right of the frame when docked below) | One row in every mode | The newest brief wins; it reverses C26's outcome and v3 item 7 |
 | C38 | One rail per level (v4 item 10) | Brief: nested test cases, with clear starts and ends | `patterns/automation-details.md` §6: one left rail for the status icon, so the tree reads vertically | One rail per level (16, 48, 80px) | Brief wins; within a level the rail holds |
 | C39 | A narrow status label (v4 item 8.10) | Brief: truncate the label when the buttons do not fit | `ux-text-guidelines.md` §3: never a bare error code | Cut to 48px (*500…*, whole on hover), hidden below that | Below 48px a cut label shows less than the code; the payload under it carries the status |
+| C40 | Eight type segments (v5 item 1) | Screenshot N1: All, JS, CSS, Img, Media, Font, Doc, WS | `guidelines/README.md` §5: a filter with more than 5 options is `LTSelect`, not `LTSegmentedControl` | `LTSegmentedControl` with the eight, in the product's order and words | Brief wins: "make the currently existing network logs list first". A select would hide, behind a click, types the product shows at a glance |
+| C41 | Start time's form (v5 item 6) | Brief: `mm:ss` | C28: one form for a moment in the run, `m:ss` | `mm:ss` in this column only: *00:05* | Brief wins; it names the form. Question 38 |
+| C42 | Data in a popover (v5 items 7 to 9) | Brief: a hoverable popover with every phase's exact time, staying open to copy from | `ltpopover.md`: for light instructions, short text with maybe one link or button | `LTPopover`, interactive: close button, Esc and click-outside, a phase list and **Copy timings** | Brief wins, as C20 and C31 did for the failure popovers |
+| C43 | *Start time* (v5 item 6) | Brief: "Start Time" | `ux-text-guidelines.md` §2: sentence case for labels and column headers | *Start time* | Guideline wins |
+| C44 | The product's words | Screenshot N1: *Errors Only*, *Show Connect*, *Finished: 34.9s* | `ux-text-guidelines.md` §2: sentence case, no colon on labels; CONNECT is the HTTP method's name; `mock-data.md`: durations as `Mo D H M S` | *Errors only*, *Show CONNECT*, *Finished in 2m 37s*; *All* and *Search all fields* kept | Guideline wins on case and form; the words stay |
+| C45 | Where a request's details open (v5 item 4) | Rajat: a panel beside the table, the table narrowing, as developer tools | README §5 and `ltmodal.md`: secondary content that keeps context goes in `LTDrawer`, right side only | A panel inside the tab, beside the table, with a splitter; no backdrop | `ltmodal.md` also says a drawer always shows a backdrop, so nothing behind it stays interactive, and is never for heavy information. The details are headers and bodies, read while the arrow keys walk the table |
+| C46 | The switch's label (v5 item 1) | Screenshot N1: the switch, then its label | `ltswitch.md`: by default the label sits on the left and the switch is pushed to the right | `labelPosition` END, `LTSwitch`'s own default: the switch, then the label | Brief wins (the existing list first). `ltswitch.md` itself leaves its default when a switch sits inline with other content; its alternative, a vertical layout, does not fit a toolbar row |
+| C47 | HTTP reason phrases | The data: *304 Not Modified*, *204 No Content*, *404 Not Found* | `ux-text-guidelines.md` §1 rule 2: no negation | Kept, in the status code and in the details' reasons | They are the protocol's names for the codes, and the page already shows them in full (*404 Not Found*, v2) |
 
 ## 7. Design decisions [proposed]
 
@@ -589,6 +709,26 @@ Every control, ranked by how often a debugging session needs it, decides where i
 - **Choosing a test case in the filter opens it and its parent**: the user asked to see it.
 - **The status hides rather than shrink past 48px**, and the buttons wrap only as the last step (C39).
 
+### 7e. v5 decisions [proposed]
+
+- **The Waterfall is each request's own breakdown**, as screenshot N2 draws it, not a timeline across the run: across t-01's 2m 37s, a 50ms request would be under a tenth of a pixel in the 136px bar. Start time and Duration carry when and how long (question 39).
+- **The phase colours** (`--net-*`, generated by `scripts/tokens.mjs`), in time order: Queueing `checks.ansi.gray`, DNS lookup `sponsors.emphasis`, Initial connection `checks.ansi.yellow`, SSL `ansi.magentaBright`, Request sent `checks.ansi.white`, Waiting (TTFB) `checks.ansi.green`, Content download `ansi.blueBright`. Chosen by a search over design-context's chart-like colour tokens, with the status colours and the accent left out as reserved, keeping the developer-tools convention where a token allows it: connection yellow, SSL purple, waiting green, download blue. No cyan token passes both the lightness band and the chroma floor (`ansi.cyan` and `ansi.cyanBright` read grey, `checks.ansi.cyan` is too light, `checks.ansi.cyanBright` fails both), so DNS is pink. The dataviz validator's results, on white:
+  - The five hues, adjacent, which is how a stacked bar is read: every check passes. Worst CVD ΔE 25.0 (deutan), worst normal-vision ΔE 29.9. Yellow and green sit under 3:1 against white (2.24, 2.28), which the validator allows only with visible labels or a table: the popover and the Timing tab name every value.
+  - With the two greys in their places (Queueing first, Request sent between SSL and Waiting): adjacent CVD ΔE 9.3 and normal 21.5, both passing. The greys fail the lightness and chroma checks by design: they are the neutral phases.
+  - All pairs: SSL and Content download are too close for protan vision (ΔE 2.0; 14.2 normal). They never touch in a bar, the order is fixed and every phase is named, and the validator applies all-pairs to scatter plots and maps, not stacks. Question 42 offers the one swap that passes all pairs.
+- **2px gaps between phases, each phase at least 2px**, so a 0.1ms Request sent still shows; the popover has the exact value.
+- **Show CONNECT means the HTTP CONNECT tunnels** a capture proxy records, one for each new connection. In the mock a request after 30 idle seconds opens one, so t-01 has 3. Off by default, as in screenshot N1, and counted only while shown (question 37).
+- **Errors only means status 400 and up.**
+- **The search's field** offers every text column plus the URL, with the product's *All* first (question 44). It shows only the field's name, as the product does, at a fixed width, so choosing one never moves the row. *Fields: All*, after *Tests: All*, was built first and pushed the switches to a third row whenever a longer field was chosen.
+- **Type segments filter by what was requested**, as developer tools do, so a broken image is found under Img.
+- **Name and Status stay beside the details.** Developer tools keep only Name; Status keeps the errors in view (question 43). Where the two would leave the table under 220px (the logs at their 487px at 1280 × 800), Name stays alone, and the details' head carries the status.
+- **The details keep the tab chosen** for the next request, as developer tools do; they open on Headers the first time.
+- **The details panel** is 400px by default, at least 320px (the pane scale of `guidelines/README.md` §2), and leaves the table at least 220px.
+- **Filtered, the footer's sizes add up what shows**, so it stays on one line in the default pane; *Finished in* stays for the whole log.
+- **Download HAR saves the whole log**, whatever the filters (question 45).
+- **The tab stays mounted** while another tab shows, as All Commands does, and starts fresh for another test.
+- **Duration keeps the product's two decimals** in the page's unit form (*34.77ms*), where commands show whole milliseconds (*20ms*): network timings differ in the decimals.
+
 ## 8. Copy
 
 All strings follow `ux-text-guidelines.md`. Rule numbers are that guide's.
@@ -665,6 +805,26 @@ All strings follow `ux-text-guidelines.md`. Rule numbers are that guide's.
 | Tests filter | Inside #TC-7742 | `ltactionmenu.md` item description |
 | Nested group | *, test case, inside #TC-7742* (screen readers) | §1 rule 1 |
 
+**Added in v5:**
+
+| Where | String | Rule |
+|---|---|---|
+| Type segments | All · JS · CSS · Img · Media · Font · Doc · WS · *Request type* (the group) | screenshot N1's words (C40) |
+| Toolbar | Download HAR · All · Name · URL · Status · Method · Domain · Type · *Search in: All* (screen readers) | §3 Tooltips name the action; §2 sentence case menu items |
+| Search | Search all fields · Search names · Search URLs · Search status codes · Search methods · Search domains · Search types | §2; the placeholder names what it searches |
+| Switches | Errors only · Show CONNECT | `ltswitch.md`: label the setting, not its state; C44 |
+| Columns | Name · Status · Method · Domain · Type · Size · Start time · Duration · Waterfall | §2 sentence case headers (C43) |
+| Sorting | Sorts by waiting time (TTFB) · *Sorted by Duration, descending* (announced) | §3 Tooltips; §3 Silent success still speaks |
+| Popover | Copy timings · Timings copied · Total · Waterfall phases · Queueing · DNS lookup · Initial connection · SSL · Request sent · Waiting (TTFB) · Content download | §2 sentence case; the phase names are developer tools' |
+| Popover notes | The connection was already open, so DNS lookup, initial connection and SSL took 0ms. · The address was already known, so DNS lookup took 0ms. · CONNECT opens a tunnel for the HTTPS requests after it, so its DNS lookup and SSL show 0ms. | §1 rule 2 no negation (*took 0ms*, not *took no time*) |
+| Legend | Waiting in the browser's queue for a connection. · Finding the server's address for the domain. · Opening the connection to the server. · The handshake that secures the connection. · Sending the request. · Waiting for the first byte of the response. · Receiving the rest of the response. | §1 rules 1 and 6 |
+| Details | 34 of 61 · Previous request · Next request · This is the first request · This is the last request · Close details · Copy URL · URL copied · Headers · Payload · Response · Timing · General · Response headers · Request headers · Field · Header · Value | §3 Tooltips; inactive controls say why, positively |
+| General | Request URL · Request method · Status code · Content type (left out for CONNECT, rather than *None*) · Transferred · Resource size · Start time · Duration | §2; §3 empty values name the state, never *None* |
+| Details, empty | Empty payload · This GET request sent only its URL and headers. · Empty response body · Binary response · Previews show text responses. This one is image/webp, 430 B. · Copy payload · Copy response | §1 rule 2; §3 Empty states |
+| Timing | Started at 00:05 · 34.77ms in total · Phase · When · Duration · Total | §2 |
+| Footer | 61 requests · 15 of 61 requests · 1.7 MB transferred · 4.3 MB resources · Finished in 2m 37s | C44; `mock-data.md` duration form |
+| States | see §5 | §1 rule 2 (*0 matching requests*, *made 0 media requests*, *Every request in this run succeeded.*) |
+
 ## 9. Gaps found in design-context
 
 Recorded, not changed. Each is a candidate for a design-context pull request once Rajat decides.
@@ -699,6 +859,17 @@ Recorded, not changed. Each is a candidate for a design-context pull request onc
 - **No component switches panels in place at the first level.** `LTUnderlineNav` is navigation with URLs, `LTTabNav` sits below it (C34), and neither documents closable tabs. `LTUnderlineNav` still has no overflow (the base pattern's open question 2), so More ▾ is composed.
 - **`mock-data.md` has no nested test cases.** #TC-8 is its own example ID, #TC-4410 follows its `#TC-` format, and the two nested names are its own extra test-case-shaped titles (its *Test instance names* list).
 - **No rule for a danger action without a confirmation.** Unlink offers Undo; Delete Comment, for now, nothing (C36).
+
+**Found in v5:**
+
+- **`mock-data.md` has no network values**: hosts, paths, sizes, durations, phases, headers or bodies. `src/network-data.js` takes the first page's file names, types, sizes and durations from screenshots N1 and N2 (N1's where a name appears in both, so *9de5c062541a58ac.css* is N1's 4 KB, not N2's 16.9 KB), the host from v1's screenshots (www.airbnb.com, the mock test's site), and writes the rest for the mock: later pages, the phases (from a seeded generator, adding up to each duration), headers, bodies and the two failures. N1's one third-party host (*app.revenu…*, cut off) is not guessed at: every request uses the one host.
+- **No format for sizes or for durations under a millisecond.** The prototype uses the product's own: *0 B*, *230 B*, *24.6 KB*, *2.2 MB* (1,000 bytes to a KB), and two decimals in the page's unit form (*34.77ms*).
+- **`LTTable` documents four props** (`allowValueCopy`, `columns`, `data`, `tabIndex`) and has no guideline file. Sorting, rendered cells, row handlers, fixed widths, a sticky header and a sticky first column are composed in the look-alike; the real column shape is unknown.
+- **`LTSwitch`'s look is undocumented**: no sizes in `COMPONENTS.md`, and `ltswitch.md` has a TO FILL for `square`. The look-alike measures screenshot N1: a 32 × 16 pill with a 16px round knob, in Primer's toggle-switch tokens (`switchTrack.*`, `switchKnob.*`).
+- **`LTTabNav`'s `items` shape is TBD**, and nothing says whether its tabs are links or switch panels in place. The look-alike switches in place, with tab semantics; the project-listing prototype's tabs are links.
+- **`ltpopover.md` covers light instructions only**, not a data popover (C42), and its directions (`right-top` and the rest) are listed without placement rules. The look-alike now places `right-top` and `right-bottom` with the caret 16px from the box's end.
+- **No chart component and no categorical palette.** The bar, its legend and the colours are composed from tokens and checked with the dataviz validator (§7e).
+- **`icons.md`**: the page now uses 79 lucide names, all present in 1.58.0; v5 adds ArrowUp, ArrowDown and ArrowUpDown for sorting, and reuses Info, Download, Copy, ChevronUp, ChevronDown, Sun, Moon and X (README).
 
 ## 10. Open questions
 
@@ -748,6 +919,20 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 35. **Deleting a comment, for real**: an Undo toast, as Unlink has, rather than a confirmation (`ux-persona.md`: recovery beats confirmation)?
 36. **Nesting deeper than two levels**: never, or folded into the second level?
 
+**New in v5:**
+
+37. **Show CONNECT**: read as the HTTP CONNECT tunnels the capture proxy records, hidden by default. Right?
+38. **Start time's form**: `mm:ss` as the brief writes it (as built, C41), or the page's `m:ss`? A run past an hour would read *61:05* in `mm:ss`.
+39. **The Waterfall**: each request's own breakdown, as screenshot N2 draws it (as built), or a timeline across the run, each bar placed at its start, as developer tools draw it by default?
+40. **Sorting the Waterfall**: by its waiting phase, TTFB (as built), or not sortable?
+41. **The popover with the logs below the video** (or the video floating or collapsed): the table reaches the window's edge, so the popover keeps to the edge and covers the end of nearby rows. Keep, or keep a margin right of the table in those layouts?
+42. **Phase colours**: SSL and Content download are close for protan vision when compared out of order (§7e). Swap SSL to `ansi.green`, which passes every pair, and give up developer tools' purple SSL?
+43. **Beside the details**: Name and Status (as built), or Name only, as developer tools do?
+44. **The search's fields**: All, Name, URL, Status, Method, Domain, Type (as built). Which fields does the product's *All* search?
+45. **Download HAR**: the whole log (as built), or only what the filters show?
+46. **A request's moment in the video**: should Start time seek the video, as a command's time does?
+47. **The type segments' words** (*Img*, *Doc*, *WS*): kept from the product; spell them out (*Images*, *Documents*, *WebSockets*)?
+
 ## 11. When this ships into design-context/
 
 - [ ] Amend `patterns/automation-details.md`: header, meta row, actions and menu, the All Commands anatomy, dock and splitters, states, and this file's copy rows in its copy table. Keep the 4 Sep wording visible with dated notes.
@@ -769,3 +954,8 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 - [ ] v4: `mock-data.md`, nested test cases.
 - [ ] v4 FE asks: closable in-place tabs with overflow, and a video player whose control row works in every mode.
 - [ ] v4: `icons.md`, add SquareArrowOutUpRight and LocateFixed to this page's names (README).
+- [ ] v5: amend `patterns/automation-details.md` with §3d and §4e (the Network tab); record C40 to C47.
+- [ ] v5: `mock-data.md`, network values and the size and duration forms (§9).
+- [ ] v5: `guidelines/`: sortable tables (a button per header, the rotation, `aria-sort` on one header), a details panel beside a table, the data popover's placement (beside, never above or below), and the phase palette.
+- [ ] v5 FE asks: `LTTable` sorting, rendered cells and sticky columns; `LTSwitch`'s sizes; `LTTabNav` tabs that switch in place; `LTPopover` for data.
+- [ ] v5: `icons.md`, add ArrowUp, ArrowDown and ArrowUpDown to this page's names (README).

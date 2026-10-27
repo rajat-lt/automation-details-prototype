@@ -1,4 +1,4 @@
-// Logs, Network and Meta Data tabs, and the tests pane.
+// Logs and Meta Data tabs, and the tests pane. The Network tab is network.jsx.
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Download, ListFilter, Maximize, Minimize, Moon, PanelLeftClose, Sun } from 'lucide-react'
 import {
@@ -87,16 +87,7 @@ export function LogsTab({ detail, theme, setTheme }) {
 }
 
 /* ---------------- Network ----------------
-   Capture is off for this run (capabilities: network false), which is the
-   honest state for mock data with no recorded requests. */
-export function NetworkTab() {
-  return (
-    <div className="tab-state">
-      <LTBlankSlate heading="Network capture is off"
-        description="Set the network capability to true to record requests on the next run." />
-    </div>
-  )
-}
+   network.jsx since v5 (27 Oct 2026). */
 
 /* ---------------- Meta Data ---------------- */
 export function MetaDataTab({ test }) {

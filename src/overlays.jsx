@@ -4,7 +4,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, X, CircleCheck, CircleAlert, Info } from 'lucide-react'
-import { cx, placeFloating, LTTooltip, LTIconButton, LTButton, usePortalRoot } from './lt.jsx'
+import { cx, placeFloating, visibleRect, LTTooltip, LTIconButton, LTButton, usePortalRoot } from './lt.jsx'
 
 /* ---------- LTActionMenu ----------
    Quick actions or one selection (selectionVariant="single"). Every item has
@@ -159,6 +159,42 @@ export function LTUnderlineNav({ navs, current, ariaLabel, trailing, onKeyDown }
   )
 }
 
+/* ---------- LTTabNav ----------
+   The second tab layer, always below the page's LTUnderlineNav
+   (guidelines/README.md §5). Boxed tabs on a hairline, the current one
+   raised white, as in the notification-center and project-listing
+   prototypes. Documented props: items (shape TBD → lttabnav--tab-nav),
+   activeTab, ariaLabel, size, onSelect. Here it switches a request's
+   details in place (v5 item 4), so its tabs are buttons with tab semantics
+   and arrow keys, not links (automation-details.md §9). `idPrefix` ties
+   each tab to the panel it controls. */
+export function LTTabNav({ items, activeTab, ariaLabel, size = 'medium', onSelect, idPrefix }) {
+  const refs = useRef([])
+  const onKeyDown = (e, i) => {
+    const j = e.key === 'ArrowRight' ? (i + 1) % items.length : e.key === 'ArrowLeft' ? (i - 1 + items.length) % items.length
+      : e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : null
+    if (j == null) return
+    e.preventDefault()
+    refs.current[j]?.focus()
+    onSelect?.(items[j].id)
+  }
+  return (
+    <div className={cx('lt-tabnav', `lt-tabnav--${size}`)} role="tablist" aria-label={ariaLabel}>
+      {items.map((t, i) => {
+        const on = t.id === activeTab
+        return (
+          <button key={t.id} ref={el => { refs.current[i] = el }} type="button" role="tab" id={`${idPrefix}-tab-${t.id}`}
+            aria-selected={on} aria-controls={`${idPrefix}-panel`} tabIndex={on ? 0 : -1}
+            className={cx('lt-tabnav__item', on && 'is-current')} onClick={() => onSelect?.(t.id)} onKeyDown={e => onKeyDown(e, i)}>
+            <span className="lt-unav__label" data-text={t.label}>{t.label}</span>
+            {t.counter != null && <span className="lt-counter lt-counter--secondary">{t.counter}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 /* ---------- focus trap shared by LTModal and LTDrawer ---------- */
 function useDialog(isOpen, onClose, ref, initialRef) {
   useEffect(() => {
@@ -308,7 +344,8 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
   const headingId = useId()
   const root = usePortalRoot()
   const side = direction.split('-')[0]
-  const align = { left: 'start', right: 'end' }[direction.split('-')[1]] ?? 'center'
+  // top-left / top-right and right-top / right-bottom: the box's start or end.
+  const align = { left: 'start', right: 'end', top: 'start', bottom: 'end' }[direction.split('-')[1]] ?? 'center'
 
   closeRef.current = () => setOpen(false)
   const show = () => {
@@ -332,8 +369,10 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
         setOpen(false)
         return
       }
-      const p = placeFloating(anchorRef.current, popRef.current, { side, align, offset: 10, flip: canChangeDirection })
-      const a = anchorRef.current.getBoundingClientRect()
+      // Placed beside the part of the anchor in view (v5: a Waterfall cell
+      // half cut off by the table's sideways scroll).
+      const a = visibleRect(anchorRef.current)
+      const p = placeFloating({ getBoundingClientRect: () => a }, popRef.current, { side, align, offset: 10, flip: canChangeDirection })
       const w = popRef.current.offsetWidth, h = popRef.current.offsetHeight
       // The caret points at the anchor's centre, however the box was clamped.
       p.caretX = Math.min(w - 16, Math.max(16, a.left + a.width / 2 - p.left))

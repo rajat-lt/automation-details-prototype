@@ -1,5 +1,6 @@
 // Automation test details: Rajat's 18 changes of 16 Oct 2026, the 16 of
-// 17 Oct 2026 (v2), the 11 of 18 Oct 2026 (v3) and the 12 of 19 Oct 2026 (v4).
+// 17 Oct 2026 (v2), the 11 of 18 Oct 2026 (v3), the 12 of 19 Oct 2026 (v4)
+// and the 11 of 27 Oct 2026 for the Network tab (v5, network.jsx).
 // Spec: automation-details.md. Shell, tokens, components and copy come from
 // design-context (main e014a73); every departure is recorded in the spec.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -8,7 +9,8 @@ import { PlatformSidebar, TopBar } from './shell.jsx'
 import { TestHeader } from './header.jsx'
 import { CommandsTab, PayloadPanel } from './commands.jsx'
 import { VideoPane, PipWindow, frameDataURL } from './video.jsx'
-import { LogsTab, NetworkTab, MetaDataTab, TestsPane } from './tabs.jsx'
+import { LogsTab, MetaDataTab, TestsPane } from './tabs.jsx'
+import { NetworkTab } from './network.jsx'
 import { MediaTabs, ReorderTabs } from './tabbar.jsx'
 import { ShortcutsDialog } from './shortcuts.jsx'
 import { Splitter, usePref, useSize } from './layout.jsx'
@@ -340,7 +342,14 @@ function Page() {
         {tab === 'logs' && (detail.commands.length
           ? <LogsTab detail={detail} theme={logTheme} setTheme={setLogTheme} />
           : <div className="tab-state"><p className="lt-blank__heading">Logs appear here once the test starts.</p></div>)}
-        {tab === 'network' && <NetworkTab />}
+        {/* v5: kept mounted too, so its filters, sort, open request and
+            scroll survive a tab switch. */}
+        <div className="tab-host" hidden={tab !== 'network'}>
+          <NetworkTab key={`${test.id}:${demo}`} test={test} codeTheme={codeTheme} setCodeTheme={setCodeTheme}
+            isCurrent={tab === 'network' && !modal}
+            demo={demo?.startsWith('network-') ? demo.slice('network-'.length) : null}
+            onRetry={() => setDemo(null)} />
+        </div>
         {tab === 'metadata' && <MetaDataTab test={test} />}
       </div>
     </section>
