@@ -508,6 +508,8 @@ export function LTTable({ columns, data, allowValueCopy = false, caption, tabInd
                     {c.sortHint ? <LTTooltip type="description" text={c.sortHint} direction="top">{button}</LTTooltip> : button}
                     {c.headerExtra}
                   </span>
+                ) : c.headerExtra ? (
+                  <span className="lt-table__th"><span>{c.title}</span>{c.headerExtra}</span>
                 ) : c.title}
               </th>
             )

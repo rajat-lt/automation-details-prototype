@@ -1123,7 +1123,7 @@ kbd {
   padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-muted);
 }
 .net-toolbar__row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
-.net-har { margin-left: auto; } /* a margin, not a spacer: one gap less, so the row fits the logs' 480px minimum */
+.net-view { margin-left: auto; } /* a margin, not a spacer: one gap less, so the row fits the default 574px */
 /* As wide as its longest option (Method, Domain), so choosing one never moves the row. */
 .net-field { flex: none; min-width: 100px; justify-content: space-between; }
 .net-search { flex: 1 1 160px; min-width: 160px; }
@@ -1133,7 +1133,8 @@ kbd {
 /* Both ways: the header sticks to the top, Name to the left (spec §3d). */
 .net-scroll { flex: 1; min-width: 0; overflow: auto; position: relative; isolation: isolate; }
 .net-scroll > .lt-blank { margin-top: var(--space-4); }
-.net-table { table-layout: fixed; min-width: 1036px; border: 0; border-radius: 0; overflow: visible; }
+/* --net-min: Name's 224px plus the fixed columns that show (network.jsx). */
+.net-table { table-layout: fixed; min-width: var(--net-min, 1116px); border: 0; border-radius: 0; overflow: visible; }
 .net-table.is-compact { min-width: 0; }
 /* 16px between columns, and 16px at the edges to line up with the toolbar. */
 .net-table th, .net-table td { height: 32px; padding: var(--space-1) var(--space-2); vertical-align: middle; white-space: nowrap; }
@@ -1166,12 +1167,34 @@ kbd {
 .net-status { font-variant-numeric: tabular-nums; }
 .net-status.is-error { color: var(--danger-fg); font-weight: var(--weight-semibold); }
 
-/* Waterfall (items 7 to 9): the request's own phases, 2px apart. */
-/* The hover target reaches the cell's right edge, which is the table's, so
-   the popover opens clear of the table (item 8). */
+/* Waterfall in the rows (items 7 to 9; Rajat, 28 Oct 2026: the whole run).
+   The hover target reaches the cell's right edge, which is the table's, so
+   the popover opens clear of the table (item 8). Faint lines mark the run's
+   minutes (or finer steps in a short run), sized in network.jsx. */
 .net-wf { display: flex; align-items: center; height: 24px; margin-right: calc(var(--space-4) * -1); padding-right: var(--space-4); }
-.net-bar { flex: 1; min-width: 0; display: flex; gap: 2px; height: 10px; }
-.net-bar__seg { flex: 0 1 0; min-width: 2px; border-radius: 2px; }
+.net-wf__lane {
+  position: relative; flex: 1; min-width: 0; height: 100%;
+  background-image: linear-gradient(to right, var(--border-muted) 0 1px, transparent 1px); background-repeat: repeat-x;
+}
+.net-runbar { position: absolute; top: 50%; height: 10px; margin-top: -5px; display: flex; overflow: hidden; border-radius: 2px; }
+.net-runbar > span, .net-strip__bar > span { flex: 0 1 0; min-width: 0; }
+.net-wf-scale { margin-left: auto; color: var(--fg-muted); font-weight: var(--weight-regular); font-variant-numeric: tabular-nums; }
+
+/* The strip (Rajat, 28 Oct 2026): the whole run on top of the list, with All
+   Commands' handles and axis (.tl-*). Bars are 3px, DevTools' band height. */
+.net-strip { flex: none; padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border-muted); }
+.net-strip__head { display: flex; align-items: center; gap: var(--space-2); min-height: 28px; }
+.net-strip__title { margin: 0; font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
+.net-strip__window { display: inline-flex; min-width: 0; }
+/* Reaches the strip's right edge, so the legend opens beside the list. */
+.net-strip__legend { display: flex; margin-right: calc(var(--space-4) * -1); padding-right: var(--space-4); }
+.net-strip__tl { margin-top: var(--space-2); }
+.net-strip__track { cursor: default; border-radius: var(--radius-1); background: var(--canvas-subtle); box-shadow: inset 0 0 0 1px var(--border-muted); }
+.net-strip__bar { position: absolute; height: 3px; display: flex; overflow: hidden; border-radius: 1px; }
+.net-strip__bar.is-hot { z-index: 1; height: 5px; margin-top: -1px; overflow: visible; box-shadow: 0 0 0 1px var(--canvas-default), 0 0 0 2px var(--fg-default); }
+.net-strip__shade { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--canvas-default) 70%, transparent); }
+.net-strip .tl-handle { height: 100%; }
+.net-strip__playhead { top: 0; height: 100%; }
 .net-swatch { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 .net-pop { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
 .net-phases { margin: 0; display: grid; grid-template-columns: 1fr auto; column-gap: var(--space-6); row-gap: var(--space-1); }
@@ -1187,7 +1210,7 @@ kbd {
   display: flex; gap: var(--space-1); margin: 0 0 calc(var(--space-1) * -1) calc(var(--space-1) * -1);
   padding-top: var(--space-2); border-top: 1px solid var(--border-muted);
 }
-.net-legend-anchor { flex: 1; display: flex; align-items: center; align-self: stretch; margin-right: calc(var(--space-4) * -1); padding-right: var(--space-4); }
+.net-legend-anchor { flex: 1; display: flex; align-items: center; gap: var(--space-2); align-self: stretch; margin-right: calc(var(--space-4) * -1); padding-right: var(--space-4); }
 .net-legend { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); max-width: 300px; }
 .net-legend li { display: flex; align-items: baseline; gap: var(--space-2); }
 .net-legend .net-swatch { transform: translateY(1px); }

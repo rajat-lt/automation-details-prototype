@@ -17,7 +17,9 @@ import { commentKey, useComments } from './comments.js'
 
 const MIN_GAP = 5 // seconds between the two handles
 
-function ticksFor(v0, v1, width) {
+// Shared with the Network tab's strip (v5), so its handles and axis behave
+// as these do.
+export function ticksFor(v0, v1, width) {
   const span = v1 - v0
   const steps = [1, 2, 5, 10, 15, 20, 30, 60, 120, 300, 600]
   const fits = Math.max(2, Math.floor(width / 56))
@@ -30,7 +32,7 @@ function ticksFor(v0, v1, width) {
   return out
 }
 
-function Handle({ which, value, min, max, onChange, trackRef, view }) {
+export function Handle({ which, value, min, max, onChange, trackRef, view, fmt = fmtTime }) {
   const drag = useRef(false)
   const [v0, v1] = view
   const toTime = x => {
@@ -42,7 +44,7 @@ function Handle({ which, value, min, max, onChange, trackRef, view }) {
       style={{ left: `${((value - v0) / (v1 - v0)) * 100}%` }}
       aria-label={which === 'start' ? 'Timeline start' : 'Timeline end'}
       aria-valuemin={Math.round(min)} aria-valuemax={Math.round(max)} aria-valuenow={Math.round(value)}
-      aria-valuetext={fmtTime(value)}
+      aria-valuetext={fmt(value)}
       onPointerDown={e => { e.stopPropagation(); drag.current = true; e.currentTarget.setPointerCapture(e.pointerId) }}
       onPointerMove={e => { if (drag.current) onChange(Math.min(max, Math.max(min, toTime(e.clientX)))) }}
       onPointerUp={() => { drag.current = false }}

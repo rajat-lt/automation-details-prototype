@@ -1,10 +1,10 @@
 # Automation test details · prototype
 
-A working prototype of LambdaTest's automation test details page with Rajat's 18 UX changes of 16 Oct 2026, his 16 more of 17 Oct 2026 (v2), 11 more of 18 Oct 2026 (v3), 12 more of 19 Oct 2026 (v4) and the Network tab's 11 of 27 Oct 2026 (v5), built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
+A working prototype of LambdaTest's automation test details page with Rajat's 18 UX changes of 16 Oct 2026, his 16 more of 17 Oct 2026 (v2), 11 more of 18 Oct 2026 (v3), 12 more of 19 Oct 2026 (v4) and the Network tab's 11 of 27 Oct 2026 (v5, with Rajat's answers of 28 Oct 2026), built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
 
 **Live:** https://rajat-lt.github.io/automation-details-prototype/
 
-**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33; v4 adds §3c, §4d and §7d and conflicts C34 to C39; v5 adds §3d, §4e and §7e and conflicts C40 to C47.
+**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33; v4 adds §3c, §4d and §7d and conflicts C34 to C39; v5 adds §3d, §4e and §7e and conflicts C40 to C47; Rajat's answers add §4f and §7f and conflicts C48 and C49.
 
 ## Where to see each change
 
@@ -87,14 +87,25 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 |---|---|---|
 | v5 1 | The existing list first | Type segments, Download HAR (a real `.har` file), the search's field (*All*), *Search all fields*, *Errors only* (a 500 at 01:36 and a 404 at 02:10), *Show CONNECT* (3 tunnels), the footer |
 | v5 2 | Column names | Name, Status, Method, Domain, Type, Size, Start time, Duration, Waterfall |
-| v5 3 | Sorting | Click a header: ascending, then descending, then ascending again. Name ascending by default |
+| v5 3 | Sorting | Click a header: ascending, then descending, then ascending again. Name ascending by default. Waterfall does not sort (answers) |
 | v5 4 | A request's details | Click a row (or Enter on it): Headers, Payload, Response, Timing beside the table, which keeps Name and Status. Up and Down walk the requests; Esc closes. Click a Waterfall bar to open Timing directly |
 | v5 5 | Duration | The product's Time, renamed: *34.77ms* |
 | v5 6 | Start time | *00:05*, `mm:ss` |
-| v5 7 | Waterfall | Scroll the table right (the logs beside the video are narrower than the table) and hover a bar; the ⓘ in its header is the legend |
+| v5 7 | Waterfall | Scroll the table right (the logs beside the video are narrower than the table) and hover a row's Waterfall cell; the ⓘ in its header is the legend. Since the answers the column is the whole run |
 | v5 8 | Popover on the right | It opens right of the table, over the video, never above or below the bar |
 | v5 9 | Stays open | Move the pointer into it and select a value, or use Copy timings; ×, Esc or a click outside closes it |
 | v5 10, 11 | Hierarchy, everything works | Muted secondary columns, tinted error rows, a sticky Name; every control works on every test |
+
+**v5 answers, 28 Oct 2026**
+
+| Answer | Change | Try it |
+|---|---|---|
+| 39 | The waterfall is the whole run, in the rows or as a strip on top | The two icons left of Download HAR: *Waterfall in rows* and *Waterfall strip on top*. The choice is remembered |
+| 39 | The strip's handles filter the list | In the strip view, drag a handle (or focus it and use the arrow keys); the list, the footer and a tag follow. Hover a row to ring its bar |
+| 39 | Reset, and R | The undo icon at the strip's top right, or press R anywhere on the tab outside a text field |
+| 40 | Waterfall does not sort | Its header has no sort button |
+| 41 | The logs stay beside the video on this tab | Dock the logs below the video on All Commands, then open Network: the logs move beside the video, and back on leaving |
+| 42 | Chrome DevTools' colours | Hover a row's Waterfall cell, or open a request's Timing tab |
 
 ## Review states
 
@@ -119,7 +130,7 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | Network error | [`?demo=network-error`](https://rajat-lt.github.io/automation-details-prototype/?demo=network-error#/t-01/network) |
 | Network empty | [`?demo=network-empty`](https://rajat-lt.github.io/automation-details-prototype/?demo=network-empty#/t-01/network) |
 
-Pane sizes (the Network tab's details panel too), the dock position, the code theme, the payload view, the row density, the tab order, the video mode and the floating window's place are remembered in the browser. Renames, deletes, unlinks, comments and payload tabs last until a reload.
+Pane sizes (the Network tab's details panel too), the dock position, the Network tab's waterfall view, the code theme, the payload view, the row density, the tab order, the video mode and the floating window's place are remembered in the browser. Renames, deletes, unlinks, comments and payload tabs last until a reload.
 
 ## Simulated in this prototype
 
@@ -136,10 +147,10 @@ Pane sizes (the Network tab's details panel too), the dock position, the code th
 
 ## How it is built from design-context
 
-- **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file was generated from `main` at `618b4b8` (v5, which added the switch and network phase tokens).
+- **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file was generated from `main` at `618b4b8` (v5 added the switch tokens). The network phase colours are Chrome DevTools' own, by Rajat's answer of 28 Oct 2026, in `src/devtools-phases.css` with each value's DevTools source.
 - **Components:** each one is a look-alike of the private `lt-components` library under its real name, using only props documented in `COMPONENTS.md`, styled from the tokens and used as `guidelines/` says.
 - **Layout, copy and data:** `patterns/automation-details.md` is the base. `ux-text-guidelines.md` governs every string. `mock-data.md` supplies the cast, names, formats and IDs, and everything it lacks is listed in the spec's §9.
-- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 79 used: Accessibility, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, Globe, GripHorizontal, History, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, LocateFixed, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, Smartphone, SquareArrowOutUpRight, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
+- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 80 used: Accessibility, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Bell, Bot, Braces, Bug, ChartColumn, ChartGantt, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, Globe, GripHorizontal, History, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, LocateFixed, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, Smartphone, SquareArrowOutUpRight, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
 
 ## Run it
 
@@ -162,11 +173,12 @@ Build for GitHub Pages with `npm run build`; the site is served from the `gh-pag
 |---|---|
 | `automation-details.md` | The spec |
 | `scripts/tokens.mjs`, `src/tokens.css` | Token generator and its output |
+| `src/devtools-phases.css` | The network phase colours, Chrome DevTools' own, with their sources |
 | `src/lt.jsx`, `src/overlays.jsx` | The LT component look-alikes (v2 adds `LTPopover`, toast actions, and overlays that follow full screen; v5 adds `LTSwitch`, `LTTabNav` and sorting in `LTTable`) |
 | `src/App.jsx` | The page: panes, dock, video modes, dialogs, and the video's side with its payload tabs (v4 item 8) |
 | `src/shell.jsx` | Platform sidebar and top bar (`patterns/platform-sidebar.md`, `patterns/topbar.md`) |
 | `src/header.jsx` | Title, copy test ID, meta row, actions, remarks (items 1 to 5; v3 items 1, 2; v4 items 3, 4) |
-| `src/commands.jsx`, `src/timeline.jsx` | All Commands tab (items 6 to 12, 15 to 18; v2 items 2, 3, 4, 7, 9, 10, 16; v3 items 3, 6, 9; v4 items 1, 2, 6, 7, 8, 10, 11), and the payload in a tab (v4 item 8) |
+| `src/commands.jsx`, `src/timeline.jsx` | All Commands tab (the timeline's handles also serve the Network tab's strip) (items 6 to 12, 15 to 18; v2 items 2, 3, 4, 7, 9, 10, 16; v3 items 3, 6, 9; v4 items 1, 2, 6, 7, 8, 10, 11), and the payload in a tab (v4 item 8) |
 | `src/failure.jsx` | Failure popovers on both time bars (v2 item 8; v3 item 4; v4 item 5) |
 | `src/video.jsx`, `src/playback.js` | Replay, controls, picture-in-picture, the shared playhead, wheel seeking (item 9; v2 items 5, 11, 14; v4 item 9) |
 | `src/tabbar.jsx` | Tab reordering (v2 item 1), and the media tabs with their More menu (v4 item 8) |

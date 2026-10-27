@@ -16,6 +16,8 @@ Every component and prop below was read from `COMPONENTS.md`. Proposals carry **
 
 **v5, 27 Oct 2026.** Rajat's fifth brief: a revamp of the Network tab in 11 items, with two screenshots: *screenshot N1*, the product's Network tab in dark mode, and *screenshot N2*, a light reference table whose last column draws each request's phases. Its items are written *v5 item 1* to *v5 item 11*. Item 4 reached us cut off ("on clicking a network log row, a"); Rajat answered on 27 Oct 2026: a details panel beside the table, as browser developer tools have, with Headers, Payload, Response and Timing, the table narrowing while it is open. Covered by §3d, §4e, conflicts C40 to C47, §7e and the v5 rows of every other section. Sources read from `design-context` `main` (`618b4b8`) on 27 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md` (§1 rule 2 no negation, §2 casing and punctuation), `guidelines/README.md` (§1 tables and their three states, §3 type for tables, §5 component choice), `ltswitch.md`, `ltpopover.md`, `ltmodal.md` (side sheets), `COMPONENTS.md` (`LTSwitch`, `LTSelect`, `LTTabNav`, `LTTable`, `LTPopover`), `icons.md`, `mock-data.md` and `data/tokens.json` (through `scripts/tokens.mjs`, now 142 tokens). The phase colours were chosen and checked with the dataviz skill's palette validator (§7e).
 
+**v5 answers, 28 Oct 2026.** Rajat answered questions 37 to 42: the Waterfall is a timeline across the whole run, shown either in the rows or as a strip on top whose handles filter the list, with a Reset that R also triggers (39, then his pick of "switch between them"); Waterfall does not sort (40); the phases wear Chrome DevTools' colours (42); `mm:ss` stays (38); Show CONNECT waits for the PM (37). On question 41 he chose a third way: on the Network tab the logs no longer move below the video, so the popover always has the video's side to open into; All Commands keeps the dock control. Covered by §4f, C48, C49, §7f and the "answers" rows of the other sections; superseded v5 text is kept with an italic note. Sources: Chrome DevTools' own code, read in `ChromeDevTools/devtools-frontend` at `main` `a19ceb8912fd` (27 Oct 2026): `front_end/panels/network/NetworkOverview.ts`, `networkPanel.css`, `NetworkWaterfallColumn.ts`, `RequestTimingView.ts`, `networkTimingTable.css` and `front_end/design_system_tokens.css`; and, from design-context, `guidelines/ltsegmentedcontrol.md` and `lticonbutton.md`.
+
 ---
 
 ## 1. What this page is
@@ -68,6 +70,14 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | Network tab | *Network capture is off* on every test | The product's request list, rebuilt in light mode (v5 item 1): eight type segments, Download HAR, the search's field, *Search all fields*, *Errors only* and *Show CONNECT*; a table with Name, Status, Method, Domain, Type, Size, Start time, Duration and Waterfall that sorts on every header (items 2, 3, 5, 6, 7); the product's footer |
 | A request | Nothing | Hovering its Waterfall bar opens its exact phase times to the right of the table, and they stay to copy from (items 7 to 9); clicking the row opens its details beside the table: Headers, Payload, Response, Timing (item 4) |
 | Data | No requests | Each test's own page loads, from its Navigate To commands and its search (§4e); capture stays off for one test, t-07, which keeps that state; the Meta Data tab's `network` capability follows |
+
+**What Rajat's answers change (28 Oct 2026)**
+
+| Region | After v5 | After the answers |
+|---|---|---|
+| Waterfall | Each request's own breakdown, in the last column; sorts by waiting time | A timeline across the whole run, in the rows (each bar at its moment) or as a strip on top whose handles filter the list; Reset or R brings back the whole run; it does not sort |
+| Phase colours | design-context tokens, validated | Chrome DevTools' own |
+| Layout | The logs beside or below the video, on every tab | On the Network tab the logs always sit beside the video; the dock control shows on the other tabs |
 
 ## 2. Component inventory
 
@@ -152,6 +162,15 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 | `LTBlankSlate`, `LTFlash`, `LTSkeletonBox` | The tab's states (§5) | as before |
 
 **Built custom and flagged in v5:** the Waterfall bar and its legend (no chart component), the details panel beside the table (the v1 splitter, not `LTDrawer`: C45), and the composed `LTTable` parts above. See §9.
+
+**Added with the answers (28 Oct 2026):**
+
+| Component | Where | Props used (all in `COMPONENTS.md`) |
+|---|---|---|
+| `LTSegmentedControl` | Waterfall view: *Waterfall in rows*, *Waterfall strip on top* | `options`, `selectedValue`, `onChange`, `ariaLabel`, `isIconButton` (icons with their names on hover, as the dock control; §7f) |
+| `LTIconButton` | Reset timeline, with R; the strip's Waterfall phases | `ariaLabel`, `icon`, `variant`, `size`, `inactive`, `tooltipText`, `keyshortcuts` and the shortcut in the tooltip (`lticonbutton.md`) |
+| `LTTag` | The strip's window, *00:40 - 01:40* | `text` |
+| Range timeline handles | The strip's two handles and its axis | v1's custom range timeline (`timeline.jsx`, flagged in §9 since v1): the same handles, arrow keys and ticks |
 
 **Built custom and flagged in v2:** tab reordering around `LTUnderlineNav` (v2 item 1); the right-click menu's anchor (v2 item 2); the floating video window (v2 item 5); copy buttons with another icon or rich content, for Copy link and Copy table (v2 items 2, 10, 15), because `LTCopyToClipboard` has a fixed icon and copies plain text; the "full text when cut" tooltip helper (v2 item 16). See §9.
 
@@ -370,7 +389,29 @@ Unchanged from the base pattern: a debugging surface for one automation test, wi
 </LTPopover>
 ```
 
-Column widths: Name takes what is left, at least 224px; Status 76, Method 80, Domain 128, Type 104, Size 80, Start time 96, Duration 88, Waterfall 160; 1,036px in all, each fitting its header and sort icon. Gutters are 16px, the outer ones in line with the toolbar. Rows are 32px, as condensed All Commands. At 1512 × 900 with the logs beside the video, the logs are 574px wide, so the table scrolls sideways under the sticky Name; with the logs below the video they are 1,055px wide and every column shows.
+*Answers, 28 Oct 2026: the toolbar's first row ends in the Waterfall view switch, then Download HAR; the strip, when chosen, sits between the toolbar and the list; the Waterfall column is 240px and only in the rows view. See the sketch after this paragraph.*
+
+Column widths: Name takes what is left, at least 224px; Status 76, Method 80, Domain 128, Type 104, Size 80, Start time 96, Duration 88, Waterfall 160 (*240 since the answers*); 1,036px in all (*1,116px with the Waterfall column, 876px without*), each fitting its header and sort icon. Gutters are 16px, the outer ones in line with the toolbar. Rows are 32px, as condensed All Commands. At 1512 × 900 with the logs beside the video, the logs are 574px wide, so the table scrolls sideways under the sticky Name; with the logs below the video they are 1,055px wide and every column shows.
+
+```jsx
+// After the answers (28 Oct 2026)
+<Toolbar>
+  All · JS · CSS · Img · Media · Font · Doc · WS        [Waterfall in rows | Waterfall strip on top] · Download HAR
+  All ▾ · Search all fields · Errors only · Show CONNECT
+</Toolbar>
+{view === 'strip' && (
+  <Strip>                            {/* the whole run, 00:00 to 03:20 */}
+    <Head>Timeline · <LTTag text="00:40 - 01:40" /> · Reset timeline (R) · ⓘ</Head>
+    <Track>{/* up to 10 lanes of 3px bars; outside the handles dimmed; the playhead */}
+      <Handle which="start" /> <Handle which="end" />
+    </Track>
+    <Axis>00:00 · 00:30 · … · 03:20</Axis>
+  </Strip>
+)}
+<LTTable>                            {/* rows view: … · Duration · Waterfall ⓘ 00:00 - 03:20 */}
+  <Row>favicon.ico · … · 34.77ms · <RunBar left="2.7%" width="max(3px, …)" /></Row>
+</LTTable>
+```
 
 ## 4. Behaviour, item by item
 
@@ -485,10 +526,11 @@ Column widths: Name takes what is left, at least 224px; Status 76, Method 80, Do
    - **Type segments** filter by what was requested, so the missing image stays under Img while its Type shows *html*, what came back. Media and WS find 0 requests in this mock and say so (§5).
    - **Search** looks in the chosen field, ignoring case: *All* (every text column and the URL), Name, URL, Status (code and its text), Method, Domain, Type (the subtype and the MIME type). Matches are marked in the cells that field covers; a URL search also marks names and domains. Choosing a field puts focus back in the search, whose placeholder follows (*Search URLs*). Esc clears it.
    - **Errors only** keeps status 400 and up. **Show CONNECT** adds the CONNECT tunnels, which count in the footer only while shown (§7e).
+   - *Answers, 28 Oct 2026: the logs always sit beside the video on this tab, and the first toolbar row also holds the Waterfall view switch (§4f).*
    - **Download HAR** saves `{test ID}-network.har`: HAR 1.2, the whole log whatever the filters, CONNECT included, one page per page load, with headers, text bodies and the phases (HAR's `connect` includes `ssl`; a phase that does not apply is `-1`).
    - **The footer** reads *61 requests · 1.7 MB transferred · 4.3 MB resources · Finished in 2m 37s*. Filtered, the count says *15 of 61 requests* and the sizes add up what shows. *Finished in* is when the last request ended, from the start of the run, for the whole log.
 2. **Column names.** Screenshot N1 has a header row whose text is nearly invisible in dark mode; enhanced, it reads *Name, Status, Method, Domain, Type, Size, Time*. Those names stay, with Time renamed (item 5), *Start time* added (item 6) and *Waterfall* last (item 7). Header text is `SMALL_BOLD`, 12px, muted, on the grey header row (README §3), readable in light mode.
-3. **Sorting.** Every header is a button. A click sorts its column ascending, the next click on it descending, the next ascending again; a click on another column sorts that one ascending. The default is Name ascending. Ties keep run order, earliest first, whichever way the column sorts, so the five `_app-fb6ea908a8e8fe2c.js` rows read in the order they loaded. The sorted column shows ↑ or ↓; the others show ↕ in a lighter grey. `aria-sort` sits on the sorted header only, and screen readers hear *Sorted by Duration, descending*. Waterfall sorts by its waiting phase, and says so on hover (*Sorts by waiting time (TTFB)*; question 40).
+3. **Sorting.** Every header is a button. A click sorts its column ascending, the next click on it descending, the next ascending again; a click on another column sorts that one ascending. The default is Name ascending. Ties keep run order, earliest first, whichever way the column sorts, so the five `_app-fb6ea908a8e8fe2c.js` rows read in the order they loaded. The sorted column shows ↑ or ↓; the others show ↕ in a lighter grey. `aria-sort` sits on the sorted header only, and screen readers hear *Sorted by Duration, descending*. Waterfall sorts by its waiting phase, and says so on hover (*Sorts by waiting time (TTFB)*; question 40). *Answered 28 Oct 2026: Waterfall does not sort.*
 4. **A request's details** (Rajat's answer). Clicking a row, or Enter on its name, opens the details beside the table, as developer tools do; the table narrows to Name and Status (Name alone when that would leave it under 220px, as at 1280px wide), and the row takes the selection: the orange bar plus the grey fill (README §1).
    - The head: the name, its place (*34 of 61*), **Previous request**, **Next request** (inactive at the ends, with *This is the first request*) and **Close details**; then the method, the status code (red from 400) and the URL, with **Copy URL**.
    - `LTTabNav`: **Headers** (General, which also holds what the hidden columns show: URL, method, status code, content type, transferred, resource size, start time, duration; then the response and request headers, each with its count and a copy button per value), **Payload** (the request body, or *Empty payload*), **Response** (the body in a code block with the page's theme toggle and copy, or why there is none, or that it is binary), **Timing** (§4e item 7's phases, each on the request's own timeline, with the total, the note and **Copy timings**). Left and Right move between the tabs, Home and End go to the ends. The tab chosen stays for the next request.
@@ -496,11 +538,25 @@ Column widths: Name takes what is left, at least 224px; Status 76, Method 80, Do
    - Esc, **Close details**, or a filter that hides the request closes them, and focus goes back to its row.
 5. **Duration.** The product's Time, renamed, with its two decimals: *34.77ms* (§9 on the form).
 6. **Start time.** When the request started in the run, `mm:ss` as the brief writes it: *00:05*, *02:10* (C41).
-7. **Waterfall.** The last column draws each request's own breakdown, as screenshot N2 does: every phase that took time, in time order, 2px apart, the whole bar standing for the request's duration (§7e). The phases are HAR 1.2's: Queueing, DNS lookup, Initial connection, SSL, Request sent, Waiting (TTFB), Content download. Hovering a bar for 250ms opens a popover with every phase's exact time, phases that took 0ms in muted text, the total, one line on why some took 0ms (*The connection was already open, so DNS lookup, initial connection and SSL took 0ms.*), and **Copy timings**. The ⓘ in the header opens the legend: each phase, its colour, and what it is.
-8. **The popover opens on the right.** Never above or below the bar: it opens right of the table's edge, centred on the row with its caret on it, and the legend hangs down from the header row (`right-top`). With the logs beside the video, the table's edge is the video's, so the popover sits over the video and covers no row. When part of the Waterfall column is scrolled out of view, it opens beside the part in view. When the table reaches the window's edge (logs below the video, or the video floating or collapsed), there is no room to its right: it keeps to the window's edge, still to the right, and covers the end of nearby rows (question 41).
+7. **Waterfall.** The last column draws each request's own breakdown, as screenshot N2 does: every phase that took time, in time order, 2px apart, the whole bar standing for the request's duration (§7e). The phases are HAR 1.2's: Queueing, DNS lookup, Initial connection, SSL, Request sent, Waiting (TTFB), Content download. Hovering a bar for 250ms opens a popover with every phase's exact time, phases that took 0ms in muted text, the total, one line on why some took 0ms (*The connection was already open, so DNS lookup, initial connection and SSL took 0ms.*), and **Copy timings**. The ⓘ in the header opens the legend: each phase, its colour, and what it is. *Answered 28 Oct 2026: the column is now the whole run, and the strip is the other way to see it (§4f).*
+8. **The popover opens on the right.** Never above or below the bar: it opens right of the table's edge, centred on the row with its caret on it, and the legend hangs down from the header row (`right-top`). With the logs beside the video, the table's edge is the video's, so the popover sits over the video and covers no row. When part of the Waterfall column is scrolled out of view, it opens beside the part in view. When the table reaches the window's edge (logs below the video, or the video floating or collapsed), there is no room to its right: it keeps to the window's edge, still to the right, and covers the end of nearby rows (question 41). *Answered 28 Oct 2026: the Network tab no longer docks the logs below the video, so the table's edge is always the video's (§4f); the floating and collapsed video remain (question 49).*
 9. **It stays open.** Leaving the bar leaves the popover open, so values can be selected and copied. It closes with its close button, Esc, a click outside, scrolling the table, switching tabs, or hovering another bar for 250ms, which replaces it: one at a time (`ltpopover.md`). A pointer that only crosses other bars on its way to the popover opens nothing.
-10. **Visual hierarchy.** Name, Status, Size and Duration in default text; Method, Domain, Type and Start time in muted text. Error rows take the failed command's tint and a red, semibold status code; the code is the label, so colour is never alone. The selection is the orange bar plus the grey fill. Name sticks with a hairline while the rest scrolls under it. Numbers sit right, in tabular figures. The phase colours are validated (§7e).
+10. **Visual hierarchy.** Name, Status, Size and Duration in default text; Method, Domain, Type and Start time in muted text. Error rows take the failed command's tint and a red, semibold status code; the code is the label, so colour is never alone. The selection is the orange bar plus the grey fill. Name sticks with a hairline while the rest scrolls under it. Numbers sit right, in tabular figures. The phase colours are validated (§7e). *Answered 28 Oct 2026: Chrome DevTools' colours instead (C48).*
 11. **Everything works.** Every control works on every test: segments, search, field, switches, sort, the popover and the legend, the details and their tabs, every copy button, the splitter, Download HAR, and the states (§5). The list is one tab stop: Up and Down move between requests, Home and End go to the ends, Enter opens one; with the details open, the open request follows the arrows. The tab keeps its filters, sort, open request and scroll while another tab shows, and starts fresh for another test.
+
+## 4f. Behaviour after Rajat's answers (28 Oct 2026)
+
+1. **A timeline across the whole run** (answer to 39). The run is 0:00 to the test's duration (3:20 for t-01), the same span as the video and All Commands' timeline.
+2. **Waterfall view: rows or strip.** The first toolbar row ends in an icon segmented control, *Waterfall view*: **Waterfall in rows** (ChartGantt) and **Waterfall strip on top** (PanelTop), named on hover as the dock control's icons are. The choice is remembered, like the page's other views, and announced (*Waterfall shows as a strip on top*).
+   - **In rows:** the last column, 240px, is the whole run, with *00:00 - 03:20* in its header and a faint line every minute (for a 3:20 run; the step runs from 5 to 300 seconds, so no run shows more than 6 intervals). A request's bar starts at its start and is as long as it took, at least 3px; at this scale most bars are that thin, so a page load's requests read as a short stack of marks at the same moment, and the hover popover holds their phases. The popover, the legend and a click to Timing work as in §4e.
+   - **Strip on top:** the Waterfall column goes, and a strip sits between the toolbar and the list: *Timeline*, the whole run with its axis (*00:00, 00:30 … 03:20*), each request a 3px bar (DevTools' band height) in up to 10 lanes, packed so requests that overlap in time stack. The video's playhead runs across it. Two handles, All Commands' own, select a window: drag them, or focus one and use the arrow keys (1 second, 10 with Shift), Home and End. The list keeps every request that runs at any moment of the window, the footer counts *20 of 61 requests*, a tag says *00:40 - 01:40*, and the strip dims everything outside it. The type segments, search, Errors only and Show CONNECT also thin the strip, so it shows what the list could show.
+   - **Reset timeline** (Undo2, at the strip's top right) brings back the whole run, and so does **R** anywhere on the tab except in a text field; it is inactive, with *Showing the whole run*, when there is nothing to reset. **Clear Filters** resets the window too. Leaving the strip view resets it, so no hidden window filters the rows.
+   - Hovering a row in the list rings its bar in the strip, and the open request's bar stays ringed, as developer tools highlight a request in their overview.
+   - The strip's ⓘ opens the same legend, beside the list.
+3. **Waterfall does not sort** (answer to 40). Its header has no sort button; every other column still sorts on a rotating click.
+4. **Chrome DevTools' colours** (answer to 42; C48). Queueing white with a light grey border, DNS lookup `#00677F`, Initial connection `#EAB308`, SSL `#D190FF`, Request sent `#009DC1`, Waiting (TTFB) `#37BE5F`, Content download `#4C8DF6` with a `#03A9F4` border: the light theme of DevTools' overview and Waterfall column. They are in `src/devtools-phases.css`, each with its DevTools source, not in the generated `tokens.css`.
+5. **The logs stay beside the video on the Network tab** (Rajat's answer to 41). The dock control leaves the tab bar while Network is open; a layout docked below on another tab comes back on leaving. The popover therefore always opens over the video, clear of the table. The video can still float or be collapsed (question 49).
+6. **`mm:ss` stays** for Start time (answer to 38), and the strip's axis, tag and handles use it too, so the tab reads one form.
 
 ## 5. States
 
@@ -564,6 +620,15 @@ The review states are linked from the README.
 | Details | The first or last request | Previous or Next inactive, with *This is the first request* or *This is the last request* |
 | Popover | Phases that took 0ms | Muted rows, and the note on why |
 
+**Added with the answers (28 Oct 2026):**
+
+| Surface | State | What shows |
+|---|---|---|
+| Strip | Whole run | Handles at 00:00 and the run's end; Reset inactive, with *Showing the whole run* |
+| Strip | A window | The tag (*00:40 - 01:40*), the outside dimmed, the list and footer filtered, Reset active |
+| Request list | A window with no requests | *0 matching requests* · *Try a wider time range.* (or, with other filters, *This time range has 0 CSS requests.*, *Every request in this time range succeeded.*) · **Clear Filters**, which also resets the window |
+| Tab bar | Network open | No dock control; Dock Video or Show Video still show while the video floats or is collapsed |
+
 **Delete confirmation** follows `patterns/modal.md` §5, because deleting a test is permanent: title *Delete test "{name}"?*; for a failed run only, a warning `LTFlash` naming what is specific to it (*This is a failed run. Its video and logs are the record of the failure.*); the consequence, with the reassurance last (*Deleting removes this test's video, logs, and 93 commands from the build. Test case #TC-88904 stays in Test Manager.*); *This action is permanent. Type DELETE to confirm.*; and **Keep Test** beside **Delete Test**, which stays inactive until the word matches. Focus starts on Keep Test, and the backdrop stops closing the dialog once something is typed (modal.md delta 3). After deleting, a toast confirms (*Test "{name}" deleted.*) and the next test opens.
 
 ## 6. Conflicts recorded
@@ -616,6 +681,8 @@ The review states are linked from the README.
 | C44 | The product's words | Screenshot N1: *Errors Only*, *Show Connect*, *Finished: 34.9s* | `ux-text-guidelines.md` §2: sentence case, no colon on labels; CONNECT is the HTTP method's name; `mock-data.md`: durations as `Mo D H M S` | *Errors only*, *Show CONNECT*, *Finished in 2m 37s*; *All* and *Search all fields* kept | Guideline wins on case and form; the words stay |
 | C45 | Where a request's details open (v5 item 4) | Rajat: a panel beside the table, the table narrowing, as developer tools | README §5 and `ltmodal.md`: secondary content that keeps context goes in `LTDrawer`, right side only | A panel inside the tab, beside the table, with a splitter; no backdrop | `ltmodal.md` also says a drawer always shows a backdrop, so nothing behind it stays interactive, and is never for heavy information. The details are headers and bodies, read while the arrow keys walk the table |
 | C46 | The switch's label (v5 item 1) | Screenshot N1: the switch, then its label | `ltswitch.md`: by default the label sits on the left and the switch is pushed to the right | `labelPosition` END, `LTSwitch`'s own default: the switch, then the label | Brief wins (the existing list first). `ltswitch.md` itself leaves its default when a switch sits inline with other content; its alternative, a vertical layout, does not fit a toolbar row |
+| C48 | The phase colours (answer to 42) | Rajat: use Chrome DevTools' colours | The house workflow: every colour from design-context's tokens; the dataviz validator (§7e): DevTools' yellow fails the lightness band and its teal the chroma floor, and three phases sit under 3:1 against white (Initial connection 1.92, SSL 2.30, Waiting 2.42; the queueing border 1.50) | DevTools' light-theme values, in their own file with their sources | Brief wins. The validator accepts the low contrast only when values are also shown as text: the popover and the Timing tab write every phase's time. Adjacent separation passes (CVD ΔE 8.8, normal 19.2); all pairs do not (Waiting and Initial connection 5.2 for protan vision; Content download and Request sent 10.6 normal) |
+| C49 | The Waterfall view switch (answer to 39) | Rajat's chosen sketch: *Waterfall view: [Rows] [Strip]*, in words | `ltsegmentedcontrol.md`: icon-only segments only when the icon is genuinely obvious, always with a tooltip; never obscure icons without a visible label; in tight space, hide the labels | Icon-only: ChartGantt (*Waterfall in rows*) and PanelTop (*Waterfall strip on top*), named on hover and to screen readers | Words do not fit the row at 574px; the guideline allows hiding labels in tight space. Whether these two icons are obvious enough is question 53 |
 | C47 | HTTP reason phrases | The data: *304 Not Modified*, *204 No Content*, *404 Not Found* | `ux-text-guidelines.md` §1 rule 2: no negation | Kept, in the status code and in the details' reasons | They are the protocol's names for the codes, and the page already shows them in full (*404 Not Found*, v2) |
 
 ## 7. Design decisions [proposed]
@@ -711,8 +778,8 @@ Every control, ranked by how often a debugging session needs it, decides where i
 
 ### 7e. v5 decisions [proposed]
 
-- **The Waterfall is each request's own breakdown**, as screenshot N2 draws it, not a timeline across the run: across t-01's 2m 37s, a 50ms request would be under a tenth of a pixel in the 136px bar. Start time and Duration carry when and how long (question 39).
-- **The phase colours** (`--net-*`, generated by `scripts/tokens.mjs`), in time order: Queueing `checks.ansi.gray`, DNS lookup `sponsors.emphasis`, Initial connection `checks.ansi.yellow`, SSL `ansi.magentaBright`, Request sent `checks.ansi.white`, Waiting (TTFB) `checks.ansi.green`, Content download `ansi.blueBright`. Chosen by a search over design-context's chart-like colour tokens, with the status colours and the accent left out as reserved, keeping the developer-tools convention where a token allows it: connection yellow, SSL purple, waiting green, download blue. No cyan token passes both the lightness band and the chroma floor (`ansi.cyan` and `ansi.cyanBright` read grey, `checks.ansi.cyan` is too light, `checks.ansi.cyanBright` fails both), so DNS is pink. The dataviz validator's results, on white:
+- *Superseded 28 Oct 2026: the whole run (§4f).* **The Waterfall is each request's own breakdown**, as screenshot N2 draws it, not a timeline across the run: across t-01's 2m 37s, a 50ms request would be under a tenth of a pixel in the 136px bar. Start time and Duration carry when and how long (question 39).
+- *Superseded 28 Oct 2026 by Chrome DevTools' colours (C48); kept for the record.* **The phase colours** (`--net-*`, generated by `scripts/tokens.mjs`), in time order: Queueing `checks.ansi.gray`, DNS lookup `sponsors.emphasis`, Initial connection `checks.ansi.yellow`, SSL `ansi.magentaBright`, Request sent `checks.ansi.white`, Waiting (TTFB) `checks.ansi.green`, Content download `ansi.blueBright`. Chosen by a search over design-context's chart-like colour tokens, with the status colours and the accent left out as reserved, keeping the developer-tools convention where a token allows it: connection yellow, SSL purple, waiting green, download blue. No cyan token passes both the lightness band and the chroma floor (`ansi.cyan` and `ansi.cyanBright` read grey, `checks.ansi.cyan` is too light, `checks.ansi.cyanBright` fails both), so DNS is pink. The dataviz validator's results, on white:
   - The five hues, adjacent, which is how a stacked bar is read: every check passes. Worst CVD ΔE 25.0 (deutan), worst normal-vision ΔE 29.9. Yellow and green sit under 3:1 against white (2.24, 2.28), which the validator allows only with visible labels or a table: the popover and the Timing tab name every value.
   - With the two greys in their places (Queueing first, Request sent between SSL and Waiting): adjacent CVD ΔE 9.3 and normal 21.5, both passing. The greys fail the lightness and chroma checks by design: they are the neutral phases.
   - All pairs: SSL and Content download are too close for protan vision (ΔE 2.0; 14.2 normal). They never touch in a bar, the order is fixed and every phase is named, and the validator applies all-pairs to scatter plots and maps, not stacks. Question 42 offers the one swap that passes all pairs.
@@ -728,6 +795,19 @@ Every control, ranked by how often a debugging session needs it, decides where i
 - **Download HAR saves the whole log**, whatever the filters (question 45).
 - **The tab stays mounted** while another tab shows, as All Commands does, and starts fresh for another test.
 - **Duration keeps the product's two decimals** in the page's unit form (*34.77ms*), where commands show whole milliseconds (*20ms*): network timings differ in the decimals.
+
+### 7f. Decisions after the answers [proposed]
+
+- **Icon segments for the Waterfall view** (C49). Rajat's chosen sketch showed *Rows* and *Strip* as words; two labelled segments do not fit the first toolbar row in the default 574px, and the dock control already sets the icon-with-name-on-hover form on this page. ChartGantt and PanelTop are verified in lucide-react 1.58.0 (question 53).
+- **Rows is the default view**, the order of Rajat's sketch; the choice is remembered.
+- **The window keeps every request that runs at any moment of it**, not only those that start in it, so a slow request crossing the edge stays in view, as in developer tools.
+- **The strip shows what the other filters match**, so it never shows a bar the list cannot reach; the window alone does not thin it.
+- **Lanes, not connections.** DevTools' overview puts a connection's requests on one band; over one HTTP/2 connection nearly every request would share a band, so the strip packs requests into up to 10 lanes instead.
+- **A click on the strip does nothing.** All Commands' bar seeks the video on a click, and developer tools' overview draws a new window on a drag; the brief asked for the handles only (question 50). The playhead still shows where the video is.
+- **R is the strip's shortcut, its visible twin the Reset button** (`ux-persona.md`: every shortcut has a visible twin). It is listed in the shortcuts dialog. All Commands' Reset timeline has no key yet (question 51).
+- **Leaving the strip view resets the window**: a window nobody can see would filter the list silently.
+- **The Network tab keeps the logs beside the video, and only that tab**: Rajat named All Commands as the tab that keeps the dock control; Logs and Meta Data keep it too until he says otherwise (question 48).
+- **Waterfall is 240px in the rows view**, half as wide again, since it now holds the whole run: a 3:20 run gets about 1px a second instead of 0.7px.
 
 ## 8. Copy
 
@@ -825,6 +905,16 @@ All strings follow `ux-text-guidelines.md`. Rule numbers are that guide's.
 | Footer | 61 requests · 15 of 61 requests · 1.7 MB transferred · 4.3 MB resources · Finished in 2m 37s | C44; `mock-data.md` duration form |
 | States | see §5 | §1 rule 2 (*0 matching requests*, *made 0 media requests*, *Every request in this run succeeded.*) |
 
+**Added with the answers (28 Oct 2026):**
+
+| Where | String | Rule |
+|---|---|---|
+| View switch | Waterfall view (the group) · Waterfall in rows · Waterfall strip on top · *Waterfall shows in the rows* · *Waterfall shows as a strip on top* (announced) | `ltsegmentedcontrol.md`: segments are nouns; §3 Silent success still speaks |
+| Strip | Timeline · 00:40 - 01:40 (*Showing 00:40 - 01:40* to screen readers) · Reset timeline (R) · Showing the whole run · *Showing the whole run* (announced) · Timeline start · Timeline end | All Commands' words; `mock-data.md` ranges with a spaced hyphen |
+| Waterfall header | 00:00 - 03:20 | as above |
+| States | Try a wider time range. · This time range has 0 CSS requests. · Every request in this time range succeeded. | §1 rule 2; §3 Empty states teach the next action |
+| Shortcuts | R · Reset the Network tab's timeline strip | §2 |
+
 ## 9. Gaps found in design-context
 
 Recorded, not changed. Each is a candidate for a design-context pull request once Rajat decides.
@@ -869,7 +959,12 @@ Recorded, not changed. Each is a candidate for a design-context pull request onc
 - **`LTTabNav`'s `items` shape is TBD**, and nothing says whether its tabs are links or switch panels in place. The look-alike switches in place, with tab semantics; the project-listing prototype's tabs are links.
 - **`ltpopover.md` covers light instructions only**, not a data popover (C42), and its directions (`right-top` and the rest) are listed without placement rules. The look-alike now places `right-top` and `right-bottom` with the caret 16px from the box's end.
 - **No chart component and no categorical palette.** The bar, its legend and the colours are composed from tokens and checked with the dataviz validator (§7e).
-- **`icons.md`**: the page now uses 79 lucide names, all present in 1.58.0; v5 adds ArrowUp, ArrowDown and ArrowUpDown for sorting, and reuses Info, Download, Copy, ChevronUp, ChevronDown, Sun, Moon and X (README).
+- **`icons.md`**: the page now uses 79 lucide names, all present in 1.58.0; v5 adds ArrowUp, ArrowDown and ArrowUpDown for sorting, and reuses Info, Download, Copy, ChevronUp, ChevronDown, Sun, Moon and X (README). *Answers: 80, with ChartGantt; PanelTop and Undo2 were already in use.*
+
+**Found with the answers (28 Oct 2026):**
+
+- **No categorical or chart palette in design-context**, so Rajat chose an outside one: Chrome DevTools' (C48). A design-context palette for timings, or adopting DevTools' with its contrast caveat, would settle it for every product.
+- **No overview or brush component.** The strip reuses v1's custom range timeline, still flagged (§9 of v1).
 
 ## 10. Open questions
 
@@ -921,17 +1016,26 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 
 **New in v5:**
 
-37. **Show CONNECT**: read as the HTTP CONNECT tunnels the capture proxy records, hidden by default. Right?
-38. **Start time's form**: `mm:ss` as the brief writes it (as built, C41), or the page's `m:ss`? A run past an hour would read *61:05* in `mm:ss`.
-39. **The Waterfall**: each request's own breakdown, as screenshot N2 draws it (as built), or a timeline across the run, each bar placed at its start, as developer tools draw it by default?
-40. **Sorting the Waterfall**: by its waiting phase, TTFB (as built), or not sortable?
-41. **The popover with the logs below the video** (or the video floating or collapsed): the table reaches the window's edge, so the popover keeps to the edge and covers the end of nearby rows. Keep, or keep a margin right of the table in those layouts?
-42. **Phase colours**: SSL and Content download are close for protan vision when compared out of order (§7e). Swap SSL to `ansi.green`, which passes every pair, and give up developer tools' purple SSL?
+37. **Show CONNECT**: read as the HTTP CONNECT tunnels the capture proxy records, hidden by default. Right? *Rajat is checking with the PM (28 Oct 2026).*
+38. **Start time's form**: `mm:ss` as the brief writes it (as built, C41), or the page's `m:ss`? A run past an hour would read *61:05* in `mm:ss`. **Answered 28 Oct 2026:** keep `mm:ss`.
+39. **The Waterfall**: each request's own breakdown, as screenshot N2 draws it (as built), or a timeline across the run, each bar placed at its start, as developer tools draw it by default? **Answered 28 Oct 2026:** the whole run, in the rows or as a strip on top with handles, switched (§4f).
+40. **Sorting the Waterfall**: by its waiting phase, TTFB (as built), or not sortable? **Answered 28 Oct 2026:** not sortable.
+41. **The popover with the logs below the video** (or the video floating or collapsed): the table reaches the window's edge, so the popover keeps to the edge and covers the end of nearby rows. Keep, or keep a margin right of the table in those layouts? **Answered 28 Oct 2026:** the Network tab drops the dock control; All Commands keeps it.
+42. **Phase colours**: SSL and Content download are close for protan vision when compared out of order (§7e). Swap SSL to `ansi.green`, which passes every pair, and give up developer tools' purple SSL? **Answered 28 Oct 2026:** use Chrome DevTools' colours (C48).
 43. **Beside the details**: Name and Status (as built), or Name only, as developer tools do?
 44. **The search's fields**: All, Name, URL, Status, Method, Domain, Type (as built). Which fields does the product's *All* search?
 45. **Download HAR**: the whole log (as built), or only what the filters show?
 46. **A request's moment in the video**: should Start time seek the video, as a command's time does?
 47. **The type segments' words** (*Img*, *Doc*, *WS*): kept from the product; spell them out (*Images*, *Documents*, *WebSockets*)?
+
+**New with the answers (28 Oct 2026):**
+
+48. **The dock control on Logs and Meta Data**: kept (as built), or dropped like Network's, so only All Commands moves the logs?
+49. **A floating or collapsed video on the Network tab**: the table then reaches the window's edge and the popover covers the end of nearby rows. Keep, or keep the video docked while Network is open?
+50. **A click on the strip**: nothing (as built), seek the video as All Commands' timeline does, or draw a new window as developer tools' overview does?
+51. **R on All Commands' timeline** too, so the key means "reset the timeline" on both tabs?
+52. **DevTools' contrast** (C48): keep the three light phases as they are, the times being written in the popover and Timing tab, or darken them for 3:1?
+53. **The view switch's icons** (C49): clear enough, or should the first row make room for the words (for example by making the type segments small)?
 
 ## 11. When this ships into design-context/
 
@@ -959,3 +1063,6 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 - [ ] v5: `guidelines/`: sortable tables (a button per header, the rotation, `aria-sort` on one header), a details panel beside a table, the data popover's placement (beside, never above or below), and the phase palette.
 - [ ] v5 FE asks: `LTTable` sorting, rendered cells and sticky columns; `LTSwitch`'s sizes; `LTTabNav` tabs that switch in place; `LTPopover` for data.
 - [ ] v5: `icons.md`, add ArrowUp, ArrowDown and ArrowUpDown to this page's names (README).
+- [ ] v5 answers: amend `patterns/automation-details.md` with §4f; record C48 and C49; decide where a timing palette lives (C48, §9).
+- [ ] v5 answers: `guidelines/`: an overview strip with handles (the range timeline's second use), and a per-tab exception to the dock control.
+- [ ] v5 answers: `icons.md`, add ChartGantt (README).

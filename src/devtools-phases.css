@@ -1,0 +1,23 @@
+/* The network phase colours: Chrome DevTools' own, light theme (Rajat,
+   28 Oct 2026; automation-details.md C48). Not design-context tokens, so they
+   live here rather than in the generated tokens.css.
+
+   Read from ChromeDevTools/devtools-frontend, main @ a19ceb8912fd
+   (27 Oct 2026):
+   - front_end/panels/network/NetworkOverview.ts, RequestTimeRangeNameToColor:
+     the variable each phase uses in the overview and the waterfall.
+   - front_end/panels/network/networkPanel.css: each variable's palette token.
+   - front_end/design_system_tokens.css: each token's light-theme value.
+   - front_end/panels/network/NetworkWaterfallColumn.ts: the two borders
+     (queueing 'lightgrey', content download '#03A9F4'). */
+:root {
+  --net-queueing: #ffffff;        /* --network-overview-queueing: --ref-palette-neutral100, rgb(255 255 255) */
+  --net-queueing-border: #d3d3d3; /* lightgrey */
+  --net-dns: #00677f;             /* --network-overview-dns: --sys-color-cyan, light --ref-palette-cyan40, rgb(0 103 127) */
+  --net-connect: #eab308;         /* --network-overview-connecting: --ref-palette-yellow60, rgb(234 179 8) */
+  --net-ssl: #d190ff;             /* --network-overview-ssl: --ref-palette-purple70, rgb(209 144 255) */
+  --net-send: #009dc1;            /* --override-network-overview-sending: --ref-palette-cyan60, rgb(0 157 193) */
+  --net-wait: #37be5f;            /* --network-overview-waiting: --ref-palette-green70, rgb(55 190 95) */
+  --net-receive: #4c8df6;         /* --network-overview-receiving: --ref-palette-blue60, rgb(76 141 246) */
+  --net-receive-border: #03a9f4;
+}

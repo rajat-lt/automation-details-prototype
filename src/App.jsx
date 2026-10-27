@@ -298,9 +298,14 @@ function Page() {
   const videoHMax = Math.max(VIDEO_H.min, Math.min((ws.height || 800) * 0.6, (ws.height || 800) - LOGS_MIN_H))
   const videoHNow = Math.min(Math.max(videoH, VIDEO_H.min), videoHMax)
 
+  // Rajat, 28 Oct 2026: on the Network tab the logs always sit beside the
+  // video, so the timing popover has room on the table's right; the dock
+  // control shows on the other tabs, and their choice comes back on leaving.
+  const paneDock = tab === 'network' ? 'side' : dock
+
   // The end of the tab bar always says where the video is (show the mode):
   // its dock position while docked, otherwise the way back.
-  const videoControl = docked ? (
+  const videoControl = docked ? (tab === 'network' ? null : (
     // Item 13: implicitly saved setting, so LTSegmentedControl, icon-only with
     // tooltips. Segments are nouns, not actions (guidelines/ltsegmentedcontrol.md;
     // v1 said "Dock left of the video", corrected 17 Oct 2026).
@@ -310,11 +315,11 @@ function Page() {
         { value: 'side', label: 'Logs left of the video', icon: PanelLeft },
         { value: 'bottom', label: 'Logs below the video', icon: PanelBottom },
       ]} />
-  ) : videoMode === 'pip' ? (
-    <LTButton variant="outline" size="small" leadingIcon={dock === 'side' ? PanelRight : PanelTop} label="Dock Video"
+  )) : videoMode === 'pip' ? (
+    <LTButton variant="outline" size="small" leadingIcon={paneDock === 'side' ? PanelRight : PanelTop} label="Dock Video"
       data-focus="tab-dock" onClick={() => changeVideoMode('docked', 'video-pip')} />
   ) : (
-    <LTButton variant="outline" size="small" leadingIcon={dock === 'side' ? PanelRightOpen : PanelTopOpen} label="Show Video"
+    <LTButton variant="outline" size="small" leadingIcon={paneDock === 'side' ? PanelRightOpen : PanelTopOpen} label="Show Video"
       data-focus="show-video" onClick={() => changeVideoMode('docked', 'video-collapse')} />
   )
 
@@ -357,14 +362,14 @@ function Page() {
 
   const videoPane = mode => (
     <VideoPane key={test.id} detail={detail} segments={segments} byId={byId} onStub={onStub}
-      loading={demo === 'video-loading'} mode={mode} dock={dock}
+      loading={demo === 'video-loading'} mode={mode} dock={paneDock}
       onPip={() => changeVideoMode('pip', 'pip-dock')} onDock={() => changeVideoMode('docked', 'video-pip')}
       onCollapse={() => changeVideoMode('collapsed', 'show-video')} />
   )
   // The tab row comes and goes above the video without remounting it: the
   // video's host keeps its place among this pane's children.
   const video = (
-    <div className={cx('vp-wrap', `vp-wrap--${dock}`)} style={dock === 'side' ? { width: videoWNow } : { height: videoHNow }}>
+    <div className={cx('vp-wrap', `vp-wrap--${paneDock}`)} style={paneDock === 'side' ? { width: videoWNow } : { height: videoHNow }}>
       <div className="mp">
         {hasMediaTabs && (
           <MediaTabs order={mediaTabs} active={activeMedia} byId={byId} onActivate={activateMedia} onClose={closeMediaTab}
@@ -414,14 +419,14 @@ function Page() {
               onToggleFullscreen={() => (fullscreen ? document.exitFullscreen() : detailRef.current?.requestFullscreen?.())}
               onMenu={onMenu} linked={linked} onUnlink={unlink}
               onLink={() => onStub('Test Manager opens here, to pick the test case to link.')} />
-            <div ref={wsRef} className={cx('ws', `ws--${mediaVisible ? dock : 'solo'}`)}>
+            <div ref={wsRef} className={cx('ws', `ws--${mediaVisible ? paneDock : 'solo'}`)}>
               {/* Keyed so a dock or mode switch moves the panes instead of
                   remounting them: open payloads, revealed runs and playback
                   survive it. The video's side stays while payload tabs are
                   open, even with the video floating or collapsed (v4 item 8). */}
               {!mediaVisible ? [
                 <React.Fragment key="panel">{panel}</React.Fragment>,
-              ] : dock === 'side' ? [
+              ] : paneDock === 'side' ? [
                 <React.Fragment key="panel">{panel}</React.Fragment>,
                 <Splitter key="split-v" orientation="vertical" invert label="Resize video pane" value={videoWNow}
                   min={VIDEO_W.min} max={videoWMax} defaultValue={VIDEO_W.def} onChange={setVideoW} />,

@@ -111,15 +111,6 @@
   --switch-knob-border: #868F99; /* colorSchemes.light.colors.switchKnob.border */
   --switch-knob-checked-border: #0969DA; /* colorSchemes.light.colors.switchKnob.checked.border */
 
-  /* Network waterfall phases (v5 item 7), in time order, validated with the dataviz script (spec §7e) */
-  --net-queueing: #8c959f; /* colorSchemes.light.colors.checks.ansi.gray */
-  --net-dns: #bf3989; /* colorSchemes.light.colors.sponsors.emphasis */
-  --net-connect: #d4a72c; /* colorSchemes.light.colors.checks.ansi.yellow */
-  --net-ssl: #a475f9; /* colorSchemes.light.colors.ansi.magentaBright */
-  --net-send: #d0d7de; /* colorSchemes.light.colors.checks.ansi.white */
-  --net-wait: #4ac26b; /* colorSchemes.light.colors.checks.ansi.green */
-  --net-receive: #218bff; /* colorSchemes.light.colors.ansi.blueBright */
-
   /* Code and log surfaces: own theme, dark by default (guidelines/README.md §1) */
   --log-bg: #24292f; /* colorSchemes.light.colors.checks.bg */
   --log-raised: #32383f; /* colorSchemes.light.colors.checks.inputBg */
