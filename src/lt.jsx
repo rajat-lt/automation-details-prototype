@@ -5,7 +5,7 @@
 // matching guidelines/<component>.md file.
 import React, { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Copy, X, Search, CircleAlert, TriangleAlert } from 'lucide-react'
+import { ArrowDown, ArrowUp, ArrowUpDown, Check, Copy, X, Search, CircleAlert, TriangleAlert } from 'lucide-react'
 import { copyText } from './clipboard.js'
 
 export const cx = (...a) => a.filter(Boolean).join(' ')
@@ -48,11 +48,30 @@ export function placeFloating(anchor, el, { side = 'bottom', align = 'center', o
     left = align === 'start' ? a.left : align === 'end' ? a.right - w : a.left + a.width / 2 - w / 2
   } else {
     left = s === 'right' ? a.right + offset : a.left - offset - w
-    top = a.top + a.height / 2 - h / 2
+    // Beside the anchor: centred, or Primer's right-top / right-bottom, with
+    // the caret 16px from the box's top or bottom (v5, the Waterfall legend).
+    const mid = a.top + a.height / 2
+    top = align === 'start' ? mid - 16 : align === 'end' ? mid - h + 16 : mid - h / 2
   }
   left = Math.min(Math.max(8, left), vw - w - 8)
   top = Math.min(Math.max(8, top), vh - h - 8)
   return { top, left, side: s }
+}
+
+/* The part of an element its scrolling ancestors leave in view. A popover
+   placed beside a table cell cut off by the table's scroll (v5, the
+   Waterfall column) opens beside what shows, not beside the hidden part. */
+export function visibleRect(el) {
+  const r = el.getBoundingClientRect()
+  let { left, top, right, bottom } = r
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+    const s = getComputedStyle(p)
+    if (s.overflowX === 'visible' && s.overflowY === 'visible') continue
+    const pr = p.getBoundingClientRect()
+    if (s.overflowX !== 'visible') { left = Math.max(left, pr.left); right = Math.min(right, pr.right) }
+    if (s.overflowY !== 'visible') { top = Math.max(top, pr.top); bottom = Math.min(bottom, pr.bottom) }
+  }
+  return { left, top, right, bottom, width: Math.max(0, right - left), height: Math.max(0, bottom - top) }
 }
 
 /* ---------- LTTooltip ----------
@@ -433,25 +452,83 @@ export function LTFlash({ variant = 'default', text, action, className }) {
   )
 }
 
-/* ---------- LTTable ---------- columns, data, allowValueCopy */
-export function LTTable({ columns, data, allowValueCopy = false, caption }) {
+/* ---------- LTSwitch ----------
+   Applies at once, never waits for a Save, and its label names the setting,
+   not its state (guidelines/ltswitch.md). Documented props used: label,
+   labelPosition, checked, onValueChange, size, ariaLabel, disabled,
+   className. labelPosition END, the component's default, puts the label
+   after the switch, as the product's Network toolbar does (spec C46). The
+   label is part of the hit area (ltswitch.md: the whole touch area). */
+export function LTSwitch({ label, labelPosition = 'end', checked = false, onValueChange, size = 'small', ariaLabel,
+  disabled = false, className }) {
   return (
-    <table className="lt-table">
+    <button type="button" role="switch" aria-checked={checked} aria-label={ariaLabel} aria-disabled={disabled || undefined}
+      className={cx('lt-switch', `lt-switch--${size}`, labelPosition === 'start' && 'lt-switch--start',
+        checked && 'is-checked', disabled && 'is-disabled', className)}
+      onClick={() => { if (!disabled) onValueChange?.(!checked) }}>
+      <span className="lt-switch__track" aria-hidden="true"><span className="lt-switch__knob" /></span>
+      {label && <span className="lt-switch__label">{label}</span>}
+    </button>
+  )
+}
+
+/* ---------- LTTable ---------- columns, data, allowValueCopy, tabIndex
+   (COMPONENTS.md). The Network tab (v5) needs what those four props do not
+   document: sortable headers, cells it renders itself, row handlers and
+   fixed column widths. The column shape is TBD upstream, so these are
+   composed here and flagged (automation-details.md §9): a column may carry
+   `render(row)`, `sortable`, `sortHint`, `align: 'end'`, `width`,
+   `className` and `headerExtra`; the table takes `sort` ({ key, dir }),
+   `onSort(key)`, `rowKey(row)`, `rowProps(row)` and `className`. Sorting
+   follows the WAI-ARIA sortable table: a button in each header, aria-sort
+   on the sorted one only. */
+const SORT_WORD = { asc: 'ascending', desc: 'descending' }
+export function LTTable({ columns, data, allowValueCopy = false, caption, tabIndex, sort, onSort, rowKey, rowProps, className }) {
+  const widths = columns.some(c => c.width)
+  return (
+    <table className={cx('lt-table', className)} tabIndex={tabIndex}>
       {caption && <caption className="vh">{caption}</caption>}
-      <thead><tr>{columns.map(c => <th key={c.key} scope="col">{c.title}</th>)}</tr></thead>
+      {widths && <colgroup>{columns.map(c => <col key={c.key} style={c.width ? { width: c.width } : undefined} />)}</colgroup>}
+      <thead>
+        <tr>
+          {columns.map(c => {
+            const on = sort?.key === c.key
+            const SortIcon = !on ? ArrowUpDown : sort.dir === 'asc' ? ArrowUp : ArrowDown
+            const button = c.sortable && (
+              <button type="button" className={cx('lt-table__sort', on && 'is-sorted')} onClick={() => onSort?.(c.key)}>
+                <span>{c.title}</span>
+                <SortIcon size={14} aria-hidden="true" className="lt-table__sort-icon" />
+              </button>
+            )
+            return (
+              <th key={c.key} scope="col" className={cx(c.align === 'end' && 'is-end', c.className)}
+                aria-sort={c.sortable && on ? SORT_WORD[sort.dir] : undefined}>
+                {c.sortable ? (
+                  <span className="lt-table__th">
+                    {c.sortHint ? <LTTooltip type="description" text={c.sortHint} direction="top">{button}</LTTooltip> : button}
+                    {c.headerExtra}
+                  </span>
+                ) : c.title}
+              </th>
+            )
+          })}
+        </tr>
+      </thead>
       <tbody>
         {data.map((row, i) => (
-          <tr key={i}>
+          <tr key={rowKey ? rowKey(row) : i} {...rowProps?.(row, i)}>
             {columns.map(c => (
-              <td key={c.key} className={c.mono ? 'mono' : undefined}>
-                <span className="lt-table__cell">
-                  <span className="lt-table__value">{row[c.key]}</span>
-                  {allowValueCopy && c.copy && (
-                    <LTCopyToClipboard textToCopy={String(row[c.key])} size="xsmall"
-                      copyAriaLabel={`Copy ${row[c.copyName ?? 'key'] ?? 'value'}`} copiedAriaLabel="Value copied"
-                      className="lt-table__copy" />
-                  )}
-                </span>
+              <td key={c.key} className={cx(c.mono && 'mono', c.align === 'end' && 'is-end', c.className)}>
+                {c.render ? c.render(row) : (
+                  <span className="lt-table__cell">
+                    <span className="lt-table__value">{row[c.key]}</span>
+                    {allowValueCopy && c.copy && (
+                      <LTCopyToClipboard textToCopy={String(row[c.key])} size="xsmall"
+                        copyAriaLabel={`Copy ${row[c.copyName ?? 'key'] ?? 'value'}`} copiedAriaLabel="Value copied"
+                        className="lt-table__copy" />
+                    )}
+                  </span>
+                )}
               </td>
             ))}
           </tr>

@@ -42,8 +42,8 @@ function Hl({ text, q }) {
   return <>{text.slice(0, i)}<mark className="hl">{text.slice(i, i + q.length)}</mark><Hl text={text.slice(i + q.length)} q={q} /></>
 }
 
-/* ---------- payload rendering ---------- */
-function Json({ value }) {
+/* ---------- payload rendering ---------- also the Network tab's JSON bodies (v5) */
+export function Json({ value }) {
   const src = JSON.stringify(value, null, 2)
   const parts = []
   const re = /("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g

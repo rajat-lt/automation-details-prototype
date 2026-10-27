@@ -63,6 +63,34 @@ export function fmtTime(sec) {
   return h ? `${h}:${pad(m)}:${pad(s % 60)}` : `${m}:${pad(s % 60)}`
 }
 
+/**
+ * A request's start in the run, `mm:ss` as v5 item 6 asks (`00:05`, `02:34`):
+ * the brief names the form, so the Network tab's Start time keeps it, against
+ * the page's `m:ss` everywhere else (spec C41).
+ */
+export function fmtClock(sec) {
+  const s = Math.max(0, Math.floor(sec))
+  return `${pad(Math.floor(s / 60))}:${pad(s % 60)}`
+}
+
+/** GAP: transfer sizes. The product's own form: `0 B`, `230 B`, `24.6 KB`, `2.2 MB`, 1,000 bytes to a KB. */
+export function fmtBytes(n) {
+  if (n < 1000) return `${Math.round(n)} B`
+  if (n < 1e6) return `${+(n / 1000).toFixed(1)} KB`
+  return `${+(n / 1e6).toFixed(1)} MB`
+}
+
+/**
+ * GAP: a request's duration and its phases, to the hundredth of a
+ * millisecond as the product's Network tab shows them (`25.26 ms`), in the
+ * page's unit form (`20ms`). Two decimals always, so a column lines up:
+ * `0.12ms`, `48.30ms`, `1.24s`.
+ */
+export function fmtMsExact(ms) {
+  if (ms < 1000) return `${ms.toFixed(2)}ms`
+  return `${(ms / 1000).toFixed(2)}s`
+}
+
 /** A window of the run, with a spaced hyphen as mock-data.md's date ranges use: `1:13 - 1:25`. */
 export function fmtTimeRange(a, b) {
   return `${fmtTime(a)} - ${fmtTime(b)}`

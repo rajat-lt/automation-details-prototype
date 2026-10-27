@@ -1,10 +1,10 @@
 # Automation test details · prototype
 
-A working prototype of LambdaTest's automation test details page with Rajat's 18 UX changes of 16 Oct 2026, his 16 more of 17 Oct 2026 (v2), 11 more of 18 Oct 2026 (v3) and 12 more of 19 Oct 2026 (v4), built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
+A working prototype of LambdaTest's automation test details page with Rajat's 18 UX changes of 16 Oct 2026, his 16 more of 17 Oct 2026 (v2), 11 more of 18 Oct 2026 (v3), 12 more of 19 Oct 2026 (v4) and the Network tab's 11 of 27 Oct 2026 (v5), built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
 
 **Live:** https://rajat-lt.github.io/automation-details-prototype/
 
-**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33; v4 adds §3c, §4d and §7d and conflicts C34 to C39.
+**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33; v4 adds §3c, §4d and §7d and conflicts C34 to C39; v5 adds §3d, §4e and §7e and conflicts C40 to C47.
 
 ## Where to see each change
 
@@ -81,6 +81,21 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | v4 10 | A test case inside a test case | #TC-7742 holds #TC-8; #TC-56345 holds #TC-4410 at its end. Each has its own rule; scroll inside #TC-8 and both headers stay |
 | v4 11 | Search stays | Scroll the list down: only the timeline slides away |
 
+**v5, 27 Oct 2026: the Network tab** ([`#/t-01/network`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/network))
+
+| # | Change | Try it |
+|---|---|---|
+| v5 1 | The existing list first | Type segments, Download HAR (a real `.har` file), the search's field (*All*), *Search all fields*, *Errors only* (a 500 at 01:36 and a 404 at 02:10), *Show CONNECT* (3 tunnels), the footer |
+| v5 2 | Column names | Name, Status, Method, Domain, Type, Size, Start time, Duration, Waterfall |
+| v5 3 | Sorting | Click a header: ascending, then descending, then ascending again. Name ascending by default |
+| v5 4 | A request's details | Click a row (or Enter on it): Headers, Payload, Response, Timing beside the table, which keeps Name and Status. Up and Down walk the requests; Esc closes. Click a Waterfall bar to open Timing directly |
+| v5 5 | Duration | The product's Time, renamed: *34.77ms* |
+| v5 6 | Start time | *00:05*, `mm:ss` |
+| v5 7 | Waterfall | Scroll the table right (the logs beside the video are narrower than the table) and hover a bar; the ⓘ in its header is the legend |
+| v5 8 | Popover on the right | It opens right of the table, over the video, never above or below the bar |
+| v5 9 | Stays open | Move the pointer into it and select a value, or use Copy timings; ×, Esc or a click outside closes it |
+| v5 10, 11 | Hierarchy, everything works | Muted secondary columns, tinted error rows, a sticky Name; every control works on every test |
+
 ## Review states
 
 | State | Link |
@@ -97,8 +112,14 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | Tests pane empty | [`?demo=tests-empty`](https://rajat-lt.github.io/automation-details-prototype/?demo=tests-empty#/t-01/commands) |
 | Video loading | [`?demo=video-loading`](https://rajat-lt.github.io/automation-details-prototype/?demo=video-loading#/t-01/commands) |
 | A command's link (v2) | [`#/t-01/commands/c45`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/commands/c45) |
+| Network, default (v5) | [`#/t-01/network`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/network) |
+| Network capture off | [`#/t-07/network`](https://rajat-lt.github.io/automation-details-prototype/#/t-07/network) |
+| Network, queued test | [`#/t-12/network`](https://rajat-lt.github.io/automation-details-prototype/#/t-12/network) |
+| Network loading | [`?demo=network-loading`](https://rajat-lt.github.io/automation-details-prototype/?demo=network-loading#/t-01/network) |
+| Network error | [`?demo=network-error`](https://rajat-lt.github.io/automation-details-prototype/?demo=network-error#/t-01/network) |
+| Network empty | [`?demo=network-empty`](https://rajat-lt.github.io/automation-details-prototype/?demo=network-empty#/t-01/network) |
 
-Pane sizes, the dock position, the code theme, the payload view, the row density, the tab order, the video mode and the floating window's place are remembered in the browser. Renames, deletes, unlinks, comments and payload tabs last until a reload.
+Pane sizes (the Network tab's details panel too), the dock position, the code theme, the payload view, the row density, the tab order, the video mode and the floating window's place are remembered in the browser. Renames, deletes, unlinks, comments and payload tabs last until a reload.
 
 ## Simulated in this prototype
 
@@ -111,13 +132,14 @@ Pane sizes, the dock position, the code theme, the payload view, the row density
 - **Comments** are kept in the page until a reload. The one on Create New Session at 0:32 is seeded mock data, by the signed-in user. **Delete Comment** deletes at once, with no confirmation, as the brief asks for now.
 - **Payload tabs** are kept per test until a reload.
 - **Rotate video** is built for mobile recordings, but every mock test is web: `mock-data.md` has no mobile devices.
+- **Network logs** are built from each test's own commands (`src/network-data.js`), with the first page's files, sizes and durations from the v5 screenshots; there is no capture behind them. **Download HAR** saves a real HAR 1.2 file of them.
 
 ## How it is built from design-context
 
-- **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file was generated from `main` at `e014a73`.
+- **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file was generated from `main` at `618b4b8` (v5, which added the switch and network phase tokens).
 - **Components:** each one is a look-alike of the private `lt-components` library under its real name, using only props documented in `COMPONENTS.md`, styled from the tokens and used as `guidelines/` says.
 - **Layout, copy and data:** `patterns/automation-details.md` is the base. `ux-text-guidelines.md` governs every string. `mock-data.md` supplies the cast, names, formats and IDs, and everything it lacks is listed in the spec's §9.
-- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 76 used: Accessibility, ArrowLeft, ArrowRight, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, Globe, GripHorizontal, History, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, LocateFixed, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, Smartphone, SquareArrowOutUpRight, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
+- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 79 used: Accessibility, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, Globe, GripHorizontal, History, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, LocateFixed, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, Smartphone, SquareArrowOutUpRight, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
 
 ## Run it
 
@@ -140,7 +162,7 @@ Build for GitHub Pages with `npm run build`; the site is served from the `gh-pag
 |---|---|
 | `automation-details.md` | The spec |
 | `scripts/tokens.mjs`, `src/tokens.css` | Token generator and its output |
-| `src/lt.jsx`, `src/overlays.jsx` | The LT component look-alikes (v2 adds `LTPopover`, toast actions, and overlays that follow full screen) |
+| `src/lt.jsx`, `src/overlays.jsx` | The LT component look-alikes (v2 adds `LTPopover`, toast actions, and overlays that follow full screen; v5 adds `LTSwitch`, `LTTabNav` and sorting in `LTTable`) |
 | `src/App.jsx` | The page: panes, dock, video modes, dialogs, and the video's side with its payload tabs (v4 item 8) |
 | `src/shell.jsx` | Platform sidebar and top bar (`patterns/platform-sidebar.md`, `patterns/topbar.md`) |
 | `src/header.jsx` | Title, copy test ID, meta row, actions, remarks (items 1 to 5; v3 items 1, 2; v4 items 3, 4) |
@@ -152,5 +174,6 @@ Build for GitHub Pages with `npm run build`; the site is served from the `gh-pag
 | `src/clipboard.js` | Plain and rich copy (v2 item 10) |
 | `src/comments.js` | Comments on failed commands, and requests to open one (v3 items 4 and 6) |
 | `src/layout.jsx` | Splitters (item 14) |
-| `src/tabs.jsx` | Logs, Network, Meta Data, tests pane |
+| `src/tabs.jsx` | Logs, Meta Data, tests pane |
+| `src/network.jsx`, `src/network-data.js` | The Network tab (v5) and its mock log, with the HAR export |
 | `src/data.js`, `src/format.js` | Mock data, including the nested test cases (v4 item 10), and the `mock-data.md` formats |
