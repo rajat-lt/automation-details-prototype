@@ -5,16 +5,24 @@
 // each phase's exact time (items 7 to 9). A row opens its details beside the
 // table, as browser developer tools do (item 4, Rajat's answer of 27 Oct
 // 2026). Spec: automation-details.md §3d, §4e and §7e.
+//
+// Rajat's answers of 28 Oct 2026 (§4f): the waterfall is a timeline across
+// the whole run, shown either in the rows or as a strip on top whose handles
+// filter the list (Reset, or R, brings back the whole run); Waterfall does
+// not sort; the phases wear Chrome DevTools' colours; and on this tab the
+// logs always sit beside the video (App.jsx).
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, Copy, Download, Info, Moon, Sun, X } from 'lucide-react'
+import { ChartGantt, ChevronDown, ChevronUp, Copy, Download, Info, Moon, PanelTop, Sun, Undo2, X } from 'lucide-react'
 import {
   LTBlankSlate, LTButton, LTCodeBlock, LTCopyToClipboard, CopyIconButton, LTCounterLabel, LTFlash, LTIconButton,
-  LTInputBox, LTSkeletonBox, LTSwitch, LTTable, TruncText, announce, cx,
+  LTInputBox, LTSkeletonBox, LTSwitch, LTTable, LTTag, TruncText, announce, cx,
 } from './lt.jsx'
 import { LTActionMenu, LTPopover, LTSegmentedControl, LTTabNav } from './overlays.jsx'
 import { Splitter, usePref, useSize } from './layout.jsx'
 import { Json } from './commands.jsx'
-import { networkFor, toHar, PHASES } from './network-data.js'
+import { Handle, ticksFor } from './timeline.jsx'
+import { usePlayback } from './playback.js'
+import { networkFor, toHar, PHASES, phaseStyle } from './network-data.js'
 import { fmtBytes, fmtClock, fmtDuration, fmtMsExact } from './format.js'
 import { copyText } from './clipboard.js'
 
@@ -57,15 +65,13 @@ const SORTERS = {
   size: (a, b) => a.bytes - b.bytes,
   start: (a, b) => a.start - b.start,
   duration: (a, b) => a.duration - b.duration,
-  // The bar is each request's own breakdown, so it sorts by the phase it is
-  // mostly made of, the wait for the first byte [proposed, question 40].
-  waterfall: (a, b) => a.timings.wait - b.timings.wait,
-}
+} // Waterfall does not sort (Rajat, 28 Oct 2026)
 const TITLES = { name: 'Name', status: 'Status', method: 'Method', domain: 'Domain', type: 'Type', size: 'Size',
-  start: 'Start time', duration: 'Duration', waterfall: 'Waterfall' }
-// Fixed widths, each fitting its header and sort icon (Waterfall also its
-// legend); Name takes the rest, 224px at least (styles.css .net-table).
-const WIDTHS = { status: 76, method: 80, domain: 128, type: 104, size: 80, start: 96, duration: 88, waterfall: 160 }
+  start: 'Start time', duration: 'Duration' }
+// Fixed widths, each fitting its header and sort icon; Waterfall is wider
+// now that it holds the whole run. Name takes the rest, 224px at least.
+const WIDTHS = { status: 76, method: 80, domain: 128, type: 104, size: 80, start: 96, duration: 88, waterfall: 240 }
+const NAME_MIN = 224
 
 /* What each phase is, for the Waterfall legend. */
 const MEANS = {
@@ -99,16 +105,99 @@ function timingNote(q) {
 const timingText = q => [q.url, ...PHASES.map(p => `${p.label}: ${fmtMsExact(q.timings[p.key])}`),
   `Total: ${fmtMsExact(q.duration)}`].join('\n')
 
-/* Each request's own breakdown, the reference screenshot's bar: every phase
-   that took time, in time order, 2px apart (dataviz: a surface gap between
-   fills). The bar is the request's duration, whatever its length. */
-function WaterfallBar({ q }) {
+/* A request's phases, in time order, side by side in its bar. */
+const Phases = ({ q }) => PHASES.filter(p => q.timings[p.key] > 0).map(p => (
+  <span key={p.key} style={{ flexGrow: q.timings[p.key], ...phaseStyle(p) }} />
+))
+
+/* The waterfall in rows (Rajat, 28 Oct 2026: a timeline across the whole
+   run). A request's bar starts at its start in the run and is as long as it
+   took, at least 3px: at a run's scale most bars are that thin, and the hover
+   popover holds their phases. Faint lines mark every `gridStep` seconds. */
+const gridStep = run => [5, 10, 15, 30, 60, 120, 300].find(s => run / s <= 6) ?? 600
+function RunBar({ q, run }) {
   return (
-    <span className="net-bar">
-      {PHASES.filter(p => q.timings[p.key] > 0).map(p => (
-        <span key={p.key} className="net-bar__seg" style={{ flexGrow: q.timings[p.key], background: p.color }} />
-      ))}
+    <span className="net-runbar" style={{ left: `${(q.start / run) * 100}%`, width: `max(3px, ${(q.duration / 1000 / run) * 100}%)` }}>
+      <Phases q={q} />
     </span>
+  )
+}
+
+/* The strip (Rajat, 28 Oct 2026): the whole run on top of the table, as
+   developer tools' overview draws it, with All Commands' two handles
+   (timeline.jsx). The table lists only the requests between the handles;
+   Reset, or R, brings back the whole run. Requests sit in up to 10 lanes of
+   3px bars (DevTools' band height), packed so bars that overlap in time
+   stack; past 10 lanes they share the emptiest. The video's playhead shows
+   where it is; a click on the strip does nothing (§7f). */
+const LANES = 10, LANE = 4, MIN_BAR = 4
+const STRIP_GAP = 1 // seconds: the narrowest window the handles allow
+
+function packLanes(requests, run, width) {
+  const per = width / run
+  const ends = []
+  const lane = new Map()
+  for (const q of [...requests].sort((a, b) => a.start - b.start)) {
+    const x0 = q.start * per, x1 = Math.max(x0 + MIN_BAR, q.end * per)
+    let i = ends.findIndex(e => e + 1 <= x0)
+    if (i < 0) i = ends.length < LANES ? ends.length : ends.indexOf(Math.min(...ends))
+    ends[i] = x1
+    lane.set(q.id, i)
+  }
+  return { lane, count: Math.max(1, ends.length) }
+}
+
+function NetworkStrip({ requests, run, win, onWin, onReset, hot, isCurrent }) {
+  const trackRef = useRef(null)
+  const [width, setWidth] = useState(600)
+  const time = usePlayback(s => s.time)
+  const measure = el => { if (el && el.offsetWidth && el.offsetWidth !== width) setWidth(el.offsetWidth) }
+  const { lane, count } = useMemo(() => packLanes(requests, run, width), [requests, run, width])
+  const [a, b] = win
+  const full = a <= 0.01 && b >= run - 0.01
+  const pct = s => `${(s / run) * 100}%`
+  const view = [0, run]
+  return (
+    <div className="net-strip">
+      <div className="net-strip__head">
+        <h3 className="net-strip__title">Timeline</h3>
+        {!full && <span className="net-strip__window"><span className="vh">Showing </span><LTTag text={`${fmtClock(a)} - ${fmtClock(b)}`} /></span>}
+        <span className="spacer" />
+        <LTIconButton icon={Undo2} ariaLabel="Reset timeline" shortcutLabel="R" keyshortcuts="R" variant="invisible" size="small"
+          inactive={full} tooltipText={full ? 'Showing the whole run' : undefined} onClick={onReset} />
+        <LTPopover direction="right-top" openOnClick containsInteractiveChildElement heading="Waterfall phases"
+          forceClose={!isCurrent} popOverbodyJSX={<Legend />}>
+          <span className="net-strip__legend">
+            <LTIconButton icon={Info} ariaLabel="Waterfall phases" variant="invisible" size="small" />
+          </span>
+        </LTPopover>
+      </div>
+      <div className="tl net-strip__tl" ref={measure}>
+        <div ref={trackRef} className="tl-track net-strip__track" style={{ height: count * LANE + 8 }}>
+          <span className="tl-clip">
+            {requests.map(q => (
+              <span key={q.id} className={cx('net-strip__bar', hot.has(q.id) && 'is-hot')}
+                style={{ left: pct(q.start), width: `max(${MIN_BAR}px, ${pct(q.duration / 1000)})`, top: 4 + lane.get(q.id) * LANE }}>
+                <Phases q={q} />
+              </span>
+            ))}
+            {!full && <span className="net-strip__shade" style={{ left: 0, width: pct(a) }} aria-hidden="true" />}
+            {!full && <span className="net-strip__shade" style={{ left: pct(b), right: 0 }} aria-hidden="true" />}
+            {time <= run && <span className="tl-playhead net-strip__playhead" style={{ left: pct(time) }} aria-hidden="true" />}
+          </span>
+          <Handle which="start" value={a} min={0} max={b - STRIP_GAP} view={view} trackRef={trackRef} fmt={fmtClock}
+            onChange={v => onWin([v, b])} />
+          <Handle which="end" value={b} min={a + STRIP_GAP} max={run} view={view} trackRef={trackRef} fmt={fmtClock}
+            onChange={v => onWin([a, v])} />
+        </div>
+        <div className="tl-axis" aria-hidden="true">
+          {ticksFor(0, run, width).map((s, i, all) => (
+            <span key={`${i}-${s}`} className={cx('tl-tick', i === 0 && 'is-first', i === all.length - 1 && 'is-last')}
+              style={{ left: pct(s) }}>{fmtClock(s)}</span>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -122,7 +211,7 @@ function PhaseList({ q }) {
           const v = q.timings[p.key]
           return (
             <div key={p.key} className={cx('net-phases__row', v === 0 && 'is-zero')}>
-              <dt><span className="net-swatch" style={{ background: p.color }} aria-hidden="true" />{p.label}</dt>
+              <dt><span className="net-swatch" style={phaseStyle(p)} aria-hidden="true" />{p.label}</dt>
               <dd>{fmtMsExact(v)}</dd>
             </div>
           )
@@ -142,7 +231,7 @@ function Legend() {
     <ul className="net-legend">
       {PHASES.map(p => (
         <li key={p.key}>
-          <span className="net-swatch" style={{ background: p.color }} aria-hidden="true" />
+          <span className="net-swatch" style={phaseStyle(p)} aria-hidden="true" />
           <span><span className="net-legend__name">{p.label}</span>{` ${MEANS[p.key]}`}</span>
         </li>
       ))}
@@ -242,13 +331,13 @@ function TimingPanel({ q }) {
         columns={[
           { key: 'phase', title: 'Phase', render: r => (
             <span className="net-phase">
-              {!r.total && <span className="net-swatch" style={{ background: r.color }} aria-hidden="true" />}{r.label}
+              {!r.total && <span className="net-swatch" style={phaseStyle(r)} aria-hidden="true" />}{r.label}
             </span>
           ) },
           { key: 'bar', title: 'When', render: r => (
             <span className="net-track" aria-hidden="true">
               {r.ms > 0 && <span className="net-track__bar"
-                style={{ left: pct(r.at), width: `max(2px, ${pct(r.ms)})`, background: r.total ? 'var(--fg-subtle)' : r.color }} />}
+                style={{ left: pct(r.at), width: `max(2px, ${pct(r.ms)})`, ...(r.total ? { background: 'var(--fg-subtle)' } : phaseStyle(r)) }} />}
             </span>
           ) },
           { key: 'ms', title: 'Duration', align: 'end', render: r => fmtMsExact(r.ms) },
@@ -332,6 +421,14 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
   const [activeId, setActiveId] = useState(null) // the row in the tab order
   const [detailTab, setDetailTab] = useState('headers')
   const [panelW, setPanelW] = usePref('netPanelWidth', PANEL.def)
+  // Rajat, 28 Oct 2026: the waterfall in the rows or as a strip on top,
+  // remembered like the page's other views. The strip's window filters.
+  const [wfView, setWfView] = usePref('netWaterfallView', 'rows')
+  const run = Math.max(1, test.durationSec)
+  const [win, setWin] = useState(() => [0, run])
+  const [hoverId, setHoverId] = useState(null)
+  const winRef = useRef(win)
+  winRef.current = win
   const bodyRef = useRef(null)
   const scrollRef = useRef(null)
   const searchRef = useRef(null)
@@ -341,15 +438,22 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
   const needle = query.trim().toLowerCase()
   // CONNECT tunnels count only while they show (Show CONNECT).
   const base = useMemo(() => log.requests.filter(q => showConnect || q.method !== 'CONNECT'), [log, showConnect])
-  const rows = useMemo(() => {
+  const matched = useMemo(() => {
     const text = q => (field === 'all' ? FIELDS.slice(1).map(f => f.get(q)).join(' ') : fieldDef.get(q)).toLowerCase()
-    const out = base.filter(q => (type === 'all' || q.category === type) && (!errorsOnly || q.status >= 400)
+    return base.filter(q => (type === 'all' || q.category === type) && (!errorsOnly || q.status >= 400)
       && (!needle || text(q).includes(needle)))
+  }, [base, type, errorsOnly, needle, field, fieldDef])
+  const isFull = w => w[0] <= 0.01 && w[1] >= run - 0.01
+  const strip = wfView === 'strip'
+  const narrowed = strip && !isFull(win)
+  const rows = useMemo(() => {
+    // The strip's window keeps every request that runs at any moment of it.
+    const out = narrowed ? matched.filter(q => q.end >= win[0] && q.start <= win[1]) : [...matched]
     const by = SORTERS[sort.key]
     // Ties keep run order, whichever way the column sorts.
     return out.sort((a, b) => (sort.dir === 'asc' ? by(a, b) : by(b, a)) || a.start - b.start)
-  }, [base, type, errorsOnly, needle, field, fieldDef, sort])
-  const filtering = type !== 'all' || errorsOnly || !!needle
+  }, [matched, narrowed, win, sort])
+  const filtering = type !== 'all' || errorsOnly || !!needle || narrowed
 
   const selIndex = rows.findIndex(q => q.id === selectedId)
   const selected = selIndex >= 0 ? rows[selIndex] : null
@@ -386,6 +490,30 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
     if (next) open(next.id)
   }
 
+  const resetWin = () => {
+    if (isFull(winRef.current)) return
+    setWin([0, run])
+    announce('Showing the whole run')
+  }
+  const chooseView = v => {
+    setWfView(v)
+    if (v === 'rows') setWin([0, run]) // the strip's window leaves with the strip
+    announce(v === 'strip' ? 'Waterfall shows as a strip on top' : 'Waterfall shows in the rows')
+  }
+  // R resets the strip's window (Rajat, 28 Oct 2026), from anywhere on the
+  // tab but a text field, as "/" and "S" work across the page (App.jsx).
+  useEffect(() => {
+    if (!isCurrent || !strip) return
+    const onKey = e => {
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || (e.key !== 'r' && e.key !== 'R')) return
+      if (e.target.closest?.('input, textarea, select, [contenteditable="true"]') || document.querySelector('.lt-backdrop')) return
+      e.preventDefault()
+      resetWin()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  })
+
   const onSort = key => {
     const dir = sort.key === key && sort.dir === 'asc' ? 'desc' : 'asc'
     setSort({ key, dir })
@@ -418,7 +546,7 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 1000)
   }
-  const clearFilters = () => { setType('all'); setErrorsOnly(false); setQuery(''); setField('all') }
+  const clearFilters = () => { setType('all'); setErrorsOnly(false); setQuery(''); setField('all'); setWin([0, run]) }
 
   /* ---------- states ---------- */
   if (!log.on) {
@@ -456,6 +584,7 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
   // tools have it, when the logs are too narrow for both (1280px wide).
   const compact = !!selected
   const nameOnly = compact && bodyW - panelNow - 1 < TABLE_MIN
+  const grid = { backgroundSize: `${(gridStep(run) / run) * 100}% 100%` }
   const columns = [
     { key: 'name', title: 'Name', sortable: true, render: q => (
       <button type="button" className="net-name" data-row={q.id} tabIndex={q.id === current ? 0 : -1}
@@ -480,15 +609,16 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
         render: q => fmtClock(q.start) },
       { key: 'duration', title: 'Duration', sortable: true, align: 'end', width: WIDTHS.duration,
         render: q => fmtMsExact(q.duration) },
-      { key: 'waterfall', title: 'Waterfall', sortable: true, width: WIDTHS.waterfall, className: 'net-wf-cell',
-        sortHint: 'Sorts by waiting time (TTFB)',
+      ...(strip ? [] : [{ key: 'waterfall', title: 'Waterfall', width: WIDTHS.waterfall, className: 'net-wf-cell',
         // The legend hangs down beside the rows (right-top), from the
-        // table's edge, so it covers none of them either.
+        // table's edge, so it covers none of them either. The run's span
+        // reads on the right, since the column is the whole run.
         headerExtra: (
           <LTPopover direction="right-top" openOnClick containsInteractiveChildElement heading="Waterfall phases"
             forceClose={!isCurrent} popOverbodyJSX={<Legend />}>
             <span className="net-legend-anchor">
               <LTIconButton icon={Info} ariaLabel="Waterfall phases" variant="invisible" size="xsmall" />
+              <span className="net-wf-scale">{`${fmtClock(0)} - ${fmtClock(run)}`}</span>
             </span>
           </LTPopover>
         ),
@@ -498,11 +628,15 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
         render: q => (
           <LTPopover direction="right" containsInteractiveChildElement heading={q.name} forceClose={!isCurrent}
             popOverbodyJSX={<PhaseList q={q} />}>
-            <span className="net-wf" aria-hidden="true"><WaterfallBar q={q} /></span>
+            <span className="net-wf" aria-hidden="true">
+              <span className="net-wf__lane" style={grid}><RunBar q={q} run={run} /></span>
+            </span>
           </LTPopover>
-        ) },
+        ) }]),
     ]),
   ]
+  const minW = NAME_MIN + columns.reduce((sum, c) => sum + (c.width ?? 0), 0)
+  const hot = new Set([hoverId, selectedId].filter(Boolean))
 
   const sum = (list, k) => list.reduce((s, q) => s + q[k], 0)
   const finished = Math.max(...log.requests.map(q => q.end))
@@ -517,10 +651,11 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
   ]
 
   const typeDef = TYPES.find(t => t.value === type)
+  const scope = narrowed ? 'in this time range' : 'in this run'
   const emptyWhy = needle ? 'Try a different search term or field.'
-    : errorsOnly && type !== 'all' ? `Every ${typeDef.noun} request in this run succeeded.`
-      : errorsOnly ? 'Every request in this run succeeded.'
-        : `This run made 0 ${typeDef.noun} requests.`
+    : errorsOnly ? `Every ${type !== 'all' ? `${typeDef.noun} ` : ''}request ${scope} succeeded.`
+      : type !== 'all' ? (narrowed ? `This time range has 0 ${typeDef.noun} requests.` : `This run made 0 ${typeDef.noun} requests.`)
+        : 'Try a wider time range.'
 
   return (
     <div className="net">
@@ -528,8 +663,14 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
         <div className="net-toolbar__row">
           <LTSegmentedControl ariaLabel="Request type" selectedValue={type} onChange={setType}
             options={TYPES.map(t => ({ value: t.value, label: t.label }))} />
-          <LTIconButton icon={Download} ariaLabel="Download HAR" variant="outline" size="medium" onClick={downloadHar}
-            className="net-har" />
+          {/* Rajat, 28 Oct 2026: the waterfall in the rows or as a strip on
+              top. Icon segments named on hover, as the dock control is: two
+              labelled segments do not fit this row in the default 574px. */}
+          <LTSegmentedControl isIconButton ariaLabel="Waterfall view" selectedValue={wfView} onChange={chooseView}
+            className="net-view"
+            options={[{ value: 'rows', label: 'Waterfall in rows', icon: ChartGantt },
+              { value: 'strip', label: 'Waterfall strip on top', icon: PanelTop }]} />
+          <LTIconButton icon={Download} ariaLabel="Download HAR" variant="outline" size="medium" onClick={downloadHar} />
         </div>
         <div className="net-toolbar__row">
           {/* The search's scope: LTButton outline with a caret and a single
@@ -551,8 +692,13 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
         </div>
       </div>
 
+      {strip && (
+        <NetworkStrip requests={matched} run={run} win={win} onWin={setWin} onReset={resetWin} hot={hot} isCurrent={isCurrent} />
+      )}
+
       <div className="net-body" ref={bodyRef}>
-        <div ref={scrollRef} className={cx('net-scroll', compact && 'is-compact')} onKeyDown={onKeyDown}>
+        <div ref={scrollRef} className={cx('net-scroll', compact && 'is-compact')} onKeyDown={onKeyDown}
+          style={{ '--net-min': `${minW}px` }}>
           {rows.length === 0 ? (
             <LTBlankSlate heading="0 matching requests" description={emptyWhy}
               primaryAction={<LTButton variant="outline" size="small" label="Clear Filters" onClick={clearFilters} />} />
@@ -563,6 +709,8 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
                 className: cx('net-row', q.status >= 400 && 'is-error', q.id === selectedId && 'is-selected'),
                 // A click on the bar opens the details on Timing.
                 onClick: e => open(q.id, e.target.closest('.net-wf') ? 'timing' : null),
+                // With the strip, the row under the pointer shows its bar there.
+                ...(strip ? { onMouseEnter: () => setHoverId(q.id), onMouseLeave: () => setHoverId(h => (h === q.id ? null : h)) } : {}),
               })} />
           )}
         </div>

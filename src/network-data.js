@@ -60,16 +60,20 @@ const BY_PATH = Object.fromEntries(FIRST_LOAD.map(a => [a[0], a]))
 const DOC_BYTES = { '/': 215500, '/s/Goa/homes': 198400, '/book/stays': 176200, '/login': 142700, '/rooms/plus': 231900 }
 
 /* The phases, in time order, with the names the Timing tab and the popover
-   use. `color` is the CSS variable from scripts/tokens.mjs (spec §7e). */
+   use. `color` and `border` are Chrome DevTools' (src/devtools-phases.css,
+   spec C48): DevTools draws queueing white with a light grey border, and
+   content download with a brighter blue border. */
 export const PHASES = [
-  { key: 'blocked', label: 'Queueing', color: 'var(--net-queueing)' },
+  { key: 'blocked', label: 'Queueing', color: 'var(--net-queueing)', border: 'var(--net-queueing-border)' },
   { key: 'dns', label: 'DNS lookup', color: 'var(--net-dns)' },
   { key: 'connect', label: 'Initial connection', color: 'var(--net-connect)' },
   { key: 'ssl', label: 'SSL', color: 'var(--net-ssl)' },
   { key: 'send', label: 'Request sent', color: 'var(--net-send)' },
   { key: 'wait', label: 'Waiting (TTFB)', color: 'var(--net-wait)' },
-  { key: 'receive', label: 'Content download', color: 'var(--net-receive)' },
+  { key: 'receive', label: 'Content download', color: 'var(--net-receive)', border: 'var(--net-receive-border)' },
 ]
+/** A phase's fill, with DevTools' border where it has one. */
+export const phaseStyle = p => ({ background: p.color, boxShadow: p.border ? `inset 0 0 0 1px ${p.border}` : undefined })
 
 const STATUS_TEXT = { 200: 'OK', 204: 'No Content', 304: 'Not Modified', 404: 'Not Found', 500: 'Internal Server Error' }
 

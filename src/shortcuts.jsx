@@ -31,6 +31,7 @@ export const SHORTCUTS = [
   [['Enter'], "Show or hide the focused command's details"],
   [['Shift', 'F10'], 'Menu of the focused command or tab'],
   [['S'], 'Copy the link to this test'],
+  [['R'], "Reset the Network tab's timeline strip"],
   [[isMac ? '⌘' : 'Ctrl', 'scroll'], 'Seek the video, over the video or the timeline'],
   [[isMac ? '⌘' : 'Ctrl', 'Enter'], 'Save the comment you are writing'],
   [['?'], 'Show these shortcuts'],
