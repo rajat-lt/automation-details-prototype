@@ -142,14 +142,22 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 |---|---|---|
 | v7 1, 2, 8 | Two toolbar rows | Row 1: the type segments, then ⚙ and the HAR split button. Row 2: the search joined to its field (*All ▾*), then the counts |
 | v7 3 to 5 | The settings menu | ⚙: *Show waterfall overview* and *Show CONNECT* (a tick while on), *Set slow response limit* with its value (*500ms*), which opens the dialog |
-| v7 6 | The hourglass | On *homes* (00:42) and *rum* (01:36), on the slow count and in the settings menu |
-| v7 7 | Shorter HAR items | The caret beside Download HAR: *Open in external viewer*, *Download filtered HAR* |
+| v7 6 | The hourglass | On *homes* (00:42) and *rum* (01:36), on the slow count and in the settings menu (amber since v8) |
+| v7 7 | Shorter HAR items | The caret beside Download HAR: *Open in external viewer* (*View in HAR viewer* since v8), *Download filtered HAR* |
 | v7 9, 10 | Errors and slow responses filter | Click ⊗ 2: only the errors show and the count looks pressed; click it again for every request. The same control as All Commands' passed and failed counts |
 | v7 11, 12 | The timing popover | Scroll the table right and hover a Waterfall bar: the popover opens just above it, its caret on the bar, Copy timings beside × |
 | v7 13 | Fewer menu copies | Right-click a row: Copy link, then cURL, fetch and HAR |
 | v7 14 | Header tables copy as tables | Open a request, then Copy response headers (or request headers): paste into a doc or a sheet |
 | v7 menus | No grey at rest | Open any menu with the mouse: no item is grey until the pointer is on it. design-context [#19](https://github.com/rajat-lt/design-context/pull/19) records the rule |
-| v7 narrow | The toolbar at 1280 × 800 | ⚙ and the HAR split button fold into one ⋯; a time window's token sits beside the search and shortens before anything wraps |
+| v7 narrow | The toolbar at 1280 × 800 | ⚙ and the HAR split button fold into one ⋯; a time window's token sat beside the search (gone since v8) |
+
+**v8, 29 Oct 2026** ([`#/t-01/network`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/network))
+
+| # | Change | Try it |
+|---|---|---|
+| v8 1 | The hourglass is amber | On *homes* and *rum*, on the slow count, and in ⚙ › *Set slow response limit* |
+| v8 2 | No time window token | Click a ▼ above the overview: the list, the footer (*10 of 61 requests*) and the Waterfall header follow, with no token. R shows the whole session again |
+| v8 3 | *View in HAR viewer* | The caret beside Download HAR |
 
 ## Review states
 

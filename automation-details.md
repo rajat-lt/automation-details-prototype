@@ -1,4 +1,4 @@
-# Automation test details: 18 UX changes, then 16, then 11, then 12, then the Network tab in three rounds
+# Automation test details: 18 UX changes, then 16, then 11, then 12, then the Network tab in four rounds
 
 The automation test details page with Rajat's 18 changes of 16 Oct 2026 applied. Written in the `design-context/patterns/` house format, as an amendment proposal for `patterns/automation-details.md`. The working prototype in this repo implements it.
 
@@ -21,6 +21,8 @@ Every component and prop below was read from `COMPONENTS.md`. Proposals carry **
 **v6, 28 Oct 2026.** Rajat's sixth brief: 28 more changes to the Network tab, written *v6 item 1* to *v6 item 28*, with the standing reminder against hallucination. Covered by §3e, §4g, conflicts C50 to C56, §7g and the v6 rows of every other section; v5 text that v6 replaces keeps an italic note. Sources read from `design-context` `main` (still `618b4b8`) on 28 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md` (§1 rules, §2 casing, §3 tooltips, toasts and empty states), `guidelines/README.md` (§5 component choice, §10 drag and its keyboard twin), `ltbuttongroup.md` (the split button), `ltactionmenu.md` (no inputs in a menu; an inactive item says when it becomes available), `ltpopover.md`, `lticonbutton.md` (`unsafeDisableTooltip`), `ltswitch.md`, `COMPONENTS.md` (`LTToken`) and `icons.md`. Outside sources, each read on 28 Oct 2026: LambdaTest's [debugging options](https://www.testmuai.com/support/docs/debugging-options/#how-to-use-the-har-log-viewer) page (*Enable HAR logging by passing network.full.har = true in your test capabilities*); Firefox's DevTools source in mozilla-central (the `devtools.netmonitor.audits.slow` preference, 500, and the turtle at the right edge of the File column); compare.sitespeed.io's own script, `start.js` (a `har1` link plus `compare` opens that one HAR); and the WHATWG [Fetch Standard](https://fetch.spec.whatwg.org/#forbidden-request-header) (the forbidden request headers, and CONNECT as a forbidden method).
 
 **v7, 28 Oct 2026.** Rajat's seventh brief: 14 changes to the Network tab, written *v7 item 1* to *v7 item 14*, with four screenshots: *screenshot S1*, the status filter menu with its first item grey at rest; *S2* and *S3*, the new toolbar with the error count at rest and pressed; *S4*, the settings menu. The brief points at S2 to S4 for the toolbar, the count's two states and the menu, so they count as brief there; their copy and icons still follow the guidelines (C62, C63). One change went to design-context itself, and only that one: a menu item is grey on hover only, never at rest (rajat-lt/design-context PR #19, merged as `6cfb737`). Covered by §3f, §4h, conflicts C57 to C63, §7h and the v7 rows of every other section; v6 text that v7 replaces keeps an italic note. Sources read from `design-context` `main` (`618b4b8`, then `6cfb737`) on 28 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md` (§2 sentence-case menu items, §3 tooltips, §4 colours), `guidelines/ltactionmenu.md` (single selection only, every item an icon or none, the trailing slot, an inactive item's reason in its text), `ltpopover.md`, `ltbutton.md`, `ltbuttongroup.md`, `ltinputbox.md`, `COMPONENTS.md` (`LTActionMenu`, `LTPopover`, `LTButton`), `patterns/automation-listing.md` (the scope selector joined to the search), `icons.md` and `data/tokens.json` (`btn.outline`, `btn.invisible`, `actionListItem`). The screenshots were measured (Pillow, about 2.6×): rows of 32px; the pressed count 32px tall with 8px side padding, a `#F6F8FA` fill and a `#D0D7DE` border, which are the outline variant's own; the hourglass in the toolbar's icon grey.
+
+**v8, 29 Oct 2026.** Rajat's eighth brief: 3 changes to the Network tab, written *v8 item 1* to *v8 item 3*, with the standing reminder against hallucination: the hourglass amber everywhere, no time window token, and *View in HAR viewer* (one of the finalists offered for v7 item 7). Covered by §4i, §7i and the v8 rows of the other sections; v7 text that v8 replaces keeps an italic note. The amber is `attention.fg` (`#9a6700`), v6's turtle colour, read from `data/tokens.json` through `src/tokens.css`.
 
 ---
 
@@ -521,7 +523,7 @@ Column widths, all remembered once changed: Name 240px, and it takes whatever is
 </LTPopover>
 ```
 
-The joined field and search take what the row leaves; the counts keep the row's end. A time window's token sits between them: in full while the search keeps at least 112px (572px logs and wider for a window with tenths), without its *Time:* below that (still read out), and shortened with an ellipsis at the narrowest logs, with the full text on hover.
+The joined field and search take what the row leaves; the counts keep the row's end. A time window's token sits between them: in full while the search keeps at least 112px (572px logs and wider for a window with tenths), without its *Time:* below that (still read out), and shortened with an ellipsis at the narrowest logs, with the full text on hover. *v8 item 2: the token is gone; the search keeps at least 140px again.*
 
 ## 4. Behaviour, item by item
 
@@ -706,8 +708,8 @@ The joined field and search take what the row leaves; the counts keep the row's 
 3. **Settings: a gear, the invisible variant**, named *View settings*, left of the HAR group. It opens S4's menu.
 4. **The settings menu ticks what is on**: *Show waterfall overview* and *Show CONNECT* show or hide the overview and the CONNECT tunnels, with a tick while each is on. A choice closes the menu (`closeMenuOnClick`, true by default) and is announced (*Waterfall overview hidden*, *CONNECT requests shown*). The overview's choice is remembered for every test, as before; Show CONNECT resets with each test, as before (question 65). The items take sentence case (C63).
 5. **Set slow response limit opens the same dialog** as in v6. The item shows the limit in its trailing slot, *500ms*, as S4 does (C58), and screen readers hear it with the label.
-6. **The hourglass marks slow responses** everywhere the turtle did: the row's flag, the slow count, the settings item, and the dialog's help (*… get the hourglass.*). lucide `Hourglass`, present in 1.58.0. It wears the toolbar's icon grey, as S2 draws it, in the rows too (§7h).
-7. **The HAR menu's items are short, without descriptions**: *Open in external viewer* and *Download filtered HAR*. With no filter on, *Download filtered HAR* stays inactive, and its reason (*Available while a filter is on*) is read to screen readers only (C59).
+6. **The hourglass marks slow responses** everywhere the turtle did: the row's flag, the slow count, the settings item, and the dialog's help (*… get the hourglass.*). lucide `Hourglass`, present in 1.58.0. It wears the toolbar's icon grey, as S2 draws it, in the rows too (§7h). *v8 item 1: amber everywhere.*
+7. **The HAR menu's items are short, without descriptions**: *Open in external viewer* and *Download filtered HAR*. With no filter on, *Download filtered HAR* stays inactive, and its reason (*Available while a filter is on*) is read to screen readers only (C59). *v8 item 3: View in HAR viewer.*
 8. **The search keeps its field** and works as in v5 and v6; the two now read as one control, the scope selector joined to its search that `patterns/automation-listing.md` draws.
 9. **Errors and slow responses are counts that filter**, where the search ends: the failed glyph with the number of errors (status 400 and up), and the hourglass with the number of slow responses. It is All Commands' control, one component for both tabs (`CountFilter` in `lt.jsx`): pressing one shows only those requests; pressing it again shows every request; one at a time, as in All Commands. The counts follow the type and the time window, as All Commands' follow its test filter and range, and leave the search out, as those do [proposed]. A count of 0 is inactive unless its filter is on. Tooltips: *Show only errors: status 400 and above*, *Show only slow responses: waiting (TTFB) over 500ms*, *Show all requests*, *0 errors*. The v6 filter menu and its token are gone.
 10. **Rest and pressed, as S2 and S3 show.** At rest, the invisible variant; pressed, the outline variant, whose own colours (`btn.outline.bg` `#F6F8FA`, `btn.outline.border` `#D0D7DE`) are the ones S3 shows. 32px tall beside the search, with 8px of side padding. All Commands' counts take the same pressed look, since they are the same control (they had a white fill and the selected segment's darker border) [proposed].
@@ -721,6 +723,12 @@ The joined field and search take what the row leaves; the counts keep the row's 
 - **The page itself scrolled**, by about 500px of blank space, once a wheel scroll in a panel such as a request's details ran past its end: visually hidden text inside scrolled panels sat below the page. The page's frame now holds it (`.app` is positioned). Checked on the live v6 site first (the page scrolled 679px), then fixed here.
 
 **design-context, the one change there:** `guidelines/ltactionmenu.md` gained one rule under Do. An item's hover background (the grey `actionListItem.default.hoverBg`, or `actionListItem.danger.hoverBg`) shows only while the pointer is over it; at rest, including the moment the menu opens, the first item, which takes focus, and the selected item, which shows only its tick, look like the rest; keyboard focus shows the focus ring (`focus.outlineColor`). design-context holds no component code, so the rule lives in the component's guideline (rajat-lt/design-context PR #19, `6cfb737`). In the prototype every menu follows it: the look-alike had painted the focused item grey.
+
+## 4i. Behaviour, v8 (29 Oct 2026)
+
+1. **The hourglass is amber everywhere**: the row's flag, the slow count in the toolbar, and *Set slow response limit* in the settings menu (and in ⋯ when the toolbar folds). The colour is `attention.fg` (`#9a6700`, 4.87:1 on white), v6's turtle colour. The image mark beside it stays grey.
+2. **The time window has no token.** A window still filters the list as before (v6 item 6). What shows it now: the overview's dimmed edges and handles, the Waterfall header's range (*01:34.1 to 01:37.7*), and the footer's count (*10 of 61 requests*); screen readers still hear it once it settles. It clears with **R**, by zooming back out to the whole session, or with **Clear Filters** when nothing matches. The search keeps at least 140px again. The token's words (*Time: … to …*, *Clear time range (R)*) left the page, and `LTToken` is no longer used on it (question 71).
+3. **The HAR menu says *View in HAR viewer*** (was *Open in external viewer*), in the caret's menu and in ⋯ when the toolbar folds. It still opens compare.sitespeed.io in a new tab.
 
 ## 5. States
 
@@ -822,8 +830,8 @@ The review states are linked from the README.
 |---|---|---|
 | Toolbar | From about 552px | Two rows: the segments, ⚙ and the HAR split button; the search with its field, then the two counts |
 | Toolbar | Below about 552px (1280 × 800) | ⚙ and the HAR group fold into one ⋯ *More actions*: the three HAR actions, then the two toggles, then the slow limit |
-| Toolbar | A window, room enough | *Time: 01:34.1 to 01:37.7 ×* between the search (at least 112px) and the counts |
-| Toolbar | A window, less room | *01:34.1 to 01:37.7 ×*, *Time:* read out; at the narrowest logs, cut with an ellipsis and whole on hover |
+| Toolbar | A window, room enough | *Time: 01:34.1 to 01:37.7 ×* between the search (at least 112px) and the counts *v8: no token.* |
+| Toolbar | A window, less room | *01:34.1 to 01:37.7 ×*, *Time:* read out; at the narrowest logs, cut with an ellipsis and whole on hover *v8: no token.* |
 | Counts | At rest | Invisible variant: glyph and count only |
 | Counts | Pressed | Outline variant (grey fill, border); the list holds only errors or slow responses; *Show all requests* on hover |
 | Counts | 0 in view, not pressed | Inactive, with *0 errors* or *0 slow responses* |
@@ -834,6 +842,13 @@ The review states are linked from the README.
 | Popover | The viewport ends above | Below the bar; kept 8px inside the viewport either way |
 | HAR menu | No filter on | *Download filtered HAR* inactive; *Available while a filter is on* for screen readers (C59) |
 | Request menus | CONNECT | *Copy as cURL* and *Copy as fetch* inactive, with *Available for GET and POST requests* |
+
+**Added in v8:**
+
+| Surface | State | What shows |
+|---|---|---|
+| Toolbar | A window | No token. The overview, the Waterfall header and the footer show the window; R, zooming out, or Clear Filters (nothing matches) clears it |
+| Slow responses | Wherever the hourglass shows | Amber (`attention.fg`): the row, the count, the settings item |
 
 **Delete confirmation** follows `patterns/modal.md` §5, because deleting a test is permanent: title *Delete test "{name}"?*; for a failed run only, a warning `LTFlash` naming what is specific to it (*This is a failed run. Its video and logs are the record of the failure.*); the consequence, with the reassurance last (*Deleting removes this test's video, logs, and 93 commands from the build. Test case #TC-88904 stays in Test Manager.*); *This action is permanent. Type DELETE to confirm.*; and **Keep Test** beside **Delete Test**, which stays inactive until the word matches. Focus starts on Keep Test, and the backdrop stops closing the dialog once something is typed (modal.md delta 3). After deleting, a toast confirms (*Test "{name}" deleted.*) and the next test opens.
 
@@ -893,7 +908,7 @@ The review states are linked from the README.
 | C50 | The HAR button group (v6 item 22) | Brief: an icon button group, the first icon button downloading the whole HAR, a chevron icon button opening the menu | `ltbuttongroup.md`: the split button is a text button plus an icon-only caret; the caret has `unsafeDisableTooltip` | Both halves icon-only (`Download`, `ChevronDown`), outline and medium; the caret without its own tooltip, named *More HAR actions* | Brief wins on the icons; the guideline's caret is kept as written |
 | C51 | Data on hover again (v6 items 8, 11, 27) | Brief: the timing popover, and an image preview on hover | `ltpopover.md`: for light instructions, with a visible dismiss | The timing popover as in C42; the image preview as a hover popover without a close button, as v2's failure previews (C20) | Brief wins, as in C20 and C42 |
 | C52 | *Filtered logs* (v6 item 22) | Brief: *download HAR for filtered logs* | `ux-text-guidelines.md` §6: one term per concept; this tab calls them requests (*61 requests*, *0 matching requests*) | *Download HAR for filtered requests* | Guideline wins on the term; the meaning is the brief's |
-| C53 | The time token's words (v6 item 6) | Brief: *Time: 00:40 to 00:50 ×* | `mock-data.md` ranges use a spaced hyphen; the strip's v5 tag said *00:40 - 01:40* | *Time: 00:40 to 00:50*, with tenths and hundredths when the window is short | Brief wins; it gives the string |
+| C53 | The time token's words (v6 item 6) | Brief: *Time: 00:40 to 00:50 ×* | `mock-data.md` ranges use a spaced hyphen; the strip's v5 tag said *00:40 - 01:40* | *Time: 00:40 to 00:50*, with tenths and hundredths when the window is short | Brief wins; it gives the string *Moot since v8 item 2: the token is gone.* |
 | C54 | Pinch and Ctrl + wheel (v6 item 5) | Brief: a pinch zooms around the pointer | v2 item 14: Ctrl (Windows) or ⌘ (Mac) plus the wheel seeks the video, over the video and All Commands' timeline; Ctrl + wheel elsewhere zooms the page, which low-vision users rely on | Over the overview and the Waterfall column only, Ctrl + wheel (a pinch, in Chromium browsers) zooms the window and the page does not zoom. ⌘ + wheel, the Mac's seek, keeps its two places | Brief wins over those two areas. On Windows, Ctrl + wheel seeks over the video but zooms over the overview (question 61) |
 | C55 | Duration's unit (v6 item 18) | Brief: the duration in ms after each bar | C28 and `fmtMs`: past a second the page writes seconds (*1.2s*) | Milliseconds with two decimals at any length: *1251.88ms* | Brief wins; the popover and Timing tab use the same form |
 | C56 | The slow limit in a menu (v6 item 9) | Brief: the threshold editable in the overflow | `ltactionmenu.md`: no inputs in a menu; an LTModal instead | The overflow menu's *Set slow response limit* opens a 480px dialog with the field | Both: the setting lives in the overflow, its field in a dialog. *v7: the settings menu (item 5)* |
@@ -1055,15 +1070,20 @@ Every control, ranked by how often a debugging session needs it, decides where i
 
 - **One counting control for both tabs.** The Network counts are All Commands' passed and failed counts, now one composed component (`CountFilter`): invisible at rest, the outline variant pressed. S3's pressed colours are the outline variant's own tokens, so no colour is invented; All Commands' counts change with it (question 66).
 - **The counts follow the type and the time window, not the search**, as All Commands' follow its test filter and range; a count says how many requests pressing it would leave, before any search (question 70).
-- **The time token lives on the second row**, between the search and the counts, rather than on a row of its own: a row that appears would push the overview down under a drag. It drops *Time:* when the search would fall under 112px, and shortens with an ellipsis at the narrowest logs, whole on hover.
+- **The time token lives on the second row**, between the search and the counts, rather than on a row of its own: a row that appears would push the overview down under a drag. It drops *Time:* when the search would fall under 112px, and shortens with an ellipsis at the narrowest logs, whole on hover. *v8 item 2: the token is gone.*
 - **Narrow, one ⋯ holds ⚙ and HAR** (C60): a gear holding downloads would mislabel them, and ⋯ is the page's overflow everywhere else (question 69).
-- **The hourglass is grey everywhere**, as S2 draws it in the count: one sign, one colour. `ux-text-guidelines.md` §4 keeps yellow for a decision the user must take, and a slow response is a fact to look into (was amber in v6; question 67).
+- **The hourglass is grey everywhere**, as S2 draws it in the count: one sign, one colour. `ux-text-guidelines.md` §4 keeps yellow for a decision the user must take, and a slow response is a fact to look into (was amber in v6; question 67). *v8 item 1: amber everywhere, Rajat's choice (question 67).*
 - **View settings** names the gear: it holds how this tab shows its requests, not the run's capture settings.
 - **A choice in the settings menu closes it**, LTActionMenu's default; the change shows behind it and is announced.
 - **The popover's caret aims at the part of the bar in view**, and the popover keeps 10px above the bar so its 7px caret point stays clear of it.
 - **Copy timings joins the popover's head** through a stand-in slot (`headerActions`, §9), left of ×, the order of the details panel's head.
 - **Events from a popover stay in the popover.** The row, All Commands' timeline and the video's seek bar ignore events that reach them from a portal, so copying from a popover never opens a row or moves the video.
 - **The page never scrolls behind its panels**: the app's frame is positioned, so the visually hidden text inside a scrolled panel stays in its frame.
+
+### 7i. v8 decisions [proposed]
+
+- **One class colours every hourglass** (`net-hourglass`), so the row's flag, the count and the menu item cannot drift apart. The menu's icon column takes it through a wrapped icon, with no change to the look-alike menu.
+- **The search's 140px minimum returns** with the token gone, as v6 item 26 set it.
 
 ## 8. Copy
 
@@ -1198,13 +1218,20 @@ All strings follow `ux-text-guidelines.md`. Rule numbers are that guide's.
 |---|---|---|
 | Settings | View settings · Show waterfall overview · Show CONNECT · Set slow response limit · 500ms · *Waterfall overview shown*, *Waterfall overview hidden*, *CONNECT requests shown*, *CONNECT requests hidden* (announced) | §2: sentence-case menu items (C63); §3 Tooltips name the action |
 | Narrow toolbar | More actions · More network actions (the menu) · Download HAR | §2 |
-| HAR menu | Open in external viewer · Download filtered HAR · *Available while a filter is on* (screen readers) | `ltactionmenu.md` (C59); finalists in the report |
+| HAR menu | Open in external viewer · Download filtered HAR · *Available while a filter is on* (screen readers) | `ltactionmenu.md` (C59); finalists in the report *v8: View in HAR viewer.* |
 | Counts | *2 errors*, *2 slow responses* (names) · Show only errors: status 400 and above · Show only slow responses: waiting (TTFB) over 500ms · Show all requests · 0 errors · 0 slow responses · *Showing errors only*, *Showing slow responses only*, *Showing all requests* (announced) | §3 Tooltips: one clause, no full stop; All Commands' wording |
-| Time token | Time: 01:34.1 to 01:37.7 · 01:34.1 to 01:37.7 (narrow, *Time:* read out) · Clear time range (R) | C53 |
+| Time token | Time: 01:34.1 to 01:37.7 · 01:34.1 to 01:37.7 (narrow, *Time:* read out) · Clear time range (R) | C53 *v8: gone.* |
 | Popover | Copy timings · *Timings copied* | §3 Silent success still speaks |
 | Request menus | Copy link · Copy as cURL · Copy as fetch · Copy as HAR | `ltactionmenu.md` |
 | Details | Copy response headers · Copy request headers · *Response headers copied*, *Request headers copied* (the tables) | §3 |
 | Slow limit | Requests that wait longer than this for the first byte of their response get the hourglass. The default is 500ms. | §1 |
+
+**Added in v8:**
+
+| Where | String | Rule |
+|---|---|---|
+| HAR menu | View in HAR viewer | Rajat's pick of the v7 finalists |
+| Time token | Gone: *Time: 01:34.1 to 01:37.7*, *Clear time range (R)* | v8 item 2 |
 
 ## 9. Gaps found in design-context
 
@@ -1276,6 +1303,10 @@ Recorded, not changed. Each is a candidate for a design-context pull request onc
 - **No pattern for a filter row that runs short.** The time token's three widths (§3f) are this page's own [proposed].
 - **`icons.md`**: its *Settings* row is TO FILL; the gear is lucide `Settings`, as the platform sidebar uses. v7 adds `Hourglass` and drops `Turtle`: still 81 lucide names, all present in 1.58.0.
 - **`LTSwitch` is no longer used on the page**: Show CONNECT and the overview's switch became menu items. The look-alike stays in `lt.jsx`.
+
+**Found in v8:**
+
+- **`LTToken` is no longer used on the page**: its last use, the time window's token, is gone. The look-alike stays in `lt.jsx`, as `LTSwitch` does.
 
 ## 10. Open questions
 
@@ -1366,10 +1397,14 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 
 65. **Show CONNECT in the settings menu** resets with each test, as the v5 switch did, while the overview's choice is remembered. Remember Show CONNECT too, now that it sits among settings?
 66. **The pressed count**: S3's look (the outline variant) now shows in All Commands too, since it is the same control. Keep it in both tabs?
-67. **The hourglass's colour**: grey everywhere, as S2 draws it (as built), or amber in the rows so slow requests stand out more?
+67. **The hourglass's colour**: grey everywhere, as S2 draws it (as built), or amber in the rows so slow requests stand out more? **Answered 29 Oct 2026 (v8 item 1):** amber everywhere.
 68. **The popover above the bar** covers the bars of the rows just above while it is open: moving down the column swaps it from bar to bar, moving up means going round it or closing it. Acceptable?
 69. **The narrow toolbar** (1280 × 800 by default): ⚙ and the HAR group fold into one ⋯ (as built). Or should the gear stay and only HAR fold?
 70. **What the counts count**: the type and the time window, not the search, as All Commands' counts (as built). Or every filter, the search included?
+
+**New in v8:**
+
+71. **A visible way back to the whole session**: the token's × was the visible twin of **R** (`ux-persona.md`: every power-user shortcut has a visible twin). A window now clears with R, by zooming out, or with Clear Filters when nothing matches. Add a visible control, for example a reset button at the overview's end like the v5 strip's, or leave it?
 
 ## 11. When this ships into design-context/
 
@@ -1410,3 +1445,5 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 - [ ] v7: `guidelines/`: counts that filter as one control across tabs (rest invisible, pressed outline); toggle items and a value in a menu (C57, C58); a filter row's token that shortens before the row wraps.
 - [ ] v7 FE asks: toggle items (`menuitemcheckbox`) and values in `LTActionMenu`; a slot beside `LTPopover`'s close button; a pressed state on `LTButton`.
 - [ ] v7: `icons.md`, fill *Settings* (`Settings`) and swap Turtle for Hourglass (README).
+- [ ] v8: amend `patterns/automation-details.md` with §4i.
+- [ ] v8: `guidelines/`: the slow-response mark's colour (`attention.fg`) wherever it shows.

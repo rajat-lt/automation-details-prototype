@@ -1156,16 +1156,18 @@ kbd {
 .net-toolbar__types { column-gap: var(--space-1); }
 .net-toolbar__end { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
 /* The search joined to its field (patterns/automation-listing.md), then the
-   time token, then the counts at the row's end. */
-.net-find { flex: 1 1 0; min-width: 196px; display: flex; }
+   counts at the row's end (v8 item 2: no time token between them). The
+   search keeps at least 140px. */
+.net-find { flex: 1 1 0; min-width: 240px; display: flex; }
 /* As wide as its longest option (Method, Domain), so choosing one never moves the row. */
 .net-field { flex: none; min-width: 100px; justify-content: space-between; border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.net-search { flex: 1 1 auto; min-width: 96px; margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.net-search { flex: 1 1 auto; min-width: 140px; margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .net-search:focus-within { z-index: 1; }
-.net-timetoken { flex: none; }
-.net-timetoken.is-short { flex: 0 1 auto; min-width: 0; }
 .net-counts { flex: none; display: flex; align-items: center; gap: var(--space-3); }
-.net-counts__slow { flex: none; color: var(--fg-muted); }
+/* v8 item 1: the hourglass is amber wherever it shows: the row's flag, the
+   slow count, the settings menu's item (the attention colour, as v6's
+   turtle; was the icons' grey in v7). */
+.net-hourglass, .lt-menu__icon.net-hourglass { flex: none; color: var(--attention-fg); }
 
 .net-body { flex: 1; min-height: 0; display: flex; }
 /* Both ways: the header sticks to the top, Name to the left (spec §3d). */
@@ -1207,7 +1209,7 @@ kbd {
 .net-status.is-error { color: var(--danger-fg); font-weight: var(--weight-semibold); }
 /* v6 items 9 and 20: an image's mark and a slow response's flag sit at the
    name's right edge, where Firefox puts its turtle. v7 item 6: the flag is
-   the hourglass, in the toolbar count's grey (was the turtle, in amber). */
+   the hourglass; v8 item 1: amber again (.net-hourglass), the image mark grey. */
 .net-flag { flex: none; display: inline-flex; color: var(--fg-muted); }
 /* The row menu's mouse twin (item 14), shown on hover and with the menu open. */
 .net-rowmenu {

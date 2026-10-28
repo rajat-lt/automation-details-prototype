@@ -25,13 +25,17 @@
 // (items 1 to 10). The hourglass marks slow responses (item 6). The timing
 // popover opens above its bar (items 11, 12), and the menus keep the link,
 // cURL, fetch and HAR (item 13).
+//
+// v8 (29 Oct 2026): Rajat's 3 items, spec §4i. The hourglass is amber
+// wherever it shows (item 1), the time window has no token any more (item 2),
+// and the HAR menu says View in HAR viewer (item 3).
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft, ArrowRight, ChevronDown, Copy, Download, Ellipsis, ExternalLink, Hourglass, Image, RotateCcw, Settings,
 } from 'lucide-react'
 import {
   CopyIconButton, CountFilter, LTBlankSlate, LTButton, LTButtonGroup, LTFlash, LTIconButton, LTInputBox, LTLink, LTSkeletonBox,
-  LTTable, LTToken, LTTooltip, StatusGlyph, TruncText, announce, cx, visibleRect,
+  LTTable, LTTooltip, StatusGlyph, TruncText, announce, cx, visibleRect,
 } from './lt.jsx'
 import { LTActionMenu, LTModal, LTPopover, LTSegmentedControl, closePopover } from './overlays.jsx'
 import { Splitter, usePref, useSize } from './layout.jsx'
@@ -132,11 +136,15 @@ const STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 30
 const gridStep = span => STEPS.find(s => span / s <= 6) ?? 1200
 
 let measureCtx = null
-function textWidth(text, px = 11) {
+function textWidth(text) {
   measureCtx ??= document.createElement('canvas').getContext('2d')
-  measureCtx.font = `${px}px ${getComputedStyle(document.body).fontFamily}`
+  measureCtx.font = `11px ${getComputedStyle(document.body).fontFamily}`
   return measureCtx.measureText(text).width
 }
+
+// v8 item 1: the hourglass is amber wherever it shows, a menu's icon column
+// included (net-hourglass, styles.css).
+const AmberHourglass = ({ className, ...props }) => <Hourglass {...props} className={cx(className, 'net-hourglass')} />
 const dominant = q => PHASES.reduce((best, p) => (q.timings[p.key] > q.timings[best.key] ? p : best), PHASES[0])
 
 /* A request's bar in the window, in px of the lane. Item 7: a bar is painted
@@ -360,14 +368,12 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
   const searchRef = useRef(null)
   const toolbarRef = useRef(null)
   const typesRef = useRef(null)
-  const countsRef = useRef(null)
   const focusPending = useRef(null)
   const dragCol = useRef(null)
   const suppressSort = useRef(false)
   const body = useSize(bodyRef)
   const toolbar = useSize(toolbarRef)
   const types = useSize(typesRef)
-  const counts = useSize(countsRef)
   const cols = useMemo(() => cleanCols(colPref), [colPref])
   const setCols = f => setColPref(p => f(cleanCols(p)))
 
@@ -604,10 +610,11 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
     const har = new URL(`har/${test.id}.har`, window.location.href).href
     window.open(`https://compare.sitespeed.io/?har1=${encodeURIComponent(har)}&compare=1`, '_blank', 'noopener,noreferrer')
   }
-  // v7 item 7: short labels, no descriptions. With no filter on, the filtered
-  // download stays inactive; its reason is for screen readers only now (C59).
+  // v7 item 7: short labels, no descriptions (v8 item 3: View in HAR viewer).
+  // With no filter on, the filtered download stays inactive; its reason is
+  // for screen readers only now (C59).
   const harOptions = [
-    { value: 'view', label: 'Open in external viewer', icon: ExternalLink },
+    { value: 'view', label: 'View in HAR viewer', icon: ExternalLink },
     { value: 'filtered', label: 'Download filtered HAR', icon: Download, inactive: !filtering,
       hint: filtering ? undefined : 'Available while a filter is on' },
   ]
@@ -619,7 +626,7 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
     { value: 'overview', label: 'Show waterfall overview', checked: overviewOn },
     { value: 'connect', label: 'Show CONNECT', checked: showConnect },
     { divider: true },
-    { value: 'slow', label: 'Set slow response limit', icon: Hourglass, trailing: `${slowMs}ms` },
+    { value: 'slow', label: 'Set slow response limit', icon: AmberHourglass, trailing: `${slowMs}ms` },
   ]
   const onSetting = o => {
     if (o.value === 'overview') { setOverviewOn(!overviewOn); announce(overviewOn ? 'Waterfall overview hidden' : 'Waterfall overview shown') }
@@ -798,11 +805,11 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
             )}
           </button>
           {/* Item 20: images show which they are; item 9: slow ones too, with
-              the hourglass since v7 item 6. */}
+              the hourglass since v7 item 6, amber since v8 item 1. */}
           {q.preview && <Image size={14} aria-hidden="true" className="net-flag" />}
           {slow && (
             <LTTooltip text={`Slow response: waited ${fmtMsExact(q.timings.wait)} for the first byte, over the ${slowMs}ms limit`} direction="top">
-              <span className="net-flag"><Hourglass size={14} aria-hidden="true" /></span>
+              <span className="net-flag"><AmberHourglass size={14} aria-hidden="true" /></span>
             </LTTooltip>
           )}
           {/* The menu's mouse twin; the keyboard uses Shift + F10. */}
@@ -877,11 +884,6 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
   const toolsW = toolbar.width - 32
   const fold = !!toolbar.width && types.width + 4 + 32 + 8 + 63 > toolsW
   const moreOptions = [{ value: 'har', label: 'Download HAR', icon: Download }, ...harOptions, { divider: true }, ...settingsOptions]
-  // The time token sits between the search and the counts. Where it would
-  // leave the search under 112px, it drops its "Time:" (still read out);
-  // where even that leaves under 96px, it shortens with an ellipsis.
-  const timeText = fmtWindow(a, b)
-  const shortTime = narrowed && toolsW - 212 - counts.width - 16 < textWidth(`Time: ${timeText}`, 12) + 34
 
   return (
     <div className="net">
@@ -927,20 +929,17 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
               forwardRef={searchRef} className="net-search"
               onKeyDown={e => { if (e.key === 'Escape' && query) { e.preventDefault(); e.stopPropagation(); setQuery('') } }} />
           </span>
-          {/* v6 item 6: the window as a token, beside the search since v7. */}
-          {narrowed && (
-            <LTToken size="small" className={cx('net-timetoken', shortTime && 'is-short')} onRemove={resetWin}
-              removeLabel="Clear time range" removeTooltip="Clear time range (R)" fullText={`Time: ${timeText}`}
-              text={<><span className={shortTime ? 'vh' : undefined}>Time: </span>{timeText}</>} />
-          )}
+          {/* v8 item 2: the time window has no token here any more (v6 item
+              6, then v7). The overview's dimmed edges, the Waterfall
+              header's range and the footer's "of" show it; R clears it. */}
           {/* v7 items 9 and 10: errors and slow responses, counts that filter. */}
-          <span ref={countsRef} className="net-counts">
+          <span className="net-counts">
             <CountFilter size="medium" glyph={<StatusGlyph status="failed" />} count={errorCount}
               label={`${errorCount} error${errorCount === 1 ? '' : 's'}`} on={status === 'errors'}
               tooltip={status === 'errors' ? 'Show all requests' : errorCount === 0 ? '0 errors'
                 : 'Show only errors: status 400 and above'}
               onToggle={() => toggleStatus('errors')} />
-            <CountFilter size="medium" glyph={<Hourglass size={16} aria-hidden="true" className="net-counts__slow" />}
+            <CountFilter size="medium" glyph={<AmberHourglass size={16} aria-hidden="true" />}
               count={slowCount} label={`${slowCount} slow response${slowCount === 1 ? '' : 's'}`} on={status === 'slow'}
               tooltip={status === 'slow' ? 'Show all requests' : slowCount === 0 ? '0 slow responses'
                 : `Show only slow responses: waiting (TTFB) over ${slowMs}ms`}
