@@ -265,7 +265,8 @@ export function LTTag({ text, variant = 'secondary', labelStyle = 'outline', siz
    Its text and remove handler are TBD upstream, so `text`, `onRemove`,
    `removeLabel` and `removeTooltip` stand in (automation-details.md §9).
    A token squeezed by its row shows its full text (`fullText` when `text`
-   is not a plain string) on hover (v2 item 16; v7, the narrow toolbar). */
+   is not a plain string) on hover (v2 item 16; v7, the narrow toolbar).
+   Unused on the page since v8 item 2 removed the time window's token. */
 export function LTToken({ text, fullText, onRemove, removeLabel = 'Remove', removeTooltip, hideRemoveButton = false, isSelected = false,
   size = 'medium', as: Tag = 'span', className }) {
   return (
