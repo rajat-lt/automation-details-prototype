@@ -879,7 +879,7 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
 
   /* v6 item 26, v7: the toolbar keeps its order of importance as the logs
      narrow. The filters stay; when the first row cannot hold the segments,
-     the settings and the HAR group (below about 552px), both fold into one
+     the settings and the HAR group (below 548px), both fold into one
      ⋯ menu, HAR actions first (C60). */
   const toolsW = toolbar.width - 32
   const fold = !!toolbar.width && types.width + 4 + 32 + 8 + 63 > toolsW
