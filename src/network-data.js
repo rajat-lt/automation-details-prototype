@@ -309,7 +309,10 @@ export function networkFor(testId) {
 
 /* A HAR 1.2 file (spec §4e): the whole log, or the requests given (v6: the
    filtered ones, or one request), with the pages they belong to. HAR's
-   connect includes SSL, and a phase that does not apply is -1. */
+   connect includes SSL, and a phase that does not apply is -1. The browser,
+   and each page's URL in `_url` (a custom field; PageXray, behind
+   compare.sitespeed.io, reads it), name the run in an external viewer
+   (v6 item 23), instead of the CONNECT tunnel that opens the log. */
 export function toHar(t, log, requests = log.requests) {
   const iso = sec => new Date(log.startedAt + sec * 1000).toISOString()
   const used = new Set(requests.map(q => q.pageIndex))
@@ -317,7 +320,8 @@ export function toHar(t, log, requests = log.requests) {
     log: {
       version: '1.2',
       creator: { name: 'LambdaTest automation details prototype', version: '6' },
-      pages: log.pages.map((p, i) => ({ startedDateTime: iso(p.at), id: `page_${i + 1}`, title: p.url, pageTimings: {} }))
+      browser: { name: t.browser, version: t.browserVersion },
+      pages: log.pages.map((p, i) => ({ startedDateTime: iso(p.at), id: `page_${i + 1}`, title: p.url, _url: p.url, pageTimings: {} }))
         .filter((_, i) => used.has(i)),
       entries: requests.map(q => ({
         pageref: `page_${q.pageIndex + 1}`,
