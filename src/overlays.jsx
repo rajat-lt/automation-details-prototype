@@ -15,7 +15,13 @@ import { cx, placeFloating, visibleRect, LTTooltip, LTIconButton, LTButton, useP
    Documented props: customAnchor, activeId, selectionVariant, width, open,
    onMenuToggle (story-verified). `options` is TBD upstream (passthrough
    stories), so its item shape here, with onSelect and ariaLabel, stands in
-   for it, and `align` only places the overlay. */
+   for it, and `align` only places the overlay.
+   v7 (the Network tab's settings): an item with `checked` is a toggle
+   (menuitemcheckbox) whose tick shows while it is on, beside the others'
+   icons in the same leading column (C57); `trailing` without keyboard
+   shortcuts is a value, read out with the label ("500ms"); `hint` gives
+   screen readers an inactive item's reason when it shows no description
+   (C59). */
 export function LTActionMenu({ customAnchor, options, onSelect, selectionVariant = '', activeId, width = 240,
   align = 'end', ariaLabel, open: controlledOpen, onMenuToggle }) {
   const [openState, setOpenState] = useState(false)
@@ -84,26 +90,30 @@ export function LTActionMenu({ customAnchor, options, onSelect, selectionVariant
             if (o.divider) return <div key={`d${k}`} role="separator" className="lt-menu__divider" />
             n += 1
             const idx = n
-            const checked = selectionVariant === 'single' ? o.value === activeId : undefined
+            const toggle = o.checked !== undefined
+            const checked = selectionVariant === 'single' ? o.value === activeId : toggle ? !!o.checked : undefined
             const Icon = o.icon
             return (
               <button key={o.value ?? o.label} type="button" tabIndex={-1}
                 ref={el => { itemsRef.current[idx] = el }}
-                role={selectionVariant === 'single' ? 'menuitemradio' : 'menuitem'}
+                role={selectionVariant === 'single' ? 'menuitemradio' : toggle ? 'menuitemcheckbox' : 'menuitem'}
                 aria-checked={checked}
                 aria-keyshortcuts={o.keyshortcuts}
                 aria-disabled={o.inactive || undefined}
                 className={cx('lt-menu__item', o.variant === 'danger' && 'is-danger', o.inactive && 'is-inactive',
                   o.description && 'has-description')}
                 onClick={() => choose(o)}>
-                {selectionVariant === 'single'
+                {selectionVariant === 'single' || toggle
                   ? <span className="lt-menu__check" aria-hidden="true">{checked && <Check size={16} />}</span>
                   : Icon && <Icon size={16} aria-hidden="true" className="lt-menu__icon" />}
                 <span className="lt-menu__text">
                   <span className="lt-menu__label">{o.label}</span>
                   {o.description && <span className="lt-menu__desc">{o.description}</span>}
+                  {o.hint && <span className="vh">{`, ${o.hint}`}</span>}
                 </span>
-                {o.trailing && <span className="lt-menu__trail" aria-hidden="true">{o.trailing}</span>}
+                {o.trailing && (o.keyshortcuts
+                  ? <span className="lt-menu__trail" aria-hidden="true">{o.trailing}</span>
+                  : <span className="lt-menu__trail"><span className="vh">, </span>{o.trailing}</span>)}
               </button>
             )
           })}
@@ -334,14 +344,16 @@ export function ToastProvider({ children }) {
    tab puts its popovers above or below a table row, and keeps them in the
    viewport. It returns { top, left, side, caretX }. Not a library prop
    (automation-details.md §9). Moving from one anchor to another swaps the
-   popovers in one render, so nothing blinks between them. */
+   popovers in one render, so nothing blinks between them.
+   `headerActions` (v7 item 11) puts buttons in the head, left of the close
+   button; the component documents no such slot (§9), so it stands in. */
 let currentPopover = null // the close function of the popover open now
 /** Closes whichever popover is open: the Network tab's, when the rows under it move (v6). */
 export const closePopover = () => currentPopover?.current()
 
 export function LTPopover({ children, heading, text, popOverbodyJSX, direction = 'top', canChangeDirection = false,
   openOnClick = false, forceClose = false, onOpen, contentStyles, containsInteractiveChildElement = false, place, className,
-  openDelay }) {
+  openDelay, headerActions }) {
   const interactive = containsInteractiveChildElement
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState(null)
@@ -445,8 +457,11 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
           className={cx('lt-popover', 'is-interactive', pos && `is-${pos.side}`, instant && 'is-instant', className)} style={style}>
           <div className="lt-popover__head">
             {heading && <p id={headingId} className="lt-popover__heading">{heading}</p>}
-            <LTIconButton icon={X} ariaLabel="Close" variant="invisible" size="xsmall" tooltipDirection="n"
-              className="lt-popover__close" onClick={() => setOpen(false)} />
+            <span className="lt-popover__actions">
+              {headerActions}
+              <LTIconButton icon={X} ariaLabel="Close" variant="invisible" size="xsmall" tooltipDirection="n"
+                className="lt-popover__close" onClick={() => setOpen(false)} />
+            </span>
           </div>
           {text && <p className="lt-popover__text">{text}</p>}
           {popOverbodyJSX}

@@ -278,6 +278,9 @@ function SeekBar({ duration, segments, byId, testId, onStub }) {
       aria-valuemin={0} aria-valuemax={Math.round(duration)} aria-valuenow={Math.round(time)}
       aria-valuetext={`${fmtTime(time)} of ${fmtTime(duration)}`}
       onPointerDown={e => {
+        // A press inside a failure's popover reaches the bar through React's
+        // portal; it must not seek (found 28 Oct 2026).
+        if (!e.currentTarget.contains(e.target)) return
         dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); seekSilently(at(e.clientX))
       }}
       onPointerMove={e => { if (dragging.current) seekSilently(at(e.clientX)) }}

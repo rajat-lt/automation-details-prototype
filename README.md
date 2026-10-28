@@ -134,6 +134,23 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | v6 26 | Hierarchy as the logs narrow | Drag the divider between the logs and the video: below about 549px the HAR actions fold into ⋯ |
 | v6 28 | A link for every request | [`#/t-01/network/n42`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/network/n42) opens the failing beacon, selected, in view, with the video at 01:36 |
 
+*v7 replaces the toolbar rows of v6 items 6, 9, 19, 22, 24 and 26, the popover place of item 8, and item 14's menus; the rows above say what v6 built.*
+
+**v7, 28 Oct 2026: the toolbar from Rajat's screenshots** ([`#/t-01/network`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/network))
+
+| # | Change | Try it |
+|---|---|---|
+| v7 1, 2, 8 | Two toolbar rows | Row 1: the type segments, then ⚙ and the HAR split button. Row 2: the search joined to its field (*All ▾*), then the counts |
+| v7 3 to 5 | The settings menu | ⚙: *Show waterfall overview* and *Show CONNECT* (a tick while on), *Set slow response limit* with its value (*500ms*), which opens the dialog |
+| v7 6 | The hourglass | On *homes* (00:42) and *rum* (01:36), on the slow count and in the settings menu |
+| v7 7 | Shorter HAR items | The caret beside Download HAR: *Open in external viewer*, *Download filtered HAR* |
+| v7 9, 10 | Errors and slow responses filter | Click ⊗ 2: only the errors show and the count looks pressed; click it again for every request. The same control as All Commands' passed and failed counts |
+| v7 11, 12 | The timing popover | Scroll the table right and hover a Waterfall bar: the popover opens just above it, its caret on the bar, Copy timings beside × |
+| v7 13 | Fewer menu copies | Right-click a row: Copy link, then cURL, fetch and HAR |
+| v7 14 | Header tables copy as tables | Open a request, then Copy response headers (or request headers): paste into a doc or a sheet |
+| v7 menus | No grey at rest | Open any menu with the mouse: no item is grey until the pointer is on it. design-context [#19](https://github.com/rajat-lt/design-context/pull/19) records the rule |
+| v7 narrow | The toolbar at 1280 × 800 | ⚙ and the HAR split button fold into one ⋯; a time window's token sits beside the search and shortens before anything wraps |
+
 ## Review states
 
 | State | Link |
@@ -159,7 +176,7 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | A request's link (v6) | [`#/t-01/network/n42`](https://rajat-lt.github.io/automation-details-prototype/#/t-01/network/n42) |
 | Bodies not captured (v6) | [`#/t-02/network`](https://rajat-lt.github.io/automation-details-prototype/#/t-02/network) |
 
-Pane sizes (the Network tab's details panel too), the dock position, the Network tab's columns (order and widths), Overview switch and slow limit, the code theme, the payload view, the row density, the tab order, the video mode and the floating window's place are remembered in the browser. Renames, deletes, unlinks, comments and payload tabs last until a reload.
+Pane sizes (the Network tab's details panel too), the dock position, the Network tab's columns (order and widths), *Show waterfall overview* and slow limit, the code theme, the payload view, the row density, the tab order, the video mode and the floating window's place are remembered in the browser. Renames, deletes, unlinks, comments and payload tabs last until a reload.
 
 ## Simulated in this prototype
 
@@ -179,7 +196,7 @@ Pane sizes (the Network tab's details panel too), the dock position, the Network
 - **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file was generated from `main` at `618b4b8` (v5 added the switch tokens). The network phase colours are Chrome DevTools' own, by Rajat's answer of 28 Oct 2026, in `src/devtools-phases.css` with each value's DevTools source.
 - **Components:** each one is a look-alike of the private `lt-components` library under its real name, using only props documented in `COMPONENTS.md`, styled from the tokens and used as `guidelines/` says.
 - **Layout, copy and data:** `patterns/automation-details.md` is the base. `ux-text-guidelines.md` governs every string. `mock-data.md` supplies the cast, names, formats and IDs, and everything it lacks is listed in the spec's §9.
-- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 81 used: Accessibility, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, ExternalLink, Globe, GripHorizontal, History, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, LocateFixed, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, Smartphone, SquareArrowOutUpRight, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Turtle, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
+- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 81 used: Accessibility, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, ExternalLink, Globe, GripHorizontal, History, Hourglass, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, LocateFixed, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, Smartphone, SquareArrowOutUpRight, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
 
 ## Run it
 
@@ -203,7 +220,7 @@ Build for GitHub Pages with `npm run build`; the site is served from the `gh-pag
 | `automation-details.md` | The spec |
 | `scripts/tokens.mjs`, `src/tokens.css` | Token generator and its output |
 | `src/devtools-phases.css` | The network phase colours, Chrome DevTools' own, with their sources |
-| `src/lt.jsx`, `src/overlays.jsx` | The LT component look-alikes (v2 adds `LTPopover`, toast actions, and overlays that follow full screen; v5 adds `LTSwitch`, `LTTabNav` and sorting in `LTTable`; v6 adds `LTToken`, `headerProps` in `LTTable` and `place` in `LTPopover`) |
+| `src/lt.jsx`, `src/overlays.jsx` | The LT component look-alikes (v2 adds `LTPopover`, toast actions, and overlays that follow full screen; v5 adds `LTSwitch`, `LTTabNav` and sorting in `LTTable`; v6 adds `LTToken`, `headerProps` in `LTTable` and `place` in `LTPopover`; v7 adds `CountFilter`, toggle items and values in `LTActionMenu`, `headerActions` in `LTPopover` and `fullText` in `LTToken`) |
 | `src/App.jsx` | The page: panes, dock, video modes, dialogs, and the video's side with its payload tabs (v4 item 8) |
 | `src/shell.jsx` | Platform sidebar and top bar (`patterns/platform-sidebar.md`, `patterns/topbar.md`) |
 | `src/header.jsx` | Title, copy test ID, meta row, actions, remarks (items 1 to 5; v3 items 1, 2; v4 items 3, 4) |
@@ -216,8 +233,8 @@ Build for GitHub Pages with `npm run build`; the site is served from the `gh-pag
 | `src/comments.js` | Comments on failed commands, and requests to open one (v3 items 4 and 6) |
 | `src/layout.jsx` | Splitters (item 14) |
 | `src/tabs.jsx` | Logs, Meta Data, tests pane |
-| `src/network.jsx`, `src/network-data.js` | The Network tab (v5, v6) and its mock log, with the HAR export |
+| `src/network.jsx`, `src/network-data.js` | The Network tab (v5, v6, v7) and its mock log, with the HAR export |
 | `src/network-overview.jsx` | The overview, its brush, and the zoom and pan shared with the Waterfall column (v6) |
-| `src/network-detail.jsx`, `src/network-copy.js` | A request's details, with Preview and the capture state (v6), and its copies: link, cURL, fetch, HAR, headers, response |
+| `src/network-detail.jsx`, `src/network-copy.js` | A request's details, with Preview and the capture state (v6), and its copies: link, cURL, fetch and HAR in the menus; the header tables, the body and the timings in their tabs (v7) |
 | `vite.config.js` | Builds each test's HAR beside the page, for the external viewer (v6 item 23) |
 | `src/data.js`, `src/format.js` | Mock data, including the nested test cases (v4 item 10), and the `mock-data.md` formats |

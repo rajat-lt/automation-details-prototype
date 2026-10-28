@@ -7,8 +7,8 @@ import {
   Table, Braces, Undo2, ZoomIn, MessageSquarePlus, Pencil, Rows2, Rows4, SquareArrowOutUpRight, LocateFixed,
 } from 'lucide-react'
 import {
-  LTButton, LTIconButton, LTTooltip, LTTag, LTInputBox, LTCounterLabel, LTTestStatusLabel, StatusGlyph,
-  LTCodeBlock, LTCopyToClipboard, CopyIconButton, LTBlankSlate, LTFlash, LTSkeletonBox, LTTable, LTButtonGroup,
+  LTButton, LTIconButton, LTTooltip, LTTag, LTInputBox, LTTestStatusLabel, StatusGlyph,
+  LTCodeBlock, LTCopyToClipboard, CopyIconButton, CountFilter, LTBlankSlate, LTFlash, LTSkeletonBox, LTTable, LTButtonGroup,
   LTTextarea, LTAvatar, TruncText, announce, cx,
 } from './lt.jsx'
 import { LTActionMenu, LTSegmentedControl } from './overlays.jsx'
@@ -955,17 +955,12 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
           {[['passed', counts.passed], ['failed', counts.failed]].map(([st, n]) => {
             const on = statusFilter === st
             return (
-              <LTTooltip key={st} direction="bottom"
-                text={on ? 'Show all commands' : n === 0 ? `0 ${st} commands` : `Show only ${st} commands`}>
-                <LTButton variant="invisible" size="small" className={cx('cmd-tl-count', on && 'is-on')}
-                  aria-pressed={on} ariaLabel={`${n} ${st}`} inactive={n === 0 && !on}
-                  onClick={() => {
-                    setStatusFilter(on ? null : st)
-                    announce(on ? 'Showing all commands' : `Showing ${st} commands only`)
-                  }}>
-                  <StatusGlyph status={st} /><LTCounterLabel count={n} />
-                </LTButton>
-              </LTTooltip>
+              <CountFilter key={st} glyph={<StatusGlyph status={st} />} count={n} label={`${n} ${st}`} on={on}
+                tooltip={on ? 'Show all commands' : n === 0 ? `0 ${st} commands` : `Show only ${st} commands`}
+                onToggle={() => {
+                  setStatusFilter(on ? null : st)
+                  announce(on ? 'Showing all commands' : `Showing ${st} commands only`)
+                }} />
             )
           })}
           {/* The zoom is a mode the user chose, so it carries a label

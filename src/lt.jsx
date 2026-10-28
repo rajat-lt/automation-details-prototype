@@ -228,6 +228,25 @@ export function LTCounterLabel({ count, scheme = 'secondary', className, ...rest
   return <span className={cx('lt-counter', `lt-counter--${scheme}`, className)} {...rest}>{count}</span>
 }
 
+/* ---------- a count that filters ----------
+   Composed, not a library component: an LTButton holding a glyph and an
+   LTCounterLabel, pressed while its filter is on. All Commands' passed and
+   failed counts (v3 item 9) and the Network tab's errors and slow responses
+   (v7 items 9 and 10) are this one control. At rest it is the invisible
+   variant; pressed, the outline variant, the rest and selected states of
+   Rajat's v7 screenshots. A zero count is inactive unless its filter is on,
+   so a filter can always be turned off. */
+export function CountFilter({ glyph, count, label, on, tooltip, size = 'small', onToggle, className }) {
+  return (
+    <LTTooltip direction="bottom" text={tooltip}>
+      <LTButton variant={on ? 'outline' : 'invisible'} size={size} className={cx('count-filter', on && 'is-on', className)}
+        aria-pressed={on} ariaLabel={label} inactive={count === 0 && !on} onClick={onToggle}>
+        {glyph}<LTCounterLabel count={count} />
+      </LTButton>
+    </LTTooltip>
+  )
+}
+
 /* ---------- LTTag ---------- read-only metadata (guidelines/lttag.md).
    `leadingVisual` takes an icon (icons.md, "How icons are passed"). A tag
    cut off by its 200px cap shows its full text on hover (v2 item 16). */
@@ -244,12 +263,14 @@ export function LTTag({ text, variant = 'secondary', labelStyle = 'outline', siz
    A removable filter value (v6 item 6: the Network tab's time window).
    Documented props: as, hideRemoveButton, isSelected, size (COMPONENTS.md).
    Its text and remove handler are TBD upstream, so `text`, `onRemove`,
-   `removeLabel` and `removeTooltip` stand in (automation-details.md §9). */
-export function LTToken({ text, onRemove, removeLabel = 'Remove', removeTooltip, hideRemoveButton = false, isSelected = false,
+   `removeLabel` and `removeTooltip` stand in (automation-details.md §9).
+   A token squeezed by its row shows its full text (`fullText` when `text`
+   is not a plain string) on hover (v2 item 16; v7, the narrow toolbar). */
+export function LTToken({ text, fullText, onRemove, removeLabel = 'Remove', removeTooltip, hideRemoveButton = false, isSelected = false,
   size = 'medium', as: Tag = 'span', className }) {
   return (
     <Tag className={cx('lt-token', `lt-token--${size}`, isSelected && 'is-selected', className)}>
-      <span className="lt-token__text">{text}</span>
+      <TruncText className="lt-token__text" text={fullText ?? (typeof text === 'string' ? text : '')}>{text}</TruncText>
       {!hideRemoveButton && onRemove && (
         <LTIconButton icon={X} ariaLabel={removeLabel} tooltipText={removeTooltip} variant="invisible" size="xsmall"
           className="lt-token__remove" onClick={onRemove} />
