@@ -95,9 +95,14 @@ export function RangeTimeline({ view, segments, byId, range, onRange, onSeek, on
           first failed command; hovering one opens its popover (v2 item 8);
           a double-click zooms to it (v2 item 9). The keyboard route is the
           two handles plus Previous and Next failed command. */}
+      {/* Events from a failure's popover reach the track through React's
+          portal; only the track's own elements count (found 28 Oct 2026: a
+          click on the popover's text seeked the video). */}
       <div ref={trackRef} className="tl-track"
-        onPointerMove={e => setHover(timeAt(e.clientX))} onPointerLeave={() => setHover(null)}
+        onPointerMove={e => { if (e.currentTarget.contains(e.target)) setHover(timeAt(e.clientX)) }}
+        onPointerLeave={() => setHover(null)}
         onClick={e => {
+          if (!e.currentTarget.contains(e.target)) return
           const hit = e.target.closest?.('[data-seg]')
           const seg = hit ? segments[+hit.dataset.seg] : null
           if (seg) onSeek(seg.start, seg.ids[0])

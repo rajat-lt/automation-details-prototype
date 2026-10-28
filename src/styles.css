@@ -24,7 +24,11 @@ button { font: inherit; }
 mark.hl { background: var(--search-hl); color: inherit; border-radius: var(--radius-1); }
 
 /* ---------------- shell (platform-sidebar.md, topbar.md) ---------------- */
-.app { display: flex; height: 100vh; overflow: hidden; }
+/* Positioned, so it holds the visually hidden text inside scrolled panels
+   (.vh is absolute): without it that text sat below the page and made the
+   page itself scroll once a panel's wheel scroll ran past its end (found
+   28 Oct 2026, in the live v6 build too; spec §4h). */
+.app { position: relative; display: flex; height: 100vh; overflow: hidden; }
 .rail-slot { width: 56px; flex: 0 0 56px; }
 .rail {
   position: fixed; inset-block: 0; inset-inline-start: 0; z-index: 600;
@@ -478,7 +482,12 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
   padding: 0 var(--space-2); border: 0; border-radius: var(--radius-2);
   background: transparent; color: var(--fg-default); text-align: left; cursor: pointer;
 }
-.lt-menu__item:hover, .lt-menu__item:focus { background: var(--list-hover-bg); outline: none; }
+/* The grey is the pointer's alone (Rajat, 28 Oct 2026; guidelines/ltactionmenu.md):
+   at rest no item has it, not the first one, which takes focus as the menu
+   opens, nor the selected one, which shows only its tick. Keyboard focus
+   shows the focus ring instead. */
+.lt-menu__item:hover { background: var(--list-hover-bg); }
+.lt-menu__item:focus { outline: none; }
 .lt-menu__item:focus-visible { box-shadow: inset 0 0 0 2px var(--focus-outline); }
 .lt-menu__icon { flex: none; color: var(--fg-muted); }
 .lt-menu__check { flex: none; width: 16px; display: inline-flex; }
@@ -490,7 +499,7 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-menu__item.is-inactive, .lt-menu__item.is-inactive .lt-menu__icon { color: var(--fg-disabled); cursor: not-allowed; }
 .lt-menu__trail { flex: none; color: var(--fg-muted); font-size: var(--font-12); }
 .lt-menu__item.is-danger, .lt-menu__item.is-danger .lt-menu__icon { color: var(--danger-fg); }
-.lt-menu__item.is-danger:hover, .lt-menu__item.is-danger:focus { background: var(--list-danger-hover-bg); }
+.lt-menu__item.is-danger:hover { background: var(--list-danger-hover-bg); }
 .lt-menu__divider { height: 1px; margin: var(--space-2) calc(var(--space-2) * -1); background: var(--border-muted); }
 
 .lt-unav {
@@ -549,6 +558,7 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-popover.is-interactive { pointer-events: auto; min-width: 280px; padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4); }
 .lt-popover__head { display: flex; align-items: flex-start; gap: var(--space-2); }
 .lt-popover.is-interactive .lt-popover__heading { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
+.lt-popover__actions { flex: none; display: inline-flex; align-items: center; gap: var(--space-1); }
 .lt-popover__close { flex: none; }
 /* Taking over from another popover (v6 item 8): no fade, so nothing blinks. */
 .lt-popover.is-instant { animation: none; }
@@ -682,12 +692,14 @@ kbd {
 .cmd-toolbar.is-hidden { transform: translateY(calc(-1 * var(--toolbar-hide, 100%))); }
 .cmd-tl-head { display: flex; align-items: center; gap: var(--space-3); }
 .cmd-tl-title { margin: 0; font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
-/* v3 item 9: each count is a toggle filter. Pressed reads as chosen: a grey
-   fill with a border, like a selected segment. */
-.cmd-tl-count.lt-btn { padding: 0 var(--space-1); gap: 0; }
-.cmd-tl-count .lt-btn__label { display: inline-flex; align-items: center; gap: var(--space-1); overflow: visible; }
-.cmd-tl-count.is-on { background: var(--seg-button-bg); border-color: var(--seg-selected-border); }
-.cmd-tl-count.is-inactive, .cmd-tl-count.is-inactive:hover { background: transparent; border-color: transparent; }
+/* v3 item 9: each count is a toggle filter (CountFilter in lt.jsx). Pressed
+   reads as chosen: a grey fill with a border, the outline variant's own,
+   as Rajat's v7 screenshots draw it (was a white fill with the selected
+   segment's darker border). 32px beside the Network tab's search. */
+.count-filter.lt-btn { padding: 0 var(--space-1); gap: 0; }
+.count-filter.lt-btn--medium { padding: 0 var(--space-2); }
+.count-filter .lt-btn__label { display: inline-flex; align-items: center; gap: var(--space-1); overflow: visible; }
+.count-filter.is-inactive, .count-filter.is-inactive:hover { background: transparent; border-color: transparent; box-shadow: none; }
 .cmd-filters { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-2); }
 .cmd-search { flex: 1; }
 .cmd-testfilter { max-width: 240px; }
@@ -1135,22 +1147,25 @@ kbd {
   flex: none; display: flex; flex-direction: column; gap: var(--space-2);
   padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-muted);
 }
-.net-toolbar__row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+/* v7 (Rajat's screenshots): two rows. Neither wraps, so nothing below them
+   moves while a window is drawn on the overview. */
+.net-toolbar__row { display: flex; align-items: center; gap: var(--space-2); }
 .net-types { flex: none; display: inline-flex; }
-/* A margin, not a spacer: one gap less, so row 1 fits the default 574px. */
+/* A margin, not a spacer, keeps row 1's ends apart; 4px at the least, so the
+   segments and the ⋯ fit the narrowest logs (480px). */
+.net-toolbar__types { column-gap: var(--space-1); }
 .net-toolbar__end { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
+/* The search joined to its field (patterns/automation-listing.md), then the
+   time token, then the counts at the row's end. */
+.net-find { flex: 1 1 0; min-width: 196px; display: flex; }
 /* As wide as its longest option (Method, Domain), so choosing one never moves the row. */
-.net-field { flex: none; min-width: 100px; justify-content: space-between; }
-.net-search { flex: 1 1 140px; min-width: 140px; }
-/* v6 item 24: the counts and the active filters, a line of their own as in
-   the tests pane, so a token appearing never moves the rows above it. */
-.net-toolbar__status { min-height: 24px; column-gap: var(--space-3); }
-.net-readout {
-  margin: 0; display: flex; align-items: center; gap: var(--space-3);
-  color: var(--fg-muted); font-size: var(--font-12); line-height: var(--lh-12); font-variant-numeric: tabular-nums;
-}
-.net-readout > span { display: inline-flex; align-items: center; gap: var(--space-1); }
-.net-readout__slow { color: var(--attention-fg); }
+.net-field { flex: none; min-width: 100px; justify-content: space-between; border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.net-search { flex: 1 1 auto; min-width: 96px; margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.net-search:focus-within { z-index: 1; }
+.net-timetoken { flex: none; }
+.net-timetoken.is-short { flex: 0 1 auto; min-width: 0; }
+.net-counts { flex: none; display: flex; align-items: center; gap: var(--space-3); }
+.net-counts__slow { flex: none; color: var(--fg-muted); }
 
 .net-body { flex: 1; min-height: 0; display: flex; }
 /* Both ways: the header sticks to the top, Name to the left (spec §3d). */
@@ -1190,10 +1205,10 @@ kbd {
 .net-ellipsis { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .net-status { font-variant-numeric: tabular-nums; }
 .net-status.is-error { color: var(--danger-fg); font-weight: var(--weight-semibold); }
-/* v6 items 9 and 20: an image's mark and a slow response's turtle sit at
-   the name's right edge, where Firefox puts its turtle. */
+/* v6 items 9 and 20: an image's mark and a slow response's flag sit at the
+   name's right edge, where Firefox puts its turtle. v7 item 6: the flag is
+   the hourglass, in the toolbar count's grey (was the turtle, in amber). */
 .net-flag { flex: none; display: inline-flex; color: var(--fg-muted); }
-.net-flag--slow { color: var(--attention-fg); }
 /* The row menu's mouse twin (item 14), shown on hover and with the menu open. */
 .net-rowmenu {
   flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin: -4px 0;
@@ -1244,12 +1259,9 @@ kbd {
 .net-phases dt { display: flex; align-items: center; gap: var(--space-2); color: var(--fg-default); }
 .net-phases dd { margin: 0; text-align: right; color: var(--fg-default); font-variant-numeric: tabular-nums; }
 .net-phases__row.is-zero dt, .net-phases__row.is-zero dd { color: var(--fg-muted); }
-/* Item 27: the start first, set apart from the phases. */
+/* Item 27: the start first, set apart from the phases. v7 item 11: no
+   footer; Copy timings sits in the head. */
 .net-phases__start dt, .net-phases__start dd { padding-bottom: var(--space-2); margin-bottom: var(--space-1); border-bottom: 1px solid var(--border-muted); }
-.net-pop__actions {
-  display: flex; gap: var(--space-1); margin: 0 0 calc(var(--space-1) * -1) calc(var(--space-1) * -1);
-  padding-top: var(--space-2); border-top: 1px solid var(--border-muted);
-}
 
 /* v6 item 11: an image, on a checkerboard so its transparent parts show. */
 .net-img { margin: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }

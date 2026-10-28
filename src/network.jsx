@@ -12,15 +12,25 @@
 // The waterfall paints every request, slivers included (item 7), with its
 // duration after the bar (item 18), and the column always shows (item 19).
 // Its popover opens above or below the row and stays in the viewport (items
-// 8, 27). Slow responses carry Firefox's turtle (item 9), images a mark and
+// 8, 27). Slow responses carry a flag (item 9; v7: the hourglass), images a mark and
 // a hover preview (items 11, 20), and each request the command it ran under
 // (item 12). Columns resize and reorder, and the page remembers both (items
 // 10, 17). Selecting a request seeks the video (item 13), its actions copy it
 // (item 14, network-copy.js), and its link opens the test on it (item 28).
+//
+// v7 (28 Oct 2026): Rajat's 14 items and screenshots, spec §4h. Two toolbar
+// rows: the type segments, then a settings menu (overview, CONNECT, the slow
+// limit) and the HAR split button; the search joined to its field, then
+// errors and slow responses as counts that filter, All Commands' control
+// (items 1 to 10). The hourglass marks slow responses (item 6). The timing
+// popover opens above its bar (items 11, 12), and the menus keep the link,
+// cURL, fetch and HAR (item 13).
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ArrowLeft, ArrowRight, ChevronDown, Copy, Download, Ellipsis, ExternalLink, Image, ListFilter, RotateCcw, Turtle } from 'lucide-react'
 import {
-  CopyIconButton, LTBlankSlate, LTButton, LTButtonGroup, LTFlash, LTIconButton, LTInputBox, LTLink, LTSkeletonBox, LTSwitch,
+  ArrowLeft, ArrowRight, ChevronDown, Copy, Download, Ellipsis, ExternalLink, Hourglass, Image, RotateCcw, Settings,
+} from 'lucide-react'
+import {
+  CopyIconButton, CountFilter, LTBlankSlate, LTButton, LTButtonGroup, LTFlash, LTIconButton, LTInputBox, LTLink, LTSkeletonBox,
   LTTable, LTToken, LTTooltip, StatusGlyph, TruncText, announce, cx, visibleRect,
 } from './lt.jsx'
 import { LTActionMenu, LTModal, LTPopover, LTSegmentedControl, closePopover } from './overlays.jsx'
@@ -63,10 +73,11 @@ const FIELDS = [
 const MARKS = { all: ['name', 'status', 'method', 'domain', 'type'], name: ['name'], url: ['name', 'domain'],
   status: ['status'], method: ['method'], domain: ['domain'], type: ['type'] }
 
-/* v6 item 24: the status filter, beside the error count, as the tests pane
-   has it (a filter menu and a readout). Slow responses join errors as the
-   other thing worth finding [proposed]. */
-const STATUSES = { all: 'All requests', errors: 'Errors', slow: 'Slow responses' }
+/* v7 items 9 and 10 (were v6 item 24's readout and filter menu): errors and
+   slow responses are counts that filter, the control All Commands' passed
+   and failed counts use (CountFilter). One at a time; pressed again, every
+   request shows. */
+const STATUS_SHOWN = { all: 'Showing all requests', errors: 'Showing errors only', slow: 'Showing slow responses only' }
 
 const collator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' })
 const SORTERS = {
@@ -121,9 +132,9 @@ const STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 30
 const gridStep = span => STEPS.find(s => span / s <= 6) ?? 1200
 
 let measureCtx = null
-function textWidth(text) {
+function textWidth(text, px = 11) {
   measureCtx ??= document.createElement('canvas').getContext('2d')
-  measureCtx.font = `11px ${getComputedStyle(document.body).fontFamily}`
+  measureCtx.font = `${px}px ${getComputedStyle(document.body).fontFamily}`
   return measureCtx.measureText(text).width
 }
 const dominant = q => PHASES.reduce((best, p) => (q.timings[p.key] > q.timings[best.key] ? p : best), PHASES[0])
@@ -157,8 +168,10 @@ function WaterfallBar({ q, win, laneW }) {
   )
 }
 
-/* Items 27: the request's start, then the exact time of every phase, to
-   copy from. The Timing tab keeps the total and the notes. */
+/* v6 item 27: the request's start, then the exact time of every phase, to
+   copy from. v7 item 11: Copy timings moved to the head, left of the close
+   button (TimingCopy), and the footer went with it. The Timing tab keeps the
+   total and the notes. */
 function PhaseList({ q }) {
   return (
     <div className="net-pop">
@@ -174,17 +187,17 @@ function PhaseList({ q }) {
           )
         })}
       </dl>
-      <div className="net-pop__actions">
-        <CopyIconButton icon={Copy} ariaLabel="Copy timings" copiedLabel="Timings copied" copy={() => copyText(timingText(q))} />
-      </div>
     </div>
   )
 }
+const TimingCopy = ({ q }) => (
+  <CopyIconButton icon={Copy} size="xsmall" tooltipDirection="n" ariaLabel="Copy timings" copiedLabel="Timings copied"
+    copy={() => copyText(timingText(q))} />
+)
 
-/* Item 8: the popovers open below their row, or above it when the viewport
-   ends first, and stay inside the viewport. The waterfall's opens beside the
-   Waterfall column where the table has room, so the pointer can run down the
-   column from bar to bar; the image preview lines up with the name. */
+/* v6 item 8: the popovers stay inside the viewport (8px from its edges), and
+   one replaces another without a blink. The image preview opens below its
+   row, or above it when the viewport ends first, lined up with the name. */
 const EDGE = 8, GAP = 4
 function nextToRow(tr, h) {
   const rr = visibleRect(tr)
@@ -193,20 +206,24 @@ function nextToRow(tr, h) {
   const top = side === 'bottom' ? rr.bottom + GAP : rr.top - GAP - h
   return { side, top: Math.min(Math.max(EDGE, top), vh - h - EDGE) }
 }
-function placeWaterfall(anchor, pop) {
-  const tr = anchor.closest('tr'), td = anchor.closest('td'), sc = anchor.closest('.net-scroll')
-  if (!tr || !td || !sc) return null
-  const w = pop.offsetWidth, h = pop.offsetHeight, vw = window.innerWidth
-  const { side, top } = nextToRow(tr, h)
-  const cr = visibleRect(td), sr = sc.getBoundingClientRect()
-  const bar = anchor.querySelector('.net-runbar')?.getBoundingClientRect()
-  const barX = bar ? Math.min(cr.right, Math.max(cr.left, bar.left + bar.width / 2)) : cr.left + cr.width / 2
-  let left, at
-  if (cr.left - Math.max(sr.left, EDGE) >= w) { left = cr.left - w; at = cr.left }
-  else if (Math.min(sr.right, vw - EDGE) - cr.right >= w) { left = cr.right; at = cr.right }
-  else { left = barX - w / 2; at = barX }
-  left = Math.min(Math.max(EDGE, left), vw - w - EDGE)
-  return { top, left, side, caretX: Math.min(w - 16, Math.max(16, at - left)) }
+/* v7 item 12: the timing popover opens just above its bar, its caret on the
+   middle of the part of the bar in view. At the viewport's sides it slides
+   along, the caret still on the bar; it opens below the bar only when the
+   viewport ends above it and there is more room below (C61). 10px leaves
+   the caret's 7px point 3px above the bar. */
+const CARET_GAP = 10
+function placeOverBar(anchor, pop) {
+  const lane = anchor.querySelector('.net-wf__lane'), bar = anchor.querySelector('.net-runbar')
+  if (!lane || !bar) return null
+  const lr = visibleRect(lane), br = bar.getBoundingClientRect()
+  const l = Math.max(br.left, lr.left), r = Math.min(br.right, lr.right)
+  const x = r > l ? (l + r) / 2 : lr.left + lr.width / 2
+  const w = pop.offsetWidth, h = pop.offsetHeight, vw = window.innerWidth, vh = window.innerHeight
+  const above = br.top - CARET_GAP - h, below = br.bottom + CARET_GAP
+  const side = above >= EDGE || (below + h > vh - EDGE && br.top >= vh - br.bottom) ? 'top' : 'bottom'
+  const top = Math.min(Math.max(EDGE, side === 'top' ? above : below), vh - h - EDGE)
+  const left = Math.min(Math.max(EDGE, x - w / 2), vw - w - EDGE)
+  return { top, left, side, caretX: Math.min(w - 16, Math.max(16, x - left)) }
 }
 function placeByName(anchor, pop) {
   const tr = anchor.closest('tr')
@@ -251,8 +268,9 @@ function ColResize({ title, width, min, onChange, onReset }) {
   )
 }
 
-/* v6 item 9: the limit lives in the overflow menu, and a menu holds no
-   inputs (guidelines/ltactionmenu.md), so the item opens this dialog. */
+/* v6 item 9: the limit lives in a menu (v7 item 5: the settings menu), and a
+   menu holds no inputs (guidelines/ltactionmenu.md), so the item opens this
+   dialog. */
 function SlowLimitDialog({ isOpen, value, onClose, onSave }) {
   const [draft, setDraft] = useState(String(value))
   const [error, setError] = useState('')
@@ -281,7 +299,7 @@ function SlowLimitDialog({ isOpen, value, onClose, onSave }) {
         <LTInputBox type="number" value={draft} onChange={v => { setDraft(v); setError('') }} forwardRef={inputRef}
           ariaLabel="Waiting (TTFB) limit, in milliseconds" className="net-slow__input" />
         {error && <p className="net-slow__error" role="alert">{error}</p>}
-        <p className="net-slow__help">{`Requests that wait longer than this for the first byte of their response get the turtle. The default is ${SLOW_MS}ms.`}</p>
+        <p className="net-slow__help">{`Requests that wait longer than this for the first byte of their response get the hourglass. The default is ${SLOW_MS}ms.`}</p>
       </form>
     </LTModal>
   )
@@ -342,12 +360,14 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
   const searchRef = useRef(null)
   const toolbarRef = useRef(null)
   const typesRef = useRef(null)
+  const countsRef = useRef(null)
   const focusPending = useRef(null)
   const dragCol = useRef(null)
   const suppressSort = useRef(false)
   const body = useSize(bodyRef)
   const toolbar = useSize(toolbarRef)
   const types = useSize(typesRef)
+  const counts = useSize(countsRef)
   const cols = useMemo(() => cleanCols(colPref), [colPref])
   const setCols = f => setColPref(p => f(cleanCols(p)))
 
@@ -369,8 +389,18 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
     return out.sort((a, b) => (sort.dir === 'asc' ? by(a, b) : by(b, a)) || a.start - b.start)
   }, [matched, narrowed, win, sort])
   const filtering = type !== 'all' || status !== 'all' || !!needle || narrowed
-  const errorCount = useMemo(() => base.filter(q => q.status >= 400).length, [base])
-  const slowCount = useMemo(() => base.filter(isSlow).length, [base, slowMs])
+  // v7 items 9 and 10: the counts follow the type and the time window, as All
+  // Commands' follow its test filter and its range; like those, they leave
+  // the search out [proposed].
+  const scoped = useMemo(() => base.filter(q => (type === 'all' || q.category === type)
+    && (!narrowed || (q.end >= win[0] && q.start <= win[1]))), [base, type, narrowed, win])
+  const errorCount = useMemo(() => scoped.filter(q => q.status >= 400).length, [scoped])
+  const slowCount = useMemo(() => scoped.filter(isSlow).length, [scoped, slowMs])
+  const toggleStatus = st => {
+    const next = status === st ? 'all' : st
+    setStatus(next)
+    announce(STATUS_SHOWN[next])
+  }
   // Item 3: each page load runs from its document to the last request
   // before the next navigation.
   const pages = useMemo(() => log.on ? log.pages.map((p, i) => {
@@ -574,12 +604,29 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
     const har = new URL(`har/${test.id}.har`, window.location.href).href
     window.open(`https://compare.sitespeed.io/?har1=${encodeURIComponent(har)}&compare=1`, '_blank', 'noopener,noreferrer')
   }
+  // v7 item 7: short labels, no descriptions. With no filter on, the filtered
+  // download stays inactive; its reason is for screen readers only now (C59).
   const harOptions = [
-    { value: 'view', label: 'View HAR file in external viewer', icon: ExternalLink, description: 'compare.sitespeed.io, in a new tab' },
-    { value: 'filtered', label: 'Download HAR for filtered requests', icon: Download, inactive: !filtering,
-      description: filtering ? `${rows.length} of ${base.length} requests` : 'Available while a filter is on' },
+    { value: 'view', label: 'Open in external viewer', icon: ExternalLink },
+    { value: 'filtered', label: 'Download filtered HAR', icon: Download, inactive: !filtering,
+      hint: filtering ? undefined : 'Available while a filter is on' },
   ]
   const onHar = v => { if (v === 'har') downloadHar(); if (v === 'view') viewHar(); if (v === 'filtered') downloadFiltered() }
+
+  /* v7 items 3 to 5: the settings menu. A tick shows what is on; the slow
+     limit opens its dialog and shows its value (C57, C58). */
+  const settingsOptions = [
+    { value: 'overview', label: 'Show waterfall overview', checked: overviewOn },
+    { value: 'connect', label: 'Show CONNECT', checked: showConnect },
+    { divider: true },
+    { value: 'slow', label: 'Set slow response limit', icon: Hourglass, trailing: `${slowMs}ms` },
+  ]
+  const onSetting = o => {
+    if (o.value === 'overview') { setOverviewOn(!overviewOn); announce(overviewOn ? 'Waterfall overview hidden' : 'Waterfall overview shown') }
+    else if (o.value === 'connect') { setShowConnect(!showConnect); announce(showConnect ? 'CONNECT requests hidden' : 'CONNECT requests shown') }
+    else if (o.value === 'slow') setSlowOpen(true)
+    else onHar(o.value)
+  }
 
   const clearFilters = () => { setType('all'); setStatus('all'); setQuery(''); setField('all'); setWin([0, run]) }
 
@@ -750,11 +797,12 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
               <span className="vh">{[q.preview && ', image', slow && `, slow response: ${fmtMsExact(q.timings.wait)} waiting`].filter(Boolean).join('')}</span>
             )}
           </button>
-          {/* Item 20: images show which they are; item 9: slow ones too. */}
+          {/* Item 20: images show which they are; item 9: slow ones too, with
+              the hourglass since v7 item 6. */}
           {q.preview && <Image size={14} aria-hidden="true" className="net-flag" />}
           {slow && (
             <LTTooltip text={`Slow response: waited ${fmtMsExact(q.timings.wait)} for the first byte, over the ${slowMs}ms limit`} direction="top">
-              <span className="net-flag net-flag--slow"><Turtle size={14} aria-hidden="true" /></span>
+              <span className="net-flag"><Hourglass size={14} aria-hidden="true" /></span>
             </LTTooltip>
           )}
           {/* The menu's mouse twin; the keyboard uses Shift + F10. */}
@@ -786,10 +834,11 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
         headerExtra: compact ? undefined : <><span className="net-wf-scale">{fmtWindow(a, b)}</span>{resize('waterfall')}</>,
         // Items 8 and 27: hover opens the phases after a moment, and they
         // stay until closed so they can be copied. The Timing tab holds
-        // the same numbers for the keyboard.
+        // the same numbers for the keyboard. v7 items 11 and 12: above the
+        // bar, Copy timings beside the close button.
         render: q => (
-          <LTPopover containsInteractiveChildElement heading={q.name} forceClose={!isCurrent} place={placeWaterfall}
-            popOverbodyJSX={<PhaseList q={q} />}>
+          <LTPopover containsInteractiveChildElement heading={q.name} forceClose={!isCurrent} place={placeOverBar}
+            headerActions={<TimingCopy q={q} />} popOverbodyJSX={<PhaseList q={q} />}>
             <span className="net-wf" aria-hidden="true">
               <span className="net-wf__lane"><WaterfallBar q={q} win={win} laneW={laneW} /></span>
             </span>
@@ -821,83 +870,82 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
         : type !== 'all' ? (narrowed ? `This time range has 0 ${typeDef.noun} requests.` : `This run made 0 ${typeDef.noun} requests.`)
           : 'Try a wider time range.'
 
-  /* Item 26: the toolbar keeps its order of importance as the logs narrow.
-     The filters stay; the HAR actions fold into the overflow menu first. */
+  /* v6 item 26, v7: the toolbar keeps its order of importance as the logs
+     narrow. The filters stay; when the first row cannot hold the segments,
+     the settings and the HAR group (below about 552px), both fold into one
+     ⋯ menu, HAR actions first (C60). */
   const toolsW = toolbar.width - 32
-  const foldHar = !!toolbar.width && types.width + 8 + 60 + 8 + 32 > toolsW
-  const moreOptions = [
-    ...(foldHar ? [{ value: 'har', label: 'Download HAR', icon: Download }, ...harOptions, { divider: true }] : []),
-    { value: 'slow', label: 'Set slow response limit', icon: Turtle, description: `Now ${slowMs}ms of waiting (TTFB)` },
-  ]
+  const fold = !!toolbar.width && types.width + 4 + 32 + 8 + 63 > toolsW
+  const moreOptions = [{ value: 'har', label: 'Download HAR', icon: Download }, ...harOptions, { divider: true }, ...settingsOptions]
+  // The time token sits between the search and the counts. Where it would
+  // leave the search under 112px, it drops its "Time:" (still read out);
+  // where even that leaves under 96px, it shortens with an ellipsis.
+  const timeText = fmtWindow(a, b)
+  const shortTime = narrowed && toolsW - 212 - counts.width - 16 < textWidth(`Time: ${timeText}`, 12) + 34
 
   return (
     <div className="net">
       <div className="net-toolbar" ref={toolbarRef}>
-        <div className="net-toolbar__row">
+        <div className="net-toolbar__row net-toolbar__types">
           <span ref={typesRef} className="net-types">
             <LTSegmentedControl ariaLabel="Request type" selectedValue={type} onChange={setType}
               options={TYPES.map(t => ({ value: t.value, label: t.label }))} />
           </span>
           <span className="net-toolbar__end">
-            {/* Item 22: Download HAR, with its caret menu (a split button,
-                guidelines/ltbuttongroup.md; the brief makes both halves icons). */}
-            {!foldHar && (
-              <LTButtonGroup ariaLabel="HAR file">
-                <LTIconButton icon={Download} ariaLabel="Download HAR" variant="outline" size="medium" onClick={downloadHar} />
-                <LTActionMenu ariaLabel="HAR actions" width={288} onSelect={o => onHar(o.value)} options={harOptions}
-                  customAnchor={<LTIconButton icon={ChevronDown} ariaLabel="More HAR actions" variant="outline" size="medium"
-                    unsafeDisableTooltip />} />
-              </LTButtonGroup>
+            {fold ? (
+              <LTActionMenu ariaLabel="More network actions" width={288} options={moreOptions} onSelect={onSetting}
+                customAnchor={<LTIconButton icon={Ellipsis} ariaLabel="More actions" variant="invisible" size="medium" />} />
+            ) : (
+              <>
+                {/* v7 items 3 to 5: the settings menu, the gear's invisible variant. */}
+                <LTActionMenu ariaLabel="View settings" width={288} options={settingsOptions} onSelect={onSetting}
+                  customAnchor={<LTIconButton icon={Settings} ariaLabel="View settings" variant="invisible" size="medium" />} />
+                {/* v6 item 22: Download HAR, with its caret menu (a split
+                    button, guidelines/ltbuttongroup.md; both halves icons). */}
+                <LTButtonGroup ariaLabel="HAR file">
+                  <LTIconButton icon={Download} ariaLabel="Download HAR" variant="outline" size="medium" onClick={downloadHar} />
+                  <LTActionMenu ariaLabel="HAR actions" width={240} onSelect={o => onHar(o.value)} options={harOptions}
+                    customAnchor={<LTIconButton icon={ChevronDown} ariaLabel="More HAR actions" variant="outline" size="medium"
+                      unsafeDisableTooltip />} />
+                </LTButtonGroup>
+              </>
             )}
-            <LTActionMenu ariaLabel="More network actions" width={288} options={moreOptions}
-              onSelect={o => { if (o.value === 'slow') setSlowOpen(true); else onHar(o.value) }}
-              customAnchor={<LTIconButton icon={Ellipsis} ariaLabel="More actions" variant="outline" size="medium" />} />
           </span>
         </div>
-        <div className="net-toolbar__row">
-          {/* The search's scope: LTButton outline with a caret and a single
-              selection menu, as All Commands' test filter (README §5, C11). */}
-          <LTActionMenu ariaLabel="Search in" width={200} align="start" selectionVariant="single" activeId={field}
-            customAnchor={<LTButton variant="outline" size="medium" trailingIcon={ChevronDown} className="net-field"
-              ariaLabel={`Search in: ${fieldDef.label}`} label={fieldDef.label} />}
-            onSelect={o => { setField(o.value); searchRef.current?.focus() }}
-            options={FIELDS.map(f => ({ value: f.value, label: f.label }))} />
-          <LTInputBox value={query} onChange={setQuery} placeholder={fieldDef.placeholder} ariaLabel={fieldDef.placeholder}
-            forwardRef={searchRef} className="net-search"
-            onKeyDown={e => { if (e.key === 'Escape' && query) { e.preventDefault(); e.stopPropagation(); setQuery('') } }} />
-          {/* Item 24: a filter menu, as the tests pane has (README §5). */}
-          <LTActionMenu ariaLabel="Filter requests" width={248} selectionVariant="single" activeId={status}
-            onSelect={o => setStatus(o.value)}
-            customAnchor={<LTIconButton icon={ListFilter} variant="outline" size="medium"
-              ariaLabel={status === 'all' ? 'Filter requests' : `Filter requests: ${STATUSES[status]}`} />}
-            options={[
-              { value: 'all', label: STATUSES.all },
-              { value: 'errors', label: STATUSES.errors, description: 'Status 400 and above' },
-              { value: 'slow', label: STATUSES.slow, description: `Waiting (TTFB) over ${slowMs}ms` },
-            ]} />
-          <LTSwitch label="Show CONNECT" checked={showConnect} onValueChange={setShowConnect} />
-        </div>
-        <div className="net-toolbar__row net-toolbar__status">
-          {/* Item 24: the counts, a readout as the tests pane has (not a
-              filter); the active filters as tokens (item 6). */}
-          <p className="net-readout">
-            <LTTooltip text={`${errorCount} error${errorCount === 1 ? '' : 's'}: status 400 and above`} direction="top">
-              <span><StatusGlyph status="failed" size={14} />{errorCount}<span className="vh">{` error${errorCount === 1 ? '' : 's'}`}</span></span>
-            </LTTooltip>
-            <LTTooltip text={`${slowCount} slow response${slowCount === 1 ? '' : 's'}: over ${slowMs}ms of waiting`} direction="top">
-              <span><Turtle size={14} aria-hidden="true" className="net-readout__slow" />{slowCount}
-                <span className="vh">{` slow response${slowCount === 1 ? '' : 's'}`}</span></span>
-            </LTTooltip>
-          </p>
-          {status !== 'all' && (
-            <LTToken size="small" text={STATUSES[status]} onRemove={() => setStatus('all')} removeLabel={`Clear filter: ${STATUSES[status]}`} />
-          )}
+        <div className="net-toolbar__row net-toolbar__find">
+          {/* The search's scope, joined to the search as one control
+              (patterns/automation-listing.md): LTButton outline with a caret
+              and a single selection menu, as All Commands' test filter
+              (README §5, C11). */}
+          <span className="net-find">
+            <LTActionMenu ariaLabel="Search in" width={200} align="start" selectionVariant="single" activeId={field}
+              customAnchor={<LTButton variant="outline" size="medium" trailingIcon={ChevronDown} className="net-field"
+                ariaLabel={`Search in: ${fieldDef.label}`} label={fieldDef.label} />}
+              onSelect={o => { setField(o.value); searchRef.current?.focus() }}
+              options={FIELDS.map(f => ({ value: f.value, label: f.label }))} />
+            <LTInputBox value={query} onChange={setQuery} placeholder={fieldDef.placeholder} ariaLabel={fieldDef.placeholder}
+              forwardRef={searchRef} className="net-search"
+              onKeyDown={e => { if (e.key === 'Escape' && query) { e.preventDefault(); e.stopPropagation(); setQuery('') } }} />
+          </span>
+          {/* v6 item 6: the window as a token, beside the search since v7. */}
           {narrowed && (
-            <LTToken size="small" text={`Time: ${fmtWindow(a, b)}`} onRemove={resetWin} removeLabel="Clear time range"
-              removeTooltip="Clear time range (R)" />
+            <LTToken size="small" className={cx('net-timetoken', shortTime && 'is-short')} onRemove={resetWin}
+              removeLabel="Clear time range" removeTooltip="Clear time range (R)" fullText={`Time: ${timeText}`}
+              text={<><span className={shortTime ? 'vh' : undefined}>Time: </span>{timeText}</>} />
           )}
-          <span className="spacer" />
-          <LTSwitch label="Overview" checked={overviewOn} onValueChange={setOverviewOn} />
+          {/* v7 items 9 and 10: errors and slow responses, counts that filter. */}
+          <span ref={countsRef} className="net-counts">
+            <CountFilter size="medium" glyph={<StatusGlyph status="failed" />} count={errorCount}
+              label={`${errorCount} error${errorCount === 1 ? '' : 's'}`} on={status === 'errors'}
+              tooltip={status === 'errors' ? 'Show all requests' : errorCount === 0 ? '0 errors'
+                : 'Show only errors: status 400 and above'}
+              onToggle={() => toggleStatus('errors')} />
+            <CountFilter size="medium" glyph={<Hourglass size={16} aria-hidden="true" className="net-counts__slow" />}
+              count={slowCount} label={`${slowCount} slow response${slowCount === 1 ? '' : 's'}`} on={status === 'slow'}
+              tooltip={status === 'slow' ? 'Show all requests' : slowCount === 0 ? '0 slow responses'
+                : `Show only slow responses: waiting (TTFB) over ${slowMs}ms`}
+              onToggle={() => toggleStatus('slow')} />
+          </span>
         </div>
       </div>
 
@@ -918,9 +966,17 @@ export function NetworkTab({ test, codeTheme, setCodeTheme, isCurrent, demo, onR
               rowProps={q => ({
                 className: cx('net-row', q.status >= 400 && 'is-error', q.id === selectedId && 'is-selected', ctx?.q.id === q.id && 'has-menu'),
                 // A click on the bar opens the details on Timing; a link
-                // goes where it points.
-                onClick: e => { if (!e.target.closest('a, .net-rowmenu')) open(q.id, e.target.closest('.net-wf') ? 'timing' : null) },
-                onContextMenu: e => { e.preventDefault(); setActiveId(q.id); setCtx({ q, x: e.clientX, y: e.clientY }) },
+                // goes where it points. Clicks inside the row's popovers
+                // reach the row through React's portal, so only the row's
+                // own elements count (v7: Copy timings left the popover open).
+                onClick: e => {
+                  if (!e.currentTarget.contains(e.target) || e.target.closest('a, .net-rowmenu')) return
+                  open(q.id, e.target.closest('.net-wf') ? 'timing' : null)
+                },
+                onContextMenu: e => {
+                  if (!e.currentTarget.contains(e.target)) return
+                  e.preventDefault(); setActiveId(q.id); setCtx({ q, x: e.clientX, y: e.clientY })
+                },
                 onMouseEnter: () => setHoverId(q.id),
                 onMouseLeave: () => setHoverId(h => (h === q.id ? null : h)),
               })} />

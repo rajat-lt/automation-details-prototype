@@ -2,7 +2,9 @@
 // v6 added to them (Rajat, 28 Oct 2026): the request's actions in the header
 // (item 14: Copy link shows, the other copies sit in its menu, and each tab
 // copies what it shows), a Preview tab for images (item 11), and the state a
-// tab shows when the run kept no response bodies (item 15).
+// tab shows when the run kept no response bodies (item 15). v7 (Rajat,
+// 28 Oct 2026): the menu keeps the link, cURL, fetch and HAR (item 13), and
+// the header lists copy as tables, rows and columns intact (item 14).
 import React from 'react'
 import { ChevronDown, ChevronUp, Copy, Ellipsis, Link, Moon, Sun, X } from 'lucide-react'
 import {
@@ -11,9 +13,9 @@ import {
 import { LTActionMenu, LTTabNav } from './overlays.jsx'
 import { Json } from './commands.jsx'
 import { PHASES, phaseStyle } from './network-data.js'
-import { copyOptions, headersText, requestHref, where } from './network-copy.js'
+import { copyOptions, requestHref, where } from './network-copy.js'
 import { fmtBytes, fmtClock, fmtClockFine, fmtMsExact } from './format.js'
-import { copyText } from './clipboard.js'
+import { copyRich, copyText, tableClipboard } from './clipboard.js'
 
 // LambdaTest's docs, read 28 Oct 2026: "Enable HAR logging by passing
 // network.full.har = true in your test capabilities."
@@ -79,14 +81,16 @@ function HeadersPanel({ q }) {
     ...(q.mime ? [['Content type', q.mime]] : []), ['Transferred', fmtBytes(q.bytes)],
     ['Resource size', fmtBytes(q.resourceBytes)], ['Start time', fmtClock(q.start)], ['Duration', fmtMsExact(q.duration)],
   ]
-  // v6 item 14: each list of headers copies itself, where it shows.
+  // v6 item 14: each list of headers copies itself, where it shows. v7 item
+  // 14: as the table it is, with its header row, as All Commands copies a
+  // payload table: HTML for rich editors, tab-separated text for the rest.
   const section = (title, rows, column, none, copyLabel) => (
     <section className="net-dp__section">
       <h3 className="net-dp__title">
         {title}{rows.length > 0 && column && <LTCounterLabel count={rows.length} />}
         {rows.length > 0 && copyLabel && (
           <CopyIconButton icon={Copy} size="xsmall" ariaLabel={copyLabel} copiedLabel={`${title} copied`}
-            copy={() => copyText(headersText(rows))} className="net-dp__copy" />
+            copy={() => copyRich(tableClipboard(KV_COLUMNS(column), kv(rows)))} className="net-dp__copy" />
         )}
       </h3>
       {rows.length ? <LTTable caption={title} allowValueCopy columns={KV_COLUMNS(column)} data={kv(rows)} />
@@ -211,8 +215,8 @@ export function RequestDetails({ q, testId, index, count, tab, setTab, onPrev, o
           <TruncText className="net-detail__name" text={q.name} />
           <span className="net-detail__pos">{`${index + 1} of ${count}`}</span>
           <span className="spacer" />
-          {/* Item 14, kept contextual: the link shows; the other copies wait
-              in the menu, and each tab copies what it shows. */}
+          {/* Item 14, kept contextual: the link shows; cURL, fetch and HAR
+              wait in the menu (v7 item 13), and each tab copies what it shows. */}
           <CopyIconButton icon={Link} ariaLabel="Copy link" copiedLabel={`Link to ${where(q)} copied`}
             copy={() => copyText(requestHref(testId, q.id))} />
           <LTActionMenu ariaLabel={`Actions for ${where(q)}`} width={248}

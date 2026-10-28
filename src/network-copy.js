@@ -1,7 +1,9 @@
-// Request actions (v6 item 14): what a request copies as, for the row menu,
-// the details panel's menu and the copy buttons inside its tabs. The forms
-// follow what browser developer tools copy [proposed]: cURL in bash quoting,
-// fetch as a call with its headers, HAR as a log holding this one request.
+// Request actions (v6 item 14): what a request copies as, for the row menu
+// and the details panel's menu. The forms follow what browser developer
+// tools copy [proposed]: cURL in bash quoting, fetch as a call with its
+// headers, HAR as a log holding this one request. v7 item 13: the headers
+// and the response left the menus; each copies from its own tab, the
+// headers as tables (network-detail.jsx).
 import { toHar } from './network-data.js'
 import { fmtClock } from './format.js'
 
@@ -10,8 +12,6 @@ export const where = q => `${q.name} at ${fmtClock(q.start)}`
 
 /** v6 item 28: the request's own link, which opens the test on this request. */
 export const requestHref = (testId, id) => `${window.location.origin}${window.location.pathname}#/${testId}/network/${id}`
-
-export const headersText = pairs => pairs.map(([k, v]) => `${k}: ${v}`).join('\n')
 
 // Single quotes, with any quote inside closed, escaped and reopened.
 const sq = s => `'${String(s).replace(/'/g, `'\\''`)}'`
@@ -51,20 +51,12 @@ export const asHar = (test, log, q) => JSON.stringify(toHar(test, log, [q]), nul
    tunnel has no request to replay, so cURL and fetch wait for GET and POST. */
 export function copyOptions(q) {
   const tunnel = q.method === 'CONNECT'
-  const body = q.body.kind === 'text'
-  const bodyWhy = q.body.kind === 'uncaptured' ? 'Available with network.full.har on'
-    : q.body.kind === 'binary' ? 'Available for text responses' : 'Available when the response has a body'
   return [
     { value: 'link', label: 'Copy link' },
     { divider: true },
     { value: 'curl', label: 'Copy as cURL', inactive: tunnel, description: tunnel ? 'Available for GET and POST requests' : undefined },
     { value: 'fetch', label: 'Copy as fetch', inactive: tunnel, description: tunnel ? 'Available for GET and POST requests' : undefined },
     { value: 'har', label: 'Copy as HAR' },
-    { divider: true },
-    { value: 'reqHeaders', label: 'Copy request headers' },
-    { value: 'resHeaders', label: 'Copy response headers', inactive: !q.responseHeaders.length,
-      description: q.responseHeaders.length ? undefined : 'Available when the response has headers' },
-    { value: 'response', label: 'Copy response', inactive: !body, description: body ? undefined : bodyWhy },
   ]
 }
 
@@ -79,9 +71,6 @@ export function copyFor(value, { test, log, q }) {
     case 'curl': return as(asCurl(q), 'cURL')
     case 'fetch': return as(asFetch(q), 'fetch')
     case 'har': return as(asHar(test, log, q), 'HAR')
-    case 'reqHeaders': return of(headersText(q.requestHeaders), `Request headers of ${w}`)
-    case 'resHeaders': return of(headersText(q.responseHeaders), `Response headers of ${w}`)
-    case 'response': return of(q.body.text, `Response of ${w}`)
     default: return null
   }
 }
