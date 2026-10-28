@@ -1,6 +1,7 @@
 // Automation test details: Rajat's 18 changes of 16 Oct 2026, the 16 of
-// 17 Oct 2026 (v2), the 11 of 18 Oct 2026 (v3), the 12 of 19 Oct 2026 (v4)
-// and the 11 of 27 Oct 2026 for the Network tab (v5, network.jsx).
+// 17 Oct 2026 (v2), the 11 of 18 Oct 2026 (v3), the 12 of 19 Oct 2026 (v4),
+// the 11 of 27 Oct 2026 for the Network tab (v5, network.jsx) and its 28 of
+// 28 Oct 2026 (v6).
 // Spec: automation-details.md. Shell, tokens, components and copy come from
 // design-context (main e014a73); every departure is recorded in the spec.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -28,12 +29,14 @@ import { onCommentRequest } from './comments.js'
 const TAB_IDS = ['commands', 'logs', 'network', 'metadata']
 const TAB_LABELS = { commands: 'All Commands', logs: 'Logs', network: 'Network', metadata: 'Meta Data' }
 
-// #/{test}/{tab}, or #/{test}/commands/{command} for a command's link (v2 item 2).
+// #/{test}/{tab}, #/{test}/commands/{command} for a command's link (v2 item
+// 2), or #/{test}/network/{request} for a request's (v6 item 28).
 let hashN = 0
 function parseHash() {
-  const [, testId, tab, commandId] = window.location.hash.match(/^#\/([^/]+)\/([^/?]+)(?:\/([^/?]+))?/) ?? []
+  const [, testId, tab, itemId] = window.location.hash.match(/^#\/([^/]+)\/([^/?]+)(?:\/([^/?]+))?/) ?? []
   hashN += 1
-  return { testId, tab: TAB_IDS.includes(tab) ? tab : 'commands', commandId: tab === 'commands' ? commandId : undefined, n: hashN }
+  return { testId, tab: TAB_IDS.includes(tab) ? tab : 'commands', commandId: tab === 'commands' ? itemId : undefined,
+    requestId: tab === 'network' ? itemId : undefined, n: hashN }
 }
 const cleanOrder = o => (Array.isArray(o) && o.length === TAB_IDS.length && TAB_IDS.every(id => o.includes(id)) ? o : TAB_IDS)
 
@@ -341,6 +344,7 @@ function Page() {
             onStub={onStub} onToast={toast} onScreenshot={cmd => setModal({ shot: cmd })}
             isCurrent={tab === 'commands' && !modal}
             focusCommand={route.testId === test.id && route.commandId ? { id: route.commandId, n: route.n } : null}
+            linkedRequest={route.testId === test.id && !!route.requestId}
             demo={demo === 'commands-loading' ? 'loading' : demo === 'commands-error' ? 'error' : null}
             onRetry={() => setDemo(null)} />
         </div>
@@ -351,7 +355,8 @@ function Page() {
             scroll survive a tab switch. */}
         <div className="tab-host" hidden={tab !== 'network'}>
           <NetworkTab key={`${test.id}:${demo}`} test={test} codeTheme={codeTheme} setCodeTheme={setCodeTheme}
-            isCurrent={tab === 'network' && !modal}
+            isCurrent={tab === 'network' && !modal} onToast={toast}
+            focusRequest={route.testId === test.id && route.requestId ? { id: route.requestId, n: route.n } : null}
             demo={demo?.startsWith('network-') ? demo.slice('network-'.length) : null}
             onRetry={() => setDemo(null)} />
         </div>

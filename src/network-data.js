@@ -11,7 +11,7 @@
 // Phases are HAR 1.2's timings (blocked, dns, connect, ssl, send, wait,
 // receive), with connect kept apart from its SSL part here; the HAR export
 // adds them back together, as HAR's `connect` includes `ssl`.
-import { TESTS, getDetail, networkOn } from './data.js'
+import { TESTS, getDetail, networkOn, fullHarOn } from './data.js'
 
 const HOST = 'www.airbnb.com'
 const ORIGIN = `https://${HOST}`
@@ -101,8 +101,9 @@ function etagFor(path) {
 /* Splits a request's duration into its phases. The first request on a new
    connection pays for the connection and SSL, and the very first one for DNS
    too (cached after that); the rest goes to waiting and downloading, more of
-   it to downloading the bigger the body. The duration is the sum. */
-function phases(r, total, { fresh, dnsFresh, bytes, doc }) {
+   it to downloading the bigger the body, unless `wait` fixes the wait for the
+   first byte (v6's slow requests). The duration is the sum. */
+function phases(r, total, { fresh, dnsFresh, bytes, doc, wait }) {
   const blocked = doc ? 0.6 + r() * 0.8 : 0.3 + r() * 2.2
   const dns = dnsFresh ? 9 + r() * 9 : 0
   const connect = fresh ? 14 + r() * 10 : 0
@@ -110,16 +111,20 @@ function phases(r, total, { fresh, dnsFresh, bytes, doc }) {
   const send = 0.06 + r() * 0.3
   const rest = Math.max(total - (blocked + dns + connect + ssl + send), 4 + r() * 6)
   const share = Math.min(0.75, Math.max(0.12, bytes / (bytes + 60000)))
-  const p = { blocked, dns, connect, ssl, send, wait: rest * (1 - share), receive: 0 }
+  const p = { blocked, dns, connect, ssl, send, wait: wait != null ? Math.min(wait, rest - 1) : rest * (1 - share), receive: 0 }
   for (const k in p) p[k] = round2(p[k])
   // Downloading takes what is left, so the rounded phases add up exactly.
   p.receive = round2(Math.max(total, blocked + dns + connect + ssl + send + rest) - (p.blocked + p.dns + p.connect + p.ssl + p.send + p.wait))
   return p
 }
 
-/* Bodies written for the mock, short and plainly generic. */
-function bodyFor(q) {
+/* Bodies written for the mock, short and plainly generic. A run without
+   network.full.har kept none of them (v6 item 15). */
+const SVG_BLACK = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6"/></svg>'
+const SVG_WHITE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#fff" stroke="#d0d7de"/></svg>'
+function bodyFor(q, full) {
   if (q.method === 'CONNECT' || q.status === 204 || q.status === 304) return { kind: 'empty' }
+  if (!full) return { kind: 'uncaptured' }
   if (q.status === 404) return { kind: 'text', lang: 'html', text: '<!doctype html>\n<title>404 Not Found</title>\n<h1>Not Found</h1>' }
   if (q.status === 500) return { kind: 'text', lang: 'plain', text: 'Internal Server Error' }
   if (q.category === 'doc') {
@@ -135,8 +140,25 @@ function bodyFor(q) {
   }
   if (q.category === 'css') return { kind: 'text', lang: 'css', text: 'body{margin:0;font-family:system-ui,sans-serif}\n.header{display:flex;align-items:center;gap:16px}\n.card{border-radius:12px}' }
   if (q.category === 'js') return { kind: 'text', lang: 'js', text: `(self.chunks=self.chunks||[]).push([["${q.name.replace(/\.js$/, '')}"],{}]);` }
-  if (q.type === 'svg+xml') return { kind: 'text', lang: 'xml', text: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6"/></svg>' }
+  if (q.type === 'svg+xml') return { kind: 'text', lang: 'xml', text: q.name.includes('white') ? SVG_WHITE : SVG_BLACK }
   return { kind: 'binary' }
+}
+
+/* v6 items 11 and 20: what an image response looks like. The SVGs are their
+   own bodies; the icon and the banner are stand-ins drawn for the mock, since
+   the screenshots give only their names and sizes (spec §9). A 304 shows the
+   copy the browser already had. */
+const svgUri = svg => `data:image/svg+xml,${encodeURIComponent(svg)}`
+const STAND_INS = {
+  '/favicon.ico': { width: 32, height: 32, svg: '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#59636e"/><circle cx="16" cy="16" r="7" fill="#fff"/></svg>' },
+  '/images/whatnew.png': { width: 120, height: 40, svg: '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40"><rect width="120" height="40" rx="8" fill="#ddf4ff"/><circle cx="20" cy="20" r="8" fill="#218bff"/><rect x="36" y="14" width="68" height="5" rx="2.5" fill="#0969da"/><rect x="36" y="23" width="48" height="4" rx="2" fill="#80ccff"/></svg>' },
+}
+function previewFor(q, full) {
+  if (!full || !q.mime.startsWith('image/') || (q.status !== 200 && q.status !== 304)) return null
+  const svg = q.type === 'svg+xml' ? (q.name.includes('white') ? SVG_WHITE : SVG_BLACK) : STAND_INS[q.path]?.svg
+  if (!svg) return null
+  const size = q.type === 'svg+xml' ? { width: 32, height: 32 } : STAND_INS[q.path]
+  return { src: svgUri(svg), width: size.width, height: size.height, cached: q.status === 304, standIn: q.type !== 'svg+xml' }
 }
 
 function requestHeaders(q) {
@@ -177,6 +199,7 @@ export function networkFor(testId) {
   }
   const r = rng(parseInt(testId.slice(2), 10) * 104729)
   const startedAt = t.updatedAt.getTime() - t.durationSec * 1000
+  const full = fullHarOn(t)
 
   // The pages this test loads, in order: every Navigate To, and the results
   // page a search submits to (data.js's Get Current URL answers it).
@@ -197,11 +220,12 @@ export function networkFor(testId) {
     }
     q.requestHeaders = requestHeaders(q)
     q.responseHeaders = responseHeaders(q, startedAt)
-    q.body = bodyFor(q)
+    q.body = bodyFor(q, full)
+    q.preview = previewFor(q, full)
     requests.push(q)
     return q
   }
-  const add = ({ ms, ...o }) => {
+  const add = ({ ms, wait, ...o }) => {
     // A request after 30 idle seconds opens a new connection: through the
     // capture proxy it starts with a CONNECT tunnel, listed only with Show
     // CONNECT (spec §4e). The tunnel has no DNS or SSL of its own.
@@ -212,10 +236,11 @@ export function networkFor(testId) {
         payload: { kind: 'none' } },
       { blocked: round2(0.2 + r()), dns: 0, connect: round2(6 + r() * 6), ssl: 0, send: round2(0.05 + r() * 0.1), wait: round2(4 + r() * 8), receive: 0 })
     }
-    const timings = phases(r, ms, { fresh, dnsFresh: fresh && !dnsDone, bytes: o.bytes, doc: o.category === 'doc' })
+    const timings = phases(r, ms, { fresh, dnsFresh: fresh && !dnsDone, bytes: o.bytes, doc: o.category === 'doc', wait })
     if (fresh) dnsDone = true
     const q = push(o, timings)
     lastEnd = Math.max(lastEnd, q.end)
+    return q
   }
 
   pages.forEach((pg, pageIndex) => {
@@ -224,9 +249,17 @@ export function networkFor(testId) {
     const docStart = pg.at + 0.04 + r() * 0.03
     const docBytes = DOC_BYTES[path] ?? 180000
     const base = { page: pg.url, pageIndex, payload: { kind: 'none' } }
-    add({ ...base, method: 'GET', url: pg.url, name: path === '/' ? HOST : path.split('/').pop(), status: 200,
+    // v6 item 9: the search results page waits about 0.65s for its first
+    // byte, past the 500ms slow limit [mock].
+    const slowDoc = path === '/s/Goa/homes'
+    const doc = add({ ...base, method: 'GET', url: pg.url, name: path === '/' ? HOST : path.split('/').pop(), status: 200,
       type: 'html', mime: 'text/html', category: 'doc', bytes: docBytes, resourceBytes: docBytes,
-      ms: first ? 68 : 60 + r() * 30, start: docStart })
+      ms: slowDoc ? 700 + r() * 30 : first ? 68 : 60 + r() * 30, wait: slowDoc ? 640 + r() * 20 : undefined, start: docStart })
+    pg.docId = doc.id
+    // A later page's files start once its document's first byte is in; the
+    // first page keeps the screenshots' offsets.
+    const T = doc.timings
+    const firstByte = docStart + (T.blocked + T.dns + T.connect + T.ssl + T.send + T.wait) / 1000
     const assets = first ? FIRST_LOAD.map(a => [a, a[6], 200]) : REPEAT_LOAD.map(([p, offset, status]) => [BY_PATH[p], offset, status])
     for (const [[p, type, mime, category, bytes, ms], offset, status] of assets) {
       // The login page's banner image is gone: a 404 page answers it (spec §4e).
@@ -238,37 +271,55 @@ export function networkFor(testId) {
         type: missing ? 'html' : type, mime: missing ? 'text/html' : mime, category,
         bytes: code === 304 ? 250 + Math.floor(r() * 20) : missing ? 1200 : bytes, resourceBytes: missing ? 1200 : bytes,
         // The first page keeps the screenshots' durations; later pages vary.
-        ms: code === 304 ? 14 + r() * 6 : first ? ms : ms * (0.74 + r() * 0.12), start: docStart + (offset + r() * 6) / 1000 })
+        ms: code === 304 ? 14 + r() * 6 : first ? ms : ms * (0.74 + r() * 0.12),
+        start: (first ? docStart : firstByte) + (offset + r() * 6) / 1000 })
     }
     // RUM beacons: two on the first page (screenshot 1's 25.26ms and 27.06ms),
-    // one on every later page. The checkout page's one fails (spec §4e).
+    // one on every later page. The checkout page's one fails (spec §4e), and
+    // only after waiting over a second for its answer (v6 item 9) [mock].
     const beacons = first ? [[2.1, 25.26, 'load'], [9.8, 27.06, 'hidden']] : [[2.4, 24 + r() * 6, 'load']]
     for (const [after, ms, event] of beacons) {
       const failed = path === '/book/stays'
       add({ ...base, method: 'POST', url: `${ORIGIN}/rum`, name: 'rum', status: failed ? 500 : 204,
         type: 'plain', mime: 'text/plain', category: 'other', bytes: failed ? 21 : 0, resourceBytes: failed ? 21 : 0,
-        ms: failed ? ms * 3.1 : ms, start: docStart + after + r() * 0.2,
+        ms: failed ? 1240 + r() * 20 : ms, wait: failed ? 1180 + r() * 10 : undefined, start: docStart + after + r() * 0.2,
         payload: { kind: 'json', text: JSON.stringify({ page: pg.url, event }, null, 2) } })
     }
   })
 
   requests.sort((a, b) => a.start - b.start)
-  const log = { on: true, requests, pages, startedAt }
+  // v6 item 12: the command each request ran under: the one running when it
+  // started, or else the last one before it (`cmdRunning` false).
+  for (const q of requests) {
+    let running = null, prev = null
+    for (const c of detail.commands) {
+      if (c.at > q.start + 1e-6) break
+      prev = c
+      if (q.start <= c.at + c.ms / 1000 + 1e-6) running = c
+    }
+    const c = running ?? prev
+    q.cmdId = c?.id ?? null
+    q.cmdIdx = c?.idx ?? -1
+    q.cmdRunning = !!running
+  }
+  const log = { on: true, requests, pages, startedAt, full }
   cache.set(testId, log)
   return log
 }
 
-/* A HAR 1.2 file of the whole log (the Download HAR button, spec §4e): one
-   page per page load. HAR's connect includes SSL, and a phase that does not
-   apply is -1. */
-export function toHar(t, log) {
+/* A HAR 1.2 file (spec §4e): the whole log, or the requests given (v6: the
+   filtered ones, or one request), with the pages they belong to. HAR's
+   connect includes SSL, and a phase that does not apply is -1. */
+export function toHar(t, log, requests = log.requests) {
   const iso = sec => new Date(log.startedAt + sec * 1000).toISOString()
+  const used = new Set(requests.map(q => q.pageIndex))
   return {
     log: {
       version: '1.2',
-      creator: { name: 'LambdaTest automation details prototype', version: '5' },
-      pages: log.pages.map((p, i) => ({ startedDateTime: iso(p.at), id: `page_${i + 1}`, title: p.url, pageTimings: {} })),
-      entries: log.requests.map(q => ({
+      creator: { name: 'LambdaTest automation details prototype', version: '6' },
+      pages: log.pages.map((p, i) => ({ startedDateTime: iso(p.at), id: `page_${i + 1}`, title: p.url, pageTimings: {} }))
+        .filter((_, i) => used.has(i)),
+      entries: requests.map(q => ({
         pageref: `page_${q.pageIndex + 1}`,
         startedDateTime: iso(q.start),
         time: q.duration,

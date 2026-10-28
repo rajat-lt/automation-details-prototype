@@ -331,6 +331,17 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-tag--secondary { border-color: var(--border-default); color: var(--fg-muted); }
 .lt-tag--danger { border-color: var(--danger-emphasis); color: var(--danger-fg); }
 .lt-tag--success { border-color: var(--success-emphasis); color: var(--success-fg); }
+/* LTToken (v6): a removable filter value, a pill with its remove button. */
+.lt-token {
+  display: inline-flex; align-items: center; gap: 2px; min-width: 0; max-width: 100%; height: 28px;
+  padding: 0 2px 0 var(--space-2); border: 1px solid var(--border-default); border-radius: var(--radius-pill);
+  background: var(--canvas-default); color: var(--fg-default); font-size: var(--font-12); line-height: var(--lh-12);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.lt-token--small { height: 24px; }
+.lt-token.is-selected { border-color: var(--accent-emphasis); }
+.lt-token__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lt-token__remove { flex: none; border-radius: var(--radius-pill); }
 
 .lt-link { color: var(--link); text-decoration: none; border-radius: var(--radius-1); }
 .lt-link:hover { text-decoration: underline; }
@@ -539,6 +550,8 @@ a.crumb:hover { color: var(--accent-fg); text-decoration: underline; }
 .lt-popover__head { display: flex; align-items: flex-start; gap: var(--space-2); }
 .lt-popover.is-interactive .lt-popover__heading { flex: 1; min-width: 0; margin: 0; overflow-wrap: anywhere; }
 .lt-popover__close { flex: none; }
+/* Taking over from another popover (v6 item 8): no fade, so nothing blinks. */
+.lt-popover.is-instant { animation: none; }
 /* Failure popover content, most important first (failure.jsx). */
 .fp { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-1); }
 .fp__meta { margin: 0; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
@@ -1116,25 +1129,35 @@ kbd {
 }
 .lt-tabnav__item:focus-visible { outline-offset: -4px; }
 
-/* ---------------- Network (v5, network.jsx) ---------------- */
+/* ---------------- Network (v5 and v6, network.jsx) ---------------- */
 .net { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .net-toolbar {
   flex: none; display: flex; flex-direction: column; gap: var(--space-2);
   padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-muted);
 }
 .net-toolbar__row { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
-.net-view { margin-left: auto; } /* a margin, not a spacer: one gap less, so the row fits the default 574px */
+.net-types { flex: none; display: inline-flex; }
+/* A margin, not a spacer: one gap less, so row 1 fits the default 574px. */
+.net-toolbar__end { margin-left: auto; display: flex; align-items: center; gap: var(--space-2); }
 /* As wide as its longest option (Method, Domain), so choosing one never moves the row. */
 .net-field { flex: none; min-width: 100px; justify-content: space-between; }
-.net-search { flex: 1 1 160px; min-width: 160px; }
-.net-switches { flex: none; display: flex; align-items: center; gap: var(--space-3); }
+.net-search { flex: 1 1 140px; min-width: 140px; }
+/* v6 item 24: the counts and the active filters, a line of their own as in
+   the tests pane, so a token appearing never moves the rows above it. */
+.net-toolbar__status { min-height: 24px; column-gap: var(--space-3); }
+.net-readout {
+  margin: 0; display: flex; align-items: center; gap: var(--space-3);
+  color: var(--fg-muted); font-size: var(--font-12); line-height: var(--lh-12); font-variant-numeric: tabular-nums;
+}
+.net-readout > span { display: inline-flex; align-items: center; gap: var(--space-1); }
+.net-readout__slow { color: var(--attention-fg); }
 
 .net-body { flex: 1; min-height: 0; display: flex; }
 /* Both ways: the header sticks to the top, Name to the left (spec §3d). */
 .net-scroll { flex: 1; min-width: 0; overflow: auto; position: relative; isolation: isolate; }
 .net-scroll > .lt-blank { margin-top: var(--space-4); }
-/* --net-min: Name's 224px plus the fixed columns that show (network.jsx). */
-.net-table { table-layout: fixed; min-width: var(--net-min, 1116px); border: 0; border-radius: 0; overflow: visible; }
+/* --net-min: the widths of the columns that show (network.jsx). */
+.net-table { table-layout: fixed; min-width: var(--net-min, 1244px); border: 0; border-radius: 0; overflow: visible; }
 .net-table.is-compact { min-width: 0; }
 /* 16px between columns, and 16px at the edges to line up with the toolbar. */
 .net-table th, .net-table td { height: 32px; padding: var(--space-1) var(--space-2); vertical-align: middle; white-space: nowrap; }
@@ -1158,43 +1181,62 @@ kbd {
 .net-row.is-selected .net-name { font-weight: var(--weight-bold); }
 .net-row:has(.net-name:focus-visible) { outline: 2px solid var(--focus-outline); outline-offset: -2px; }
 .net-table td.is-muted { color: var(--fg-muted); }
+.net-namecell { display: flex; align-items: center; gap: var(--space-1); min-width: 0; }
 .net-name {
-  display: block; width: 100%; min-width: 0; padding: 0; border: 0; background: none;
+  flex: 1; display: block; min-width: 0; padding: 0; border: 0; background: none;
   color: var(--fg-default); font: inherit; text-align: left; cursor: pointer;
 }
 .net-name:focus-visible { outline: none; }
 .net-ellipsis { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .net-status { font-variant-numeric: tabular-nums; }
 .net-status.is-error { color: var(--danger-fg); font-weight: var(--weight-semibold); }
+/* v6 items 9 and 20: an image's mark and a slow response's turtle sit at
+   the name's right edge, where Firefox puts its turtle. */
+.net-flag { flex: none; display: inline-flex; color: var(--fg-muted); }
+.net-flag--slow { color: var(--attention-fg); }
+/* The row menu's mouse twin (item 14), shown on hover and with the menu open. */
+.net-rowmenu {
+  flex: none; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; margin: -4px 0;
+  padding: 0; border: 0; border-radius: var(--radius-1); background: none; color: var(--fg-muted); cursor: pointer; opacity: 0;
+}
+.net-row:hover .net-rowmenu, .net-row:focus-within .net-rowmenu, .net-row.has-menu .net-rowmenu { opacity: 1; }
+.net-rowmenu:hover, .net-row.has-menu .net-rowmenu { background: var(--bg-neutral-subtle); color: var(--fg-default); }
+/* v6 item 12: the command a request ran under, "after" one that had ended. */
+.net-cmd { display: flex; align-items: baseline; gap: var(--space-1); min-width: 0; }
+.net-cmd__after { flex: none; color: var(--fg-muted); }
+.net-cmd__link { display: block; min-width: 0; }
 
-/* Waterfall in the rows (items 7 to 9; Rajat, 28 Oct 2026: the whole run).
-   The hover target reaches the cell's right edge, which is the table's, so
-   the popover opens clear of the table (item 8). Faint lines mark the run's
-   minutes (or finer steps in a short run), sized in network.jsx. */
-.net-wf { display: flex; align-items: center; height: 24px; margin-right: calc(var(--space-4) * -1); padding-right: var(--space-4); }
+/* Columns resize at their right edge and move by dragging their header
+   (v6 items 10 and 17). */
+.net-colresize { position: absolute; top: 0; right: -4px; z-index: 1; width: 8px; height: 100%; cursor: col-resize; touch-action: none; }
+.net-table th:last-child .net-colresize { right: 0; }
+.net-colresize::after { content: ''; position: absolute; top: 6px; bottom: 6px; left: 3px; width: 2px; border-radius: 1px; }
+.net-colresize:hover::after, .net-colresize.is-dragging::after, .net-colresize:focus-visible::after { background: var(--accent-emphasis); }
+.net-colresize:focus-visible { outline: none; }
+.net-table thead th.is-dragged { z-index: 4; background: var(--canvas-default); box-shadow: var(--shadow-medium); cursor: grabbing; }
+.net-table thead th.is-dragged * { cursor: grabbing; }
+.net-coldrop { position: absolute; z-index: 5; width: 2px; margin-left: -1px; background: var(--accent-emphasis); pointer-events: none; }
+
+/* The Waterfall column: the time window of the overview (v6 item 2), with
+   faint lines at round times, set in network.jsx (--wf-step, --wf-x0). */
+/* The whole cell is the hover target, and its lines run row to row. */
+.net-wf { display: flex; align-items: center; height: 32px; margin: calc(var(--space-1) * -1) 0; }
 .net-wf__lane {
-  position: relative; flex: 1; min-width: 0; height: 100%;
+  position: relative; flex: 1; min-width: 0; height: 100%; overflow: hidden;
   background-image: linear-gradient(to right, var(--border-muted) 0 1px, transparent 1px); background-repeat: repeat-x;
+  background-size: var(--wf-step, 100%) 100%; background-position: var(--wf-x0, 0) 0;
 }
 .net-runbar { position: absolute; top: 50%; height: 10px; margin-top: -5px; display: flex; overflow: hidden; border-radius: 2px; }
-.net-runbar > span, .net-strip__bar > span { flex: 0 1 0; min-width: 0; }
+/* Item 7: every phase at least 1px; a request under 2px is a sliver. */
+.net-runbar > span { flex-shrink: 1; flex-basis: 0; min-width: 1px; }
+.net-runbar.is-sliver { height: 14px; margin-top: -7px; border-radius: 0; }
+/* Item 18: the duration, small, after its bar. */
+.net-wf__dur {
+  position: absolute; top: 50%; transform: translateY(-50%); pointer-events: none; white-space: nowrap;
+  font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); font-variant-numeric: tabular-nums;
+}
+.net-wf__dur.is-over { padding: 0 2px; border-radius: 2px; background: var(--canvas-default); color: var(--fg-default); }
 .net-wf-scale { margin-left: auto; color: var(--fg-muted); font-weight: var(--weight-regular); font-variant-numeric: tabular-nums; }
-
-/* The strip (Rajat, 28 Oct 2026): the whole run on top of the list, with All
-   Commands' handles and axis (.tl-*). Bars are 3px, DevTools' band height. */
-.net-strip { flex: none; padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border-muted); }
-.net-strip__head { display: flex; align-items: center; gap: var(--space-2); min-height: 28px; }
-.net-strip__title { margin: 0; font-size: var(--font-14); line-height: var(--lh-14); font-weight: var(--weight-bold); }
-.net-strip__window { display: inline-flex; min-width: 0; }
-/* Reaches the strip's right edge, so the legend opens beside the list. */
-.net-strip__legend { display: flex; margin-right: calc(var(--space-4) * -1); padding-right: var(--space-4); }
-.net-strip__tl { margin-top: var(--space-2); }
-.net-strip__track { cursor: default; border-radius: var(--radius-1); background: var(--canvas-subtle); box-shadow: inset 0 0 0 1px var(--border-muted); }
-.net-strip__bar { position: absolute; height: 3px; display: flex; overflow: hidden; border-radius: 1px; }
-.net-strip__bar.is-hot { z-index: 1; height: 5px; margin-top: -1px; overflow: visible; box-shadow: 0 0 0 1px var(--canvas-default), 0 0 0 2px var(--fg-default); }
-.net-strip__shade { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--canvas-default) 70%, transparent); }
-.net-strip .tl-handle { height: 100%; }
-.net-strip__playhead { top: 0; height: 100%; }
 .net-swatch { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 .net-pop { display: flex; flex-direction: column; gap: var(--space-2); margin-top: var(--space-2); }
 .net-phases { margin: 0; display: grid; grid-template-columns: 1fr auto; column-gap: var(--space-6); row-gap: var(--space-1); }
@@ -1202,19 +1244,23 @@ kbd {
 .net-phases dt { display: flex; align-items: center; gap: var(--space-2); color: var(--fg-default); }
 .net-phases dd { margin: 0; text-align: right; color: var(--fg-default); font-variant-numeric: tabular-nums; }
 .net-phases__row.is-zero dt, .net-phases__row.is-zero dd { color: var(--fg-muted); }
-.net-phases__total dt, .net-phases__total dd {
-  margin-top: var(--space-1); padding-top: var(--space-2); border-top: 1px solid var(--border-muted); font-weight: var(--weight-bold);
-}
-.net-pop__note { margin: 0; max-width: 280px; color: var(--fg-muted); }
+/* Item 27: the start first, set apart from the phases. */
+.net-phases__start dt, .net-phases__start dd { padding-bottom: var(--space-2); margin-bottom: var(--space-1); border-bottom: 1px solid var(--border-muted); }
 .net-pop__actions {
   display: flex; gap: var(--space-1); margin: 0 0 calc(var(--space-1) * -1) calc(var(--space-1) * -1);
   padding-top: var(--space-2); border-top: 1px solid var(--border-muted);
 }
-.net-legend-anchor { flex: 1; display: flex; align-items: center; gap: var(--space-2); align-self: stretch; margin-right: calc(var(--space-4) * -1); padding-right: var(--space-4); }
-.net-legend { list-style: none; margin: var(--space-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); max-width: 300px; }
-.net-legend li { display: flex; align-items: baseline; gap: var(--space-2); }
-.net-legend .net-swatch { transform: translateY(1px); }
-.net-legend__name { font-weight: var(--weight-semibold); }
+
+/* v6 item 11: an image, on a checkerboard so its transparent parts show. */
+.net-img { margin: 0; display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+.net-img__frame {
+  display: inline-flex; max-width: 100%; padding: var(--space-2); border: 1px solid var(--border-muted); border-radius: var(--radius-2);
+  background: repeating-conic-gradient(var(--bg-neutral-subtle) 0 25%, var(--canvas-default) 0 50%) 0 0 / 12px 12px;
+}
+.net-img__frame img { display: block; max-width: 100%; height: auto; }
+.net-img--compact .net-img__frame img { max-width: 160px; }
+.net-img__meta { color: var(--fg-muted); font-size: var(--font-12); line-height: var(--lh-12); font-variant-numeric: tabular-nums; }
+.net-imgpop { min-width: 0; }
 
 /* The request's details (item 4): beside the table, as developer tools. */
 .net-detail-wrap { flex: none; min-width: 0; display: flex; }
@@ -1227,15 +1273,23 @@ kbd {
 .net-detail__method { flex: none; font-weight: var(--weight-semibold); color: var(--fg-default); }
 .net-detail__status { flex: none; font-weight: var(--weight-semibold); color: var(--fg-default); }
 .net-detail__href { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); }
-/* The four tabs fit the panel's 320px minimum. */
+/* The tabs fit the panel's 320px minimum. */
 .net-detail .lt-tabnav { flex: none; padding: 0 var(--space-2); }
 .net-detail .lt-tabnav__item { padding: 0 var(--space-2); }
 .net-detail__body { flex: 1; min-height: 0; overflow: auto; padding: var(--space-4); }
 .net-detail__body:focus-visible { outline-offset: -2px; }
 .net-dp__stack { display: flex; flex-direction: column; gap: var(--space-4); }
 .net-dp__title { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-bold); }
+.net-dp__copy { margin: -4px 0 -4px auto; }
 .net-dp__none { margin: 0; color: var(--fg-muted); }
 .net-detail .lt-blank { padding: var(--space-8) var(--space-2); }
+/* v6 item 15: the capability that turns body capture on, to copy. */
+.net-capture { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+.net-capture__cap {
+  display: inline-flex; align-items: center; gap: var(--space-1); padding: 2px 2px 2px var(--space-2);
+  border: 1px solid var(--border-muted); border-radius: var(--radius-2); background: var(--canvas-subtle);
+}
+.net-capture__cap code { font-family: var(--font-mono); font-size: var(--font-12); line-height: var(--lh-12); }
 .net-timing__head { display: flex; align-items: center; gap: var(--space-2); }
 .net-timing__meta { flex: 1; margin: 0; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
 .net-ttable td { vertical-align: middle; white-space: nowrap; }
@@ -1246,12 +1300,60 @@ kbd {
 .net-track { position: relative; display: block; min-width: 64px; height: 10px; border-radius: 2px; background: var(--bg-neutral-subtle); }
 .net-track__bar { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
 
+/* v6 item 9: the slow limit's dialog. */
+.net-slow { display: flex; flex-direction: column; gap: var(--space-2); }
+.net-slow__label { margin: 0; font-weight: var(--weight-semibold); }
+.net-slow__input { max-width: 200px; }
+.net-slow__error { margin: 0; color: var(--danger-fg); }
+.net-slow__help { margin: 0; color: var(--fg-muted); }
+
 .net-foot {
   flex: none; margin: 0; display: flex; flex-wrap: wrap; align-items: center; row-gap: var(--space-1);
   padding: var(--space-2) var(--space-4); border-top: 1px solid var(--border-muted);
   font-size: var(--font-12); line-height: var(--lh-12); color: var(--fg-muted); font-variant-numeric: tabular-nums;
 }
 .net-skrow { display: flex; align-items: center; gap: var(--space-6); height: 32px; padding: 0 var(--space-4); border-bottom: 1px solid var(--neutral-subtle); }
+
+/* ---------------- Network overview (v6, network-overview.jsx) ----------------
+   The whole session: the commands' lane on top, the histogram of requests
+   in flight, page-load lines and markers, error ticks, the playhead, and
+   the brush, with All Commands' handles and axis (.tl-*). */
+.nov { flex: none; padding: var(--space-1) var(--space-4) var(--space-1); border-bottom: 1px solid var(--border-muted); user-select: none; }
+.nov-marks { position: relative; height: 14px; }
+.nov-mark {
+  position: absolute; top: 0; width: 12px; height: 14px; margin-left: -6px; padding: 0; border: 0; background: none;
+  color: var(--fg-muted); cursor: pointer;
+}
+.nov-mark::before { content: ''; position: absolute; inset: -5px -6px; } /* a 24px target */
+.nov-mark::after {
+  content: ''; position: absolute; left: 1px; top: 4px;
+  border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 7px solid currentColor;
+}
+.nov-mark:hover, .nov-mark:focus-visible { color: var(--fg-default); }
+.nov-mark:focus-visible { outline: 2px solid var(--focus-outline); outline-offset: 0; border-radius: var(--radius-1); }
+.nov-track {
+  position: relative; height: 44px; border-radius: var(--radius-1); background: var(--canvas-subtle);
+  box-shadow: inset 0 0 0 1px var(--border-muted); cursor: crosshair; touch-action: none;
+}
+.nov-clip { position: absolute; inset: 0; overflow: hidden; border-radius: inherit; pointer-events: none; }
+.nov-lane { position: absolute; left: 0; right: 0; top: 3px; height: 3px; }
+.nov-cmd { position: absolute; top: 0; height: 3px; background: var(--fg-subtle); }
+.nov-cmd.is-failed { background: var(--danger-emphasis); }
+.nov-hist { position: absolute; left: 0; top: 9px; }
+.nov-bin { fill: var(--timeline-bar); }
+.nov-cap { fill: var(--accent-emphasis); }
+.nov-nav { position: absolute; top: 0; bottom: 0; border-left: 1px dashed var(--fg-muted); }
+.nov-err { position: absolute; bottom: 2px; width: 2px; height: 6px; margin-left: -1px; border-radius: 1px; background: var(--danger-emphasis); }
+.nov-hot { position: absolute; top: 9px; height: 26px; background: color-mix(in srgb, var(--fg-default) 12%, transparent); box-shadow: inset 0 -2px 0 var(--fg-default); }
+.nov-shade { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--canvas-default) 70%, transparent); }
+.nov-playhead { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--fg-default); }
+.nov-window { position: absolute; top: 0; bottom: 0; border-radius: var(--radius-1); }
+.nov-track.is-narrowed .nov-window { cursor: grab; }
+.nov-track.is-pan, .nov-track.is-pan .nov-window { cursor: grabbing; }
+.nov-window:focus-visible { outline: 2px solid var(--focus-outline); outline-offset: -2px; }
+.nov .tl-handle { height: 100%; }
+.nov-bubble { bottom: calc(100% + 2px); }
+.nov-bubble__cmd { font-weight: var(--weight-semibold); }
 
 /* ---------------- motion ---------------- */
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

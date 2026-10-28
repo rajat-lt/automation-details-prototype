@@ -508,13 +508,21 @@ export function historyFor(test) {
 const NETWORK_OFF = new Set(['t-07'])
 export const networkOn = t => !NETWORK_OFF.has(t.id)
 
+/* v6 item 15: LambdaTest's docs (testmuai.com/support/docs/debugging-options,
+   "HAR Log Viewer", read 28 Oct 2026) say `network.full.har = true` enables
+   HAR logging. Here the failed runs had it on, so their response bodies are in
+   the log; the passed runs recorded headers and timings only [mock]. */
+const FULL_HAR = new Set(['t-01', 't-04', 't-10', 't-16'])
+export const fullHarOn = t => networkOn(t) && FULL_HAR.has(t.id)
+
 /** Capabilities for the Meta Data tab: LambdaTest W3C `LT:Options` keys. */
 export function capabilitiesFor(t) {
   return [
     ['browserName', t.browser], ['browserVersion', t.browserVersion],
     ['platformName', `${t.os} ${t.osVersion}`], ['resolution', t.resolution],
     ['build', BUILD.name], ['name', t.name],
-    ['tunnel', String(t.tunnel)], ['network', String(networkOn(t))], ['console', 'true'],
+    ['tunnel', String(t.tunnel)], ['network', String(networkOn(t))], ['network.full.har', String(fullHarOn(t))],
+    ['console', 'true'],
     ['video', String(t.video)],
   ]
 }

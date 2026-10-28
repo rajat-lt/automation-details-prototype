@@ -32,7 +32,7 @@ export function ticksFor(v0, v1, width) {
   return out
 }
 
-export function Handle({ which, value, min, max, onChange, trackRef, view, fmt = fmtTime }) {
+export function Handle({ which, value, min, max, onChange, trackRef, view, fmt = fmtTime, step: unit = 1, bigStep = 10 }) {
   const drag = useRef(false)
   const [v0, v1] = view
   const toTime = x => {
@@ -51,7 +51,7 @@ export function Handle({ which, value, min, max, onChange, trackRef, view, fmt =
       onClick={e => e.stopPropagation()}
       onDoubleClick={e => e.stopPropagation()}
       onKeyDown={e => {
-        const step = e.shiftKey ? 10 : 1
+        const step = e.shiftKey ? bigStep : unit
         let v = null
         if (e.key === 'ArrowRight' || e.key === 'ArrowUp') v = value + step
         if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') v = value - step

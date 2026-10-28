@@ -392,7 +392,7 @@ function FailureNav({ failures, reason }) {
 
 /* ---------- the tab ---------- */
 export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloadView, setPayloadView, onStub, onToast,
-  onScreenshot, demo, onRetry, isCurrent, focusCommand, density, setDensity, popOut }) {
+  onScreenshot, demo, onRetry, isCurrent, focusCommand, linkedRequest = false, density, setDensity, popOut }) {
   const { commands, tree, durationSec: duration } = detail
   const failedTest = detail.failedCount > 0
   // Every group, nested ones too (v4 item 10), outer before inner.
@@ -541,8 +541,10 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     setPendingScroll({ id: cmd.id, flashIt, focus, comment, n: Date.now() })
   }, [visible, layout])
 
+  // v6: a seek from the Network tab reveals its command here once this tab
+  // shows, since a hidden list can be neither measured nor scrolled.
   useLayoutEffect(() => {
-    if (!pendingScroll) return
+    if (!pendingScroll || !isCurrent) return
     const sc = scrollRef.current
     const row = sc?.querySelector(`[data-cmd="${pendingScroll.id}"]`)
     if (!row) return
@@ -567,7 +569,7 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     if (pendingScroll.focus) row.querySelector('.cmd-main')?.focus({ preventScroll: true })
     if (pendingScroll.flashIt) setFlash(f => ({ id: pendingScroll.id, n: f.n + 1 }))
     setPendingScroll(null)
-  }, [pendingScroll, expanded, revealed])
+  }, [pendingScroll, expanded, revealed, isCurrent])
 
   // Item 9: every jump of the video reveals and highlights its command.
   useEffect(() => onJump(({ time, commandId }) => {
@@ -611,9 +613,10 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
     openComment(id)
   }, [isCurrent])
 
-  // Item 16: a failed test opens at its first failure, unless a link named a command.
+  // Item 16: a failed test opens at its first failure, unless a link named a
+  // command, or a request (v6 item 28), whose seek this list then follows.
   useEffect(() => {
-    if (!failedTest || demo || focusCommand?.id) return
+    if (!failedTest || demo || focusCommand?.id || linkedRequest) return
     const first = detail.failed[0]
     const t = setTimeout(() => reveal(first), 120)
     return () => clearTimeout(t)
