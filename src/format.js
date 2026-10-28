@@ -83,12 +83,33 @@ export function fmtBytes(n) {
 /**
  * GAP: a request's duration and its phases, to the hundredth of a
  * millisecond as the product's Network tab shows them (`25.26 ms`), in the
- * page's unit form (`20ms`). Two decimals always, so a column lines up:
- * `0.12ms`, `48.30ms`, `1.24s`.
+ * page's unit form (`20ms`). Two decimals always, so a column lines up, and
+ * in milliseconds even past a second, as v6 item 18 asks: `0.12ms`,
+ * `48.30ms`, `1251.88ms`.
  */
 export function fmtMsExact(ms) {
-  if (ms < 1000) return `${ms.toFixed(2)}ms`
-  return `${(ms / 1000).toFixed(2)}s`
+  return `${ms.toFixed(2)}ms`
+}
+
+/**
+ * A moment in the run as `mm:ss` (fmtClock) with `decimals` places of a
+ * second [proposed]: the Network tab's zoomed-in windows (v6 item 6) and a
+ * request's start in its timing popover (v6 item 27), where whole seconds
+ * say too little. `00:42.4`, `00:42.406`.
+ */
+export function fmtClockFine(sec, decimals = 0) {
+  const k = 10 ** decimals
+  const t = Math.round(Math.max(0, sec) * k) / k
+  const m = Math.floor(t / 60)
+  const s = (t - m * 60).toFixed(decimals).padStart(decimals ? decimals + 3 : 2, '0')
+  return `${pad(m)}:${s}`
+}
+
+/** The Network tab's time window, in v6 item 6's words: `00:40 to 00:50`, with tenths under 10 seconds and hundredths under 1. */
+export function fmtWindow(a, b) {
+  const span = b - a
+  const d = span < 1 ? 2 : span < 10 ? 1 : 0
+  return `${fmtClockFine(a, d)} to ${fmtClockFine(b, d)}`
 }
 
 /** A window of the run, with a spaced hyphen as mock-data.md's date ranges use: `1:13 - 1:25`. */

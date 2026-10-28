@@ -329,11 +329,19 @@ export function ToastProvider({ children }) {
    and click-outside. It opens after a short hover (so a pointer passing over
    the bar does not open it), then stays open after the pointer leaves the
    strip, until one of those closes it or another popover opens. Only one is
-   ever open (ltpopover.md: never stack popovers). */
+   ever open (ltpopover.md: never stack popovers).
+   `place(anchor, popover)` (v6 item 8) replaces the placement: the Network
+   tab puts its popovers above or below a table row, and keeps them in the
+   viewport. It returns { top, left, side, caretX }. Not a library prop
+   (automation-details.md §9). Moving from one anchor to another swaps the
+   popovers in one render, so nothing blinks between them. */
 let currentPopover = null // the close function of the popover open now
+/** Closes whichever popover is open: the Network tab's, when the rows under it move (v6). */
+export const closePopover = () => currentPopover?.current()
 
 export function LTPopover({ children, heading, text, popOverbodyJSX, direction = 'top', canChangeDirection = false,
-  openOnClick = false, forceClose = false, onOpen, contentStyles, containsInteractiveChildElement = false }) {
+  openOnClick = false, forceClose = false, onOpen, contentStyles, containsInteractiveChildElement = false, place, className,
+  openDelay }) {
   const interactive = containsInteractiveChildElement
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState(null)
@@ -347,10 +355,15 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
   // top-left / top-right and right-top / right-bottom: the box's start or end.
   const align = { left: 'start', right: 'end', top: 'start', bottom: 'end' }[direction.split('-')[1]] ?? 'center'
 
+  // Taking over from another open popover, this one shows at once, without
+  // the fade-in, so the swap reads as one popover moving (v6 item 8).
+  const [instant, setInstant] = useState(false)
   closeRef.current = () => setOpen(false)
   const show = () => {
-    if (currentPopover && currentPopover !== closeRef) currentPopover.current()
+    const swap = !!currentPopover && currentPopover !== closeRef
+    if (swap) currentPopover.current()
     currentPopover = closeRef
+    setInstant(swap)
     setOpen(true)
   }
   useEffect(() => { if (!open && currentPopover === closeRef) currentPopover = null }, [open])
@@ -368,6 +381,10 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
       if (interactive && e?.type === 'scroll' && e.target !== document && e.target.contains?.(anchorRef.current)) {
         setOpen(false)
         return
+      }
+      if (place) {
+        const p = place(anchorRef.current, popRef.current)
+        if (p) { setPos(p); return }
       }
       // Placed beside the part of the anchor in view (v5: a Waterfall cell
       // half cut off by the table's sideways scroll).
@@ -400,10 +417,10 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
 
   const child = React.Children.only(children)
   const hover = openOnClick ? {} : interactive ? {
-    onMouseEnter: e => { child.props.onMouseEnter?.(e); clearTimeout(timer.current); if (!open) timer.current = setTimeout(show, 250) },
+    onMouseEnter: e => { child.props.onMouseEnter?.(e); clearTimeout(timer.current); if (!open) timer.current = setTimeout(show, openDelay ?? 250) },
     onMouseLeave: e => { child.props.onMouseLeave?.(e); clearTimeout(timer.current) },
   } : {
-    onMouseEnter: e => { child.props.onMouseEnter?.(e); clearTimeout(timer.current); timer.current = setTimeout(show, 150) },
+    onMouseEnter: e => { child.props.onMouseEnter?.(e); clearTimeout(timer.current); timer.current = setTimeout(show, openDelay ?? 150) },
     onMouseLeave: e => { child.props.onMouseLeave?.(e); clearTimeout(timer.current); timer.current = setTimeout(() => setOpen(false), 80) },
     onPointerDown: e => { child.props.onPointerDown?.(e); clearTimeout(timer.current); setOpen(false) },
   }
@@ -425,7 +442,7 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
       {trigger}
       {open && createPortal(interactive ? (
         <div ref={popRef} role="dialog" aria-labelledby={heading ? headingId : undefined}
-          className={cx('lt-popover', 'is-interactive', pos && `is-${pos.side}`)} style={style}>
+          className={cx('lt-popover', 'is-interactive', pos && `is-${pos.side}`, instant && 'is-instant', className)} style={style}>
           <div className="lt-popover__head">
             {heading && <p id={headingId} className="lt-popover__heading">{heading}</p>}
             <LTIconButton icon={X} ariaLabel="Close" variant="invisible" size="xsmall" tooltipDirection="n"
@@ -435,7 +452,7 @@ export function LTPopover({ children, heading, text, popOverbodyJSX, direction =
           {popOverbodyJSX}
         </div>
       ) : (
-        <div ref={popRef} className={cx('lt-popover', pos && `is-${pos.side}`)} aria-hidden="true" style={style}>
+        <div ref={popRef} className={cx('lt-popover', pos && `is-${pos.side}`, instant && 'is-instant', className)} aria-hidden="true" style={style}>
           {heading && <p className="lt-popover__heading">{heading}</p>}
           {text && <p className="lt-popover__text">{text}</p>}
           {popOverbodyJSX}

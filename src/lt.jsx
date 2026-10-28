@@ -240,6 +240,24 @@ export function LTTag({ text, variant = 'secondary', labelStyle = 'outline', siz
   )
 }
 
+/* ---------- LTToken ----------
+   A removable filter value (v6 item 6: the Network tab's time window).
+   Documented props: as, hideRemoveButton, isSelected, size (COMPONENTS.md).
+   Its text and remove handler are TBD upstream, so `text`, `onRemove`,
+   `removeLabel` and `removeTooltip` stand in (automation-details.md §9). */
+export function LTToken({ text, onRemove, removeLabel = 'Remove', removeTooltip, hideRemoveButton = false, isSelected = false,
+  size = 'medium', as: Tag = 'span', className }) {
+  return (
+    <Tag className={cx('lt-token', `lt-token--${size}`, isSelected && 'is-selected', className)}>
+      <span className="lt-token__text">{text}</span>
+      {!hideRemoveButton && onRemove && (
+        <LTIconButton icon={X} ariaLabel={removeLabel} tooltipText={removeTooltip} variant="invisible" size="xsmall"
+          className="lt-token__remove" onClick={onRemove} />
+      )}
+    </Tag>
+  )
+}
+
 /* ---------- LTTestStatusLabel ----------
    Glyphs follow the Status component as mock-data.md describes it:
    passed = green circle, white tick; failed = red circle, white cross;
@@ -479,11 +497,13 @@ export function LTSwitch({ label, labelPosition = 'end', checked = false, onValu
    composed here and flagged (automation-details.md §9): a column may carry
    `render(row)`, `sortable`, `sortHint`, `align: 'end'`, `width`,
    `className` and `headerExtra`; the table takes `sort` ({ key, dir }),
-   `onSort(key)`, `rowKey(row)`, `rowProps(row)` and `className`. Sorting
+   `onSort(key)`, `rowKey(row)`, `rowProps(row)`, `headerProps(column)`
+   (v6: column resizing and reordering) and `className`. Sorting
    follows the WAI-ARIA sortable table: a button in each header, aria-sort
    on the sorted one only. */
 const SORT_WORD = { asc: 'ascending', desc: 'descending' }
-export function LTTable({ columns, data, allowValueCopy = false, caption, tabIndex, sort, onSort, rowKey, rowProps, className }) {
+export function LTTable({ columns, data, allowValueCopy = false, caption, tabIndex, sort, onSort, rowKey, rowProps, headerProps,
+  className }) {
   const widths = columns.some(c => c.width)
   return (
     <table className={cx('lt-table', className)} tabIndex={tabIndex}>
@@ -500,8 +520,9 @@ export function LTTable({ columns, data, allowValueCopy = false, caption, tabInd
                 <SortIcon size={14} aria-hidden="true" className="lt-table__sort-icon" />
               </button>
             )
+            const extra = headerProps?.(c) ?? {}
             return (
-              <th key={c.key} scope="col" className={cx(c.align === 'end' && 'is-end', c.className)}
+              <th key={c.key} scope="col" {...extra} className={cx(c.align === 'end' && 'is-end', c.className, extra.className)}
                 aria-sort={c.sortable && on ? SORT_WORD[sort.dir] : undefined}>
                 {c.sortable ? (
                   <span className="lt-table__th">
