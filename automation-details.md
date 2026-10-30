@@ -1412,7 +1412,7 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 
 71. **A visible way back to the whole session**: the token's × was the visible twin of **R** (`ux-persona.md`: every power-user shortcut has a visible twin). A window now clears with R, by zooming out, or with Clear Filters when nothing matches. Add a visible control, for example a reset button at the overview's end like the v5 strip's, or leave it?
 
-Questions 72 to 85, the setup state's: §12.9; 86 to 90, its review's: §12.12; 91 and 92: §12.13.
+Questions 72 to 85, the setup state's: §12.9; 86 to 90, its review's: §12.12; 91 and 92: §12.13; 93: §12.14.
 
 ## 11. When this ships into design-context/
 
@@ -1842,7 +1842,7 @@ Rajat's second review, the same day, written *setup v3 item 1* to *setup v3 item
 3. **The sub-step line** (item 3):
    - No icon in front. The words type out a character every 32ms, starting 240ms after the line has risen in, from a fixed left edge: the full words, invisible underneath, hold the line's width, so nothing shifts.
    - When the words are complete, three dots run at their end: they appear one by one, hold, and fade together, every 1.5 seconds.
-   - A finished sub-step swaps its dots for the green tick, in the same place, for its half-second beat, then rises out.
+   - A finished sub-step swaps its dots for the green tick, in the same place, for its half-second beat, then rises out. *Setup v4 items 1 and 2: the tick now sits in front of the words, and the dots stay (§12.14).*
    - Typing happens only as a sub-step starts; reopening the stage later shows the words whole. With reduced motion they always show whole.
    - Screen readers get the words whole at once, with *, running* or *, done*; the dots are hidden from them.
    - The running main step in the list keeps its blue spinner (setup v2 item 5).
@@ -1859,7 +1859,7 @@ Rajat's second review, the same day, written *setup v3 item 1* to *setup v3 item
 **Decisions [proposed]**
 
 - **The dots are an indicator, not copy.** The strings stay as they were, with no punctuation of their own (`ux-text-guidelines.md` §2); the dots are drawn after them and hidden from screen readers, which hear *, running*.
-- **The tick takes the dots' place** when a sub-step finishes, so the line keeps one width, where it used to replace the spinner in front.
+- **The tick takes the dots' place** when a sub-step finishes, so the line keeps one width, where it used to replace the spinner in front. *Superseded by setup v4 item 1: the tick sits in front, hung outside the line, so the line still keeps one width (§12.14).*
 - **Type only as a sub-step starts**, so a stage reopened mid-step does not retype old words.
 - **The card's spark** is the house's own mark for activity (the kit's `sparkle()`), so the card's motion stays in the kit's own vocabulary.
 
@@ -1867,3 +1867,29 @@ Rajat's second review, the same day, written *setup v3 item 1* to *setup v3 item
 
 91. **A pause control** for the looping spots (C80): add one beside the stage, or treat the loop as part of the loading indicator?
 92. **Typing speed:** 32ms a character (about a second for *Setting the card as the payment method*). Faster, slower, or as built?
+
+### 12.14 Setup v4: Rajat's third review (30 Oct 2026)
+
+Rajat's third review, the same day, written *setup v4 item 1* to *setup v4 item 3*:
+
+1. Once a sub-step is done, put the green tick in front of its shimmering words, instead of at the end.
+2. The three dots after the sub-step's words were removed: add them again.
+3. Keep everything else as built.
+
+**What changed**
+
+1. **The tick in front** (item 1): a finished sub-step's green tick (16px, `success.fg`) sits 8px before its words, the size, colour and gap of setup v2's sub-step icon.
+   - It hangs outside the line's box, so the words and the dots stay where they were while the sub-step ran. Measured on *Checking your app*: the words' left edge holds at the same pixel before and after the tick shows.
+   - The line's box is unchanged, so its centre is where setup v3 put it. The tick reaches 24px further left, so the finished line's marks sit 16px left of the stage's centre for its beat and its rise (4px while it runs).
+2. **The dots stay** (item 2), read as the dots the tick replaced: a finished sub-step keeps its three dots, still running, through its half-second beat and while it rises out.
+   - Every line's dots keep one rhythm (each line's cycle is set against one shared clock), so the finished line, drawn afresh as it rises out, carries its dots on mid-cycle rather than blanking and starting over.
+3. **Everything else as built** (item 3): the typing, the shimmer while a sub-step runs (it stops at the tick, as before), the carousel, the long-step note, the spots, the list, the screen reader text (*, done*; the tick and the dots stay hidden from screen readers) and reduced motion.
+
+**Decisions [proposed]**
+
+- **The tick hangs outside the line.** Inside it, the tick would shift the centred words 12px the moment it shows; keeping its room empty while the sub-step runs would move the running line 12px from where setup v3 put it, against item 3.
+- **The dots keep running beside the tick**, as they ran before it: item 2 asks for the same dots back.
+
+**Open questions**
+
+93. **Dots beside a tick:** the running dots say "still working" while the tick says "done", for the half second before the line rises out. Keep them running, as built, or hold them still once the tick shows?

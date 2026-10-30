@@ -182,6 +182,8 @@ const STATE_WORDS = { done: 'done', current: 'running', pending: 'pending' }
    reduced motion it shows whole at once. */
 const TYPE_MS = 32
 const TYPE_DELAY_MS = 240
+// The running dots' cycle, as in styles.css.
+const DOTS_MS = 1500
 const reducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 function useTyped(text, type) {
   const [shown, setShown] = useState(() => (type && !reducedMotion() ? 0 : text.length))
@@ -200,21 +202,27 @@ function useTyped(text, type) {
 }
 
 /* One sub-step's line (setup v3 items 3 and 5): the words, shimmering while
-   it runs, then the running dots; a finished one swaps the dots for a green
-   tick. The full words, kept invisible underneath, hold the line's width, so
-   the typing grows from a fixed left edge and nothing shifts. Screen readers
-   get the words whole. */
+   it runs, then the running dots. A finished one keeps its dots and gains a
+   green tick in front (setup v4 items 1 and 2). The full words, kept
+   invisible underneath, hold the line's width, so the typing grows from a
+   fixed left edge, and the tick hangs outside that width, so nothing
+   shifts. Screen readers get the words whole. */
 function SubLine({ item, type = false }) {
   const shown = useTyped(item.title, type)
+  // Every line's dots keep one rhythm, so a finished line, drawn afresh as
+  // it rises out, carries its dots on mid-cycle.
+  const [dotsAt] = useState(() => -(performance.now() % DOTS_MS))
   const done = item.status === 'done'
   return (
     <span className={cx('su-type', done ? 'is-done' : 'is-running')}>
       <span className="vh">{`${item.title}, ${STATE_WORDS[item.status]}`}</span>
+      {done && <CircleCheck size={16} className="su-type__tick" aria-hidden="true" />}
       <span className="su-type__ghost" aria-hidden="true">{item.title}</span>
       <span className="su-type__text" aria-hidden="true">{item.title.slice(0, shown)}</span>
       <span className="su-type__end" aria-hidden="true">
-        {done ? <CircleCheck size={16} className="su-type__tick" />
-          : <span className={cx('su-dots', shown < item.title.length && 'is-waiting')}><i>.</i><i>.</i><i>.</i></span>}
+        <span className={cx('su-dots', shown < item.title.length && 'is-waiting')} style={{ '--su-dots-at': `${dotsAt}ms` }}>
+          <i>.</i><i>.</i><i>.</i>
+        </span>
       </span>
     </span>
   )

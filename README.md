@@ -194,9 +194,16 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 |---|---|---|
 | Setup v3 1 | Looping spots | The gears turn, the bubbles rise and the card floats for as long as their step runs |
 | Setup v3 2 | The floating card | Apple Pay's spot: no ring; the card rises and tilts over its shadow, a spark twinkles, its mark swells |
-| Setup v3 3 | Typing and running dots | Each sub-step types itself out as it starts, then three dots run at its end; done, a green tick takes the dots' place |
+| Setup v3 3 | Typing and running dots | Each sub-step types itself out as it starts, then three dots run at its end; done, a green tick takes the dots' place. *Setup v4: the tick shows in front, and the dots stay* |
 | Setup v3 4 | Carousel kept | The finished sub-step rises out as the next rises in |
 | Setup v3 5 | Shimmer on every sub-step | Every running sub-step shimmers; a long one still adds *Still working on this step. It finishes on its own.* |
+
+**Setup v4, 30 Oct 2026** (spec §12.14), on the same test:
+
+| # | Change | Try it |
+|---|---|---|
+| Setup v4 1 | The tick in front | When a sub-step finishes, a green tick shows in front of its words; the words stay where they were |
+| Setup v4 2 | The dots stay | The finished sub-step keeps its running dots while it shows its tick and rises out |
 
 ## Review states
 
