@@ -5,7 +5,7 @@
 // other tests are open. Pages read it through narrow hooks: the header's time
 // re-renders the header, the stage re-renders the stage, and the page itself
 // re-renders only when the phase changes or a result arrives.
-import React, { useEffect, useRef, useSyncExternalStore } from 'react'
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { CircleCheck, CircleDashed, Pause, Play, RotateCcw, SkipForward } from 'lucide-react'
 import { LTButton, LTLoader, announce, cx } from './lt.jsx'
 import { fmtDuration } from './format.js'
@@ -14,8 +14,8 @@ import applepaySvg from './illustrations/setup-applepay.svg?raw'
 import runSvg from './illustrations/setup-run.svg?raw'
 
 // Kit drafts, one per major step shown on the stage (spec §12.11). Inline,
-// so CSS can move their groups. Loading your results has none since setup v2
-// item 9: it happens in place, as skeletons.
+// so CSS can move their groups; since setup v3 item 1 they loop. Loading your
+// results has none since setup v2 item 9: it happens in place, as skeletons.
 const ILLUSTRATIONS = { device: deviceSvg, applepay: applepaySvg, run: runSvg }
 
 /* The flow (spec §12.3 item 1, setup v2 items 7 and 8). `sec` is each
@@ -155,10 +155,14 @@ function viewAt(t) {
     status: t >= SPANS[si].end ? 'done' : si === shown.si ? 'current' : 'pending' }))
     .filter(r => t >= KNOWN_AT[r.si])
   const attempt = shown.attempt
+  // When the running sub-step came into view: after the previous one's tick.
+  const inView = seg.start + (prev && !prev.failed ? BEAT : 0)
   return {
     step, list, attempt, maxAttempts: step.maxAttempts,
     lastFail: attempt > 1 ? { attempt: attempt - 1, reason: step.failures[attempt - 1].reason } : null,
-    sub: { key: `${shown.si}:${attempt}:${shown.sub}`, title: step.subs[shown.sub].title, status: beat ? 'done' : 'current' },
+    sub: { key: `${shown.si}:${attempt}:${shown.sub}`, title: step.subs[shown.sub].title, status: beat ? 'done' : 'current',
+      // Setup v3 item 3: typed out only as it starts, not when the stage is reopened later.
+      fresh: !beat && t - inView < 0.5 },
     long: !beat && !!step.setup && t - seg.start >= LONG_SEC,
   }
 }
@@ -171,38 +175,55 @@ export function SetupClock() {
   return <span role="timer">{fmtDuration(Math.min(s, Math.floor(RUN_END)))}</span>
 }
 
-/* An illustration plays when its step starts or a retry starts, and when a
-   sub-step starts if the last play began 14 seconds before (4 to play, 10
-   at rest), C66. A new key remounts it, which restarts its CSS animations;
-   each lasts at most 4 seconds and ends in the drawn pose. */
-function usePlayKey(view) {
-  const ref = useRef(null)
-  const t = now()
-  const si = view.step.id, attempt = view.attempt, sub = view.sub.key
-  const r = ref.current ?? (ref.current = { key: 0, at: t, si, attempt, sub })
-  if (r.si !== si || r.attempt !== attempt) { r.key += 1; r.at = t }
-  else if (r.sub !== sub && t - r.at >= 14000) { r.key += 1; r.at = t }
-  r.si = si; r.attempt = attempt; r.sub = sub
-  return r.key
-}
-
 const STATE_WORDS = { done: 'done', current: 'running', pending: 'pending' }
 
-/* Setup v2 item 3: one sub-step at a time. A finished one shows its tick,
-   then slides up and out as the next slides in; the previous line stays
-   mounted, hidden, until the next change. */
-function SubLine({ item }) {
+/* Setup v3 item 3: a sub-step types itself out as it starts, a character at
+   a time once its line has risen in, then three dots run at its end. With
+   reduced motion it shows whole at once. */
+const TYPE_MS = 32
+const TYPE_DELAY_MS = 240
+const reducedMotion = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+function useTyped(text, type) {
+  const [shown, setShown] = useState(() => (type && !reducedMotion() ? 0 : text.length))
+  const typing = useRef(shown < text.length)
+  useEffect(() => {
+    if (!typing.current) return undefined
+    let n = 0
+    let timer = setTimeout(function tick() {
+      n += 1
+      setShown(n)
+      if (n < text.length) timer = setTimeout(tick, TYPE_MS)
+    }, TYPE_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  return shown
+}
+
+/* One sub-step's line (setup v3 items 3 and 5): the words, shimmering while
+   it runs, then the running dots; a finished one swaps the dots for a green
+   tick. The full words, kept invisible underneath, hold the line's width, so
+   the typing grows from a fixed left edge and nothing shifts. Screen readers
+   get the words whole. */
+function SubLine({ item, type = false }) {
+  const shown = useTyped(item.title, type)
+  const done = item.status === 'done'
   return (
-    <>
-      <span className={cx('su-badge', `is-${item.status}`)} aria-hidden="true">
-        {item.status === 'done' ? <CircleCheck size={16} /> : <LTLoader size="small" />}
+    <span className={cx('su-type', done ? 'is-done' : 'is-running')}>
+      <span className="vh">{`${item.title}, ${STATE_WORDS[item.status]}`}</span>
+      <span className="su-type__ghost" aria-hidden="true">{item.title}</span>
+      <span className="su-type__text" aria-hidden="true">{item.title.slice(0, shown)}</span>
+      <span className="su-type__end" aria-hidden="true">
+        {done ? <CircleCheck size={16} className="su-type__tick" />
+          : <span className={cx('su-dots', shown < item.title.length && 'is-waiting')}><i>.</i><i>.</i><i>.</i></span>}
       </span>
-      <span className="su-carousel__text">{item.title}</span>
-      <span className="vh">{`, ${STATE_WORDS[item.status]}`}</span>
-    </>
+    </span>
   )
 }
-function SubCarousel({ item, long }) {
+
+/* Setup v2 item 3, kept by setup v3 item 4: one sub-step at a time. A
+   finished one shows its tick, then rises out as the next rises in; the
+   previous line stays mounted, hidden, until the next change. */
+function SubCarousel({ item }) {
   const ref = useRef(null)
   if (!ref.current) ref.current = { cur: item, prev: null }
   else if (ref.current.cur.key !== item.key) ref.current = { cur: item, prev: ref.current.cur }
@@ -211,7 +232,7 @@ function SubCarousel({ item, long }) {
   return (
     <div className="su-carousel">
       {prev && <p key={`out:${prev.key}`} className="su-carousel__item is-out" aria-hidden="true"><SubLine item={prev} /></p>}
-      <p key={item.key} className={cx('su-carousel__item', 'is-in', long && 'is-long')}><SubLine item={item} /></p>
+      <p key={item.key} className="su-carousel__item is-in"><SubLine item={item} type={item.fresh} /></p>
     </div>
   )
 }
@@ -219,7 +240,6 @@ function SubCarousel({ item, long }) {
 /** The stage, in place of the tabs the run fills (§12.2, setup v2 items 2, 3, 5). */
 export function SetupPanel() {
   const v = viewAt(useQuarter())
-  const playKey = usePlayKey(v)
   // Rows listed after the stage first showed slide open; the first ones only fade in.
   const first = useRef(null)
   if (!first.current) first.current = new Set(v.list.map(r => r.id))
@@ -227,13 +247,14 @@ export function SetupPanel() {
     <div className="su">
       <div className="su-stage">
         <div className="su-hero">
-          <span key={`${v.step.id}:${playKey}`} className="su-hero__ill" aria-hidden="true"
+          {/* Setup v3 item 1: the spot loops for as long as its step runs. */}
+          <span key={v.step.id} className="su-hero__ill" aria-hidden="true"
             dangerouslySetInnerHTML={{ __html: ILLUSTRATIONS[v.step.ill] }} />
           <h2 className="su-hero__title">{v.step.title}</h2>
           <p className="su-hero__attempt">
             {v.lastFail && `Attempt ${v.attempt} of ${v.maxAttempts}. ${v.lastFail.reason} on attempt ${v.lastFail.attempt}.`}
           </p>
-          <SubCarousel item={v.sub} long={v.long} />
+          <SubCarousel item={v.sub} />
           <p className={cx('su-hero__note', v.long && 'is-on')} aria-hidden={!v.long}>{REASSURANCE}</p>
         </div>
         <ol className="su-steps" aria-label="Setup steps">
