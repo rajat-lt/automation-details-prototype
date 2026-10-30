@@ -7,7 +7,7 @@ Four spot illustrations for the setup state (spec §12.11), built with design-co
 | `setup-device.mjs` | Setting up iPhone 16 | `phone-r134` (no home button; right edge drawn closed), `gears-r13` at 0.5 | PASS, accent 0.06 |
 | `setup-applepay.mjs` | Setting up Apple Pay | `credit-card-r69` at 0.84 | PASS, accent 0.133 |
 | `setup-run.mjs` | Running your test | `flask-r97` at 0.84 | WARN, line evenness 0.205 (the lifted flask alone: 0.234), accent 0.016 |
-| `setup-results.mjs` | Loading your results | `bar-chart-r107` at 0.46 | WARN, subject height 0.142 and line evenness 0.198, accent 0.121 |
+| `setup-results.mjs` | Loading your results | `bar-chart-r107` at 0.46 | WARN, subject height 0.142 and line evenness 0.198, accent 0.121. *Unused since setup v2: results load as skeletons (spec §12.12)* |
 
 Each `.png` is the kit's 2x preview of its 600 × 500 artboard.
 

@@ -392,7 +392,7 @@ function FailureNav({ failures, reason }) {
 
 /* ---------- the tab ---------- */
 export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloadView, setPayloadView, onStub, onToast,
-  onScreenshot, demo, onRetry, isCurrent, focusCommand, linkedRequest = false, density, setDensity, popOut }) {
+  onScreenshot, demo, onRetry, isCurrent, focusCommand, linkedRequest = false, density, setDensity, popOut, fadeIn = false }) {
   const { commands, tree, durationSec: duration } = detail
   const failedTest = detail.failedCount > 0
   // Every group, nested ones too (v4 item 10), outer before inner.
@@ -933,7 +933,8 @@ export function CommandsTab({ detail, searchRef, codeTheme, setCodeTheme, payloa
 
   const filterLabel = filterGroup ? filterGroup.tc : 'All'
   return (
-    <div ref={scrollRef} className={cx('cmd-scroll', density === 'condensed' && 'is-condensed')} onScroll={onScroll}
+    // Setup v2 item 9: the setup test's commands fade in where the skeleton was.
+    <div ref={scrollRef} className={cx('cmd-scroll', density === 'condensed' && 'is-condensed', fadeIn && 'is-revealing')} onScroll={onScroll}
       style={{ '--sticky-top': `${hidden ? toolbarH - hideH : toolbarH}px`, '--toolbar-hide': `${hideH}px` }}>
       {/* Item 17: the toolbar is sticky, hides on scroll down and returns on
           scroll up. It stays while hovered or focused, and while a scroll it

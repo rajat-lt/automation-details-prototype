@@ -10,7 +10,7 @@ import { PlatformSidebar, TopBar } from './shell.jsx'
 import { TestHeader } from './header.jsx'
 import { CommandsTab, PayloadPanel } from './commands.jsx'
 import { VideoPane, PipWindow, frameDataURL } from './video.jsx'
-import { LogsTab, MetaDataTab, TestsPane } from './tabs.jsx'
+import { LogsSkeleton, LogsTab, MetaDataTab, TestsPane } from './tabs.jsx'
 import { NetworkTab } from './network.jsx'
 import { MediaTabs, ReorderTabs } from './tabbar.jsx'
 import { ShortcutsDialog } from './shortcuts.jsx'
@@ -20,8 +20,8 @@ import {
   TruncText, announce, cx,
 } from './lt.jsx'
 import { LTDrawer, LTModal, LTSegmentedControl, ToastProvider, useToast } from './overlays.jsx'
-import { BUILD, TESTS, SETUP_TEST_ID, getDetail, failureSegments, historyFor, commandHref, networkOn, statusLabel } from './data.js'
-import { SETUP_TOTAL_SEC, SetupAnnouncer, SetupControls, SetupPanel, useSetupPhase } from './setup.jsx'
+import { BUILD, TESTS, SETUP_TEST_ID, getDetail, failureSegments, historyFor, commandHref, statusLabel } from './data.js'
+import { SETUP_TOTAL_SEC, SetupAnnouncer, SetupControls, SetupPanel, useResultsReady, useSetupPhase } from './setup.jsx'
 import { fmtCount, fmtDateTime, fmtDuration, fmtMs, fmtRelative, fmtTime } from './format.js'
 import { playback } from './playback.js'
 import { copyText } from './clipboard.js'
@@ -55,8 +55,9 @@ const NO_MEDIA_TABS = { order: ['video'], active: 'video' }
 const DEFAULT_TEST = 't-01'
 
 /* Setup state (spec §12): the test being set up shows as running, with no
-   commands yet, until setup ends; then its results, and its duration counts
-   the setup too (§12.3 item 12). */
+   commands yet, until its run ends; from then on its outcome, while the
+   results load (setup v2 item 9), and its duration counts the setup too
+   (§12.3 item 12). */
 const liveTest = (t, phase) => (t.id !== SETUP_TEST_ID ? t
   : phase === 'setup' ? { ...t, status: 'running' } : { ...t, durationSec: SETUP_TOTAL_SEC })
 const emptyDetail = test => ({ test, sessionId: '', commands: [], tree: [], groups: [], failed: [],
@@ -143,9 +144,18 @@ function Page() {
   }, [])
 
   const setupPhase = useSetupPhase()
+  const resultsReady = useResultsReady()
   const tests = TESTS.filter(t => !deleted.has(t.id)).map(t => liveTest(t, setupPhase))
   const test = tests.find(t => t.id === route.testId) ?? tests.find(t => t.id === DEFAULT_TEST) ?? tests[0]
-  const inSetup = test.status === 'running'
+  const isSetupTest = test.id === SETUP_TEST_ID
+  // The stage while it sets up and runs; then skeletons, each giving way as
+  // its result arrives (setup v2 item 9); `loadingState` covers both.
+  const inSetup = isSetupTest && setupPhase === 'setup'
+  const loadingState = isSetupTest && setupPhase !== 'done'
+  const resultsLoading = isSetupTest && setupPhase === 'results'
+  const commandsReady = !resultsLoading || !!(resultsReady & 1)
+  const logsReady = !resultsLoading || !!(resultsReady & 2)
+  const videoReady = !resultsLoading || !!(resultsReady & 4)
   const detail = useMemo(() => (inSetup ? emptyDetail(test) : getDetail(test.id)), [test.id, inSetup]) // eslint-disable-line react-hooks/exhaustive-deps
   const name = names[test.id] ?? test.name
   const segments = useMemo(() => failureSegments(detail.failed), [detail])
@@ -248,7 +258,11 @@ function Page() {
      floats or is collapsed, and comes back where it was (8.3); payload tabs
      stay whatever the video does. Before the first payload opens there are no
      tabs at all, and the video shows as before (8.5). */
-  const docked = videoMode === 'docked'
+  // Setup v2 item 1: while the test loads, the video shows docked, beside
+  // the logs, with no control to hide, float or move it; the choice made
+  // before comes back with the results.
+  const shownMode = loadingState ? 'docked' : videoMode
+  const docked = shownMode === 'docked'
   const mediaState = media[test.id] ?? NO_MEDIA_TABS
   const payloadIds = mediaState.order.filter(id => id !== 'video')
   const mediaTabs = docked ? mediaState.order : payloadIds
@@ -318,11 +332,11 @@ function Page() {
   // Rajat, 28 Oct 2026: on the Network tab the logs always sit beside the
   // video, so the timing popover has room on the table's right; the dock
   // control shows on the other tabs, and their choice comes back on leaving.
-  const paneDock = tab === 'network' ? 'side' : dock
+  const paneDock = tab === 'network' || loadingState ? 'side' : dock
 
   // The end of the tab bar always says where the video is (show the mode):
   // its dock position while docked, otherwise the way back.
-  const videoControl = docked ? (tab === 'network' ? null : (
+  const videoControl = loadingState ? null : docked ? (tab === 'network' ? null : (
     // Item 13: implicitly saved setting, so LTSegmentedControl, icon-only with
     // tooltips. Segments are nouns, not actions (guidelines/ltsegmentedcontrol.md;
     // v1 said "Dock left of the video", corrected 17 Oct 2026).
@@ -332,7 +346,7 @@ function Page() {
         { value: 'side', label: 'Logs left of the video', icon: PanelLeft },
         { value: 'bottom', label: 'Logs below the video', icon: PanelBottom },
       ]} />
-  )) : videoMode === 'pip' ? (
+  )) : shownMode === 'pip' ? (
     <LTButton variant="outline" size="small" leadingIcon={paneDock === 'side' ? PanelRight : PanelTop} label="Dock Video"
       data-focus="tab-dock" onClick={() => changeVideoMode('docked', 'video-pip')} />
   ) : (
@@ -346,30 +360,29 @@ function Page() {
         trailing={videoControl}
         navs={tabOrder.map(id => ({
           id, label: TAB_LABELS[id], href: `#/${test.id}/${id}`,
-          counter: id === 'commands' && detail.commands.length ? fmtCount(detail.commands.length) : undefined,
+          counter: id === 'commands' && commandsReady && detail.commands.length ? fmtCount(detail.commands.length) : undefined,
         }))} />
       <div className="logs-panel">
         {/* Setup state (spec §12.2): the step list stands in for the tabs the
             run fills; Meta Data shows the capabilities, which exist already. */}
-        {inSetup && tab !== 'metadata' && (
-          <SetupPanel results={networkOn(test) ? 'Commands, logs, network requests, and the video' : 'Commands, logs, and the video'} />
-        )}
+        {inSetup && tab !== 'metadata' && <SetupPanel />}
         {/* Kept mounted while other tabs show, so revealed runs, open groups
             and the scroll position survive a tab switch. */}
         {!inSetup && <>
         <div className="tab-host" hidden={tab !== 'commands'}>
-          <CommandsTab key={`${test.id}:${demo}`} detail={detail} searchRef={searchRef} codeTheme={codeTheme}
+          <CommandsTab key={`${test.id}:${demo}:${commandsReady}`} detail={detail} searchRef={searchRef} codeTheme={codeTheme}
             setCodeTheme={setCodeTheme} payloadView={payloadView} setPayloadView={setPayloadView}
             density={density} setDensity={setDensity} popOut={popOut}
             onStub={onStub} onToast={toast} onScreenshot={cmd => setModal({ shot: cmd })}
             isCurrent={tab === 'commands' && !modal}
             focusCommand={route.testId === test.id && route.commandId ? { id: route.commandId, n: route.n } : null}
             linkedRequest={route.testId === test.id && !!route.requestId}
-            demo={demo === 'commands-loading' ? 'loading' : demo === 'commands-error' ? 'error' : null}
-            onRetry={() => setDemo(null)} />
+            demo={!commandsReady || demo === 'commands-loading' ? 'loading' : demo === 'commands-error' ? 'error' : null}
+            fadeIn={isSetupTest} onRetry={() => setDemo(null)} />
         </div>
-        {tab === 'logs' && (detail.commands.length
-          ? <LogsTab detail={detail} theme={logTheme} setTheme={setLogTheme} />
+        {tab === 'logs' && !logsReady && <LogsSkeleton detail={detail} theme={logTheme} />}
+        {tab === 'logs' && logsReady && (detail.commands.length
+          ? <LogsTab detail={detail} theme={logTheme} setTheme={setLogTheme} fadeIn={isSetupTest} />
           : <div className="tab-state"><p className="lt-blank__heading">Logs appear here once the test starts.</p></div>)}
         {/* v5: kept mounted too, so its filters, sort, open request and
             scroll survive a tab switch. */}
@@ -387,8 +400,8 @@ function Page() {
   )
 
   const videoPane = mode => (
-    <VideoPane key={`${test.id}:${inSetup}`} detail={detail} segments={segments} byId={byId} onStub={onStub}
-      loading={demo === 'video-loading'} mode={mode} dock={paneDock}
+    <VideoPane key={`${test.id}:${inSetup}:${videoReady}`} detail={detail} segments={segments} byId={byId} onStub={onStub}
+      loading={demo === 'video-loading' || !videoReady} bare={loadingState} fadeIn={isSetupTest} mode={mode} dock={paneDock}
       onPip={() => changeVideoMode('pip', 'pip-dock')} onDock={() => changeVideoMode('docked', 'video-pip')}
       onCollapse={() => changeVideoMode('collapsed', 'show-video')} />
   )
@@ -468,7 +481,7 @@ function Page() {
         </div>
       </div>
 
-      {videoMode === 'pip' && (
+      {shownMode === 'pip' && (
         <PipWindow rect={pipRect} setRect={setPipRect} title={name}>
           {videoPane('pip')}
         </PipWindow>

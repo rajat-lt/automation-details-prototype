@@ -15,7 +15,28 @@ import { fmtDuration, fmtMs, fmtTime } from './format.js'
    patterns/hyperexecute-job-details.md §3.3). Lines come from the commands.
    It scrolls inside itself, as hyperexecute-job-details.md §6 says; item 17's
    single scroll is about the All Commands tab. */
-export function LogsTab({ detail, theme, setTheme }) {
+/* Setup v2 item 9: the logs' skeleton while they load, in the console's own
+   frame and theme, its title already known; the bars shimmer in a wave. */
+export function LogsSkeleton({ detail, theme }) {
+  return (
+    <div className="logs-tab" aria-busy="true">
+      <LTCodeBlock theme={theme} title={`${detail.test.framework} logs`} className="logs-console">
+        <div className="log-skeleton">
+          <span className="vh">Loading logs</span>
+          {Array.from({ length: 16 }, (_, i) => (
+            <div key={i} className="log-skeleton__line" aria-hidden="true">
+              <LTSkeletonBox width={16} height={10} delay={i * 40} />
+              <LTSkeletonBox width={76} height={10} delay={i * 40} />
+              <LTSkeletonBox width={`${38 + ((i * 29) % 46)}%`} height={10} delay={i * 40} />
+            </div>
+          ))}
+        </div>
+      </LTCodeBlock>
+    </div>
+  )
+}
+
+export function LogsTab({ detail, theme, setTheme, fadeIn = false }) {
   const lines = useMemo(() => detail.commands.flatMap(c => {
     const stamp = `${fmtTime(c.at)}.${String(Math.round((c.at % 1) * 1000)).padStart(3, '0')}`
     const args = c.request.requestBody ? ` ${c.request.requestBody}` : ''
@@ -46,14 +67,16 @@ export function LogsTab({ detail, theme, setTheme }) {
     const text = lines.map(l => `${l.stamp}  ${l.level.padEnd(5)}  ${l.text}`).join('\n')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }))
-    a.download = `${detail.test.testId}-selenium.log`
+    a.download = `${detail.test.testId}-${detail.test.framework.toLowerCase()}.log`
     a.click()
     setTimeout(() => URL.revokeObjectURL(a.href), 1000)
   }
   const dark = theme === 'dark'
   return (
-    <div className="logs-tab" ref={boxRef}>
-      <LTCodeBlock theme={theme} title="Selenium logs" className="logs-console" bodyRef={bodyRef}
+    // Setup v2 item 9: the setup test's logs fade in where the skeleton was.
+    // The title follows the framework (an Appium test since §12).
+    <div className={cx('logs-tab', fadeIn && 'is-revealing')} ref={boxRef}>
+      <LTCodeBlock theme={theme} title={`${detail.test.framework} logs`} className="logs-console" bodyRef={bodyRef}
         headerActions={<>
           <LTInputBox value={q} onChange={setQ} placeholder="Search logs" ariaLabel="Search logs" size="small"
             colorScheme={dark ? 'dark' : 'light'} className="logs-search"
@@ -71,7 +94,7 @@ export function LogsTab({ detail, theme, setTheme }) {
             variant="invisible" size="small" className={cx(dark && 'on-dark')}
             onClick={() => (fs ? document.exitFullscreen() : boxRef.current?.requestFullscreen?.())} />
         </>}>
-        <ol className="log-lines" aria-label="Selenium logs">
+        <ol className="log-lines" aria-label={`${detail.test.framework} logs`}>
           {lines.map((l, i) => (
             <li key={i} data-line={i} className={cx('log-line', l.error && 'is-error', hits[cur] === i && 'is-current', q && hits.includes(i) && 'is-hit')}>
               <span className="log-num" aria-hidden="true">{i + 1}</span>
