@@ -72,7 +72,7 @@ const ROWS = [
   ['Attempt Signup and Verify Preferences Screen Persistence', 'passed', 99, 4, 0, 2, 4 * DAY],
 ]
 
-export const TESTS = ROWS.map(([name, status, dur, cfg, res, person, ago, extra = {}], i) => {
+const ROW_TESTS = ROWS.map(([name, status, dur, cfg, res, person, ago, extra = {}], i) => {
   const r = rng(1000 + i)
   const [browser, browserVersion, os, osVersion] = CONFIGS[cfg]
   const user = PEOPLE[person]
@@ -96,6 +96,42 @@ export const TESTS = ROWS.map(([name, status, dur, cfg, res, person, ago, extra 
     testId: hex(r, 32), // GAP: no automation test ID format in mock-data.md
   }
 })
+
+/* Setup state (30 Oct 2026, spec §12): a test that is still being set up.
+   An Appium app test on a real iPhone with Apple Pay on, so its setup has a
+   slow step that retries. GAP (spec §12.8): mock-data.md has no mobile
+   devices, OS versions or app IDs, so the device, OS and capabilities follow
+   the example in TestMu AI's Apple Pay automation docs (iPhone 16, iOS 18,
+   `applePay`, `applePayCardType`), and the app URL their upload docs' form,
+   `lt://APP` and 21 digits (both read 30 Oct 2026). It is listed first, as the
+   newest test in the build, under its own ID so the others keep theirs.
+   `status` is the outcome once results arrive; while setup runs, the page
+   shows it as running (setup.js). Its duration is the run's own length, the
+   video's; the header counts setup too (spec §12.3 item 12). */
+export const SETUP_TEST_ID = 't-19'
+const SETUP_TEST = (() => {
+  const r = rng(1000 + 19)
+  return {
+    id: SETUP_TEST_ID,
+    name: 'Complete Purchase Using Gift Card and Credit Card',
+    status: 'passed', durationSec: 25,
+    platform: 'mobile', device: 'iPhone 16', os: 'iOS', osVersion: '18',
+    browser: null, browserVersion: null, resolution: null,
+    framework: 'Appium',
+    tunnel: false,
+    testCaseId: '#TC-225', // the test case T01's checkout group runs
+    updatedAt: new Date(NOW - 2 * MIN),
+    updatedBy: CURRENT_USER,
+    updatedByEmail: emailFor(CURRENT_USER),
+    video: true, deepFailure: false, remarks: null,
+    app: `lt://APP${Array.from({ length: 21 }, () => Math.floor(r() * 10)).join('')}`,
+    applePay: true, applePayCardType: ['visa'],
+    setup: true,
+    testId: hex(r, 32),
+  }
+})()
+
+export const TESTS = [SETUP_TEST, ...ROW_TESTS]
 
 /* ---------------- commands ---------------- */
 
@@ -128,6 +164,47 @@ const FAILURES = {
   intercepted: () => [400, { error: 'element click intercepted', message: 'Element <button id="reserve-button"> is not clickable at point (842, 611). Other element would receive the click: <div class="modal-backdrop">' }],
   server: () => [500, { error: 'unknown error', message: 'Internal Server Error' }],
 }
+
+/*
+ * The setup test's run (spec §12): an Appium checkout in a shopping app on an
+ * iPhone 16, paid with Apple Pay. The Apple Pay hook and the passcode entry
+ * are the TestMu AI docs' own (Apple Pay Automation on Real Devices, steps 4
+ * and 5); the locators follow the product's `accessibility-id` form (T01).
+ * GAP: mock-data.md has no app or its screens; the pages are drawn by
+ * video.jsx's phone frame. 25 seconds, all passed.
+ */
+const T19 = [
+  { top: true, page: 'app-home', rows: [
+    ['Create New Session', 0, 2400],
+    ['Set Timeouts', 2.6, 14],
+  ] },
+  { kind: 'annotation', title: 'Add a product to the cart', page: 'app-home', rows: [
+    ['Find Element', 3.4, 180, 'accessibility-id', 'product-tile-1', { target: 'tile' }],
+    ['Click Element', 3.8, 220, null, null, { target: 'tile' }],
+    ['Find Element', 5.1, 160, 'accessibility-id', 'add-to-cart', { target: 'addToCart', page: 'app-product' }],
+    ['Click Element', 5.5, 240, null, null, { target: 'addToCart', page: 'app-product' }],
+    ['Find Element', 6.8, 150, 'accessibility-id', 'cart-button', { target: 'cartButton', page: 'app-product' }],
+    ['Click Element', 7.2, 210, null, null, { target: 'cartButton', page: 'app-product' }],
+  ] },
+  { kind: 'testCase', tc: '#TC-225', title: 'Complete Purchase Using Gift Card and Credit Card', page: 'app-cart', rows: [
+    ['Find Element', 8.6, 170, 'accessibility-id', 'gift-card-code', { target: 'gift' }],
+    ['Send Keys To Element', 9.1, 620, null, 'LTGIFT2026', { target: 'gift', typed: 'LTGIFT2026' }],
+    ['Find Element', 10.2, 150, 'accessibility-id', 'apply-gift-card', { target: 'apply' }],
+    ['Click Element', 10.6, 230, null, null, { target: 'apply' }],
+    ['Get Element Text', 11.4, 90, null, null, { target: 'total' }],
+    ['Find Element', 12.3, 160, 'accessibility-id', 'apple-pay-button', { target: 'applePay' }],
+    ['Click Element', 12.7, 260, null, null, { target: 'applePay' }],
+    ['Execute Script', 14.2, 1800, null, 'lambda_executor: {"action": "lambda-applepay", "arguments": {"confirmPayment": "true"}}', { page: 'app-pay', target: 'sheet' }],
+    ['Find Element', 16.6, 210, 'xpath', '//*[@name="Passcode field"]', { page: 'app-pay', target: 'passcode' }],
+    ['Send Keys To Element', 17.1, 900, null, '123456', { page: 'app-pay', target: 'passcode', typed: '******' }],
+    ['Find Element', 19.8, 190, 'accessibility-id', 'order-confirmation', { page: 'app-done', target: 'confirm' }],
+    ['Get Element Text', 20.3, 80, null, null, { page: 'app-done', target: 'confirm' }],
+    ['Take Screenshot', 21.2, 420, null, null, { page: 'app-done' }],
+  ] },
+  { top: true, page: 'app-done', rows: [
+    ['Delete Session', 23.4, 600],
+  ] },
+]
 
 /*
  * The default test, hand-written to match the brief's screenshots:
@@ -293,6 +370,7 @@ const FLOWS = [
 
 function platformCode(t) {
   if (t.os === 'Windows') return `WIN${t.osVersion}`
+  if (t.os === 'iOS') return `IOS${t.osVersion}` // the screenshot's shape, for a device
   return 'MAC'
 }
 
@@ -308,6 +386,11 @@ function buildRequest(cmd, t, sessionId, r, startNs) {
   else if (cmd.name === 'Send Keys To Element') body = { text: cmd.value }
   else if (cmd.name === 'Execute Script') body = { script: cmd.value, args: [] }
   else if (cmd.name === 'Create New Session' && !cmd.path) body = { capabilities: { alwaysMatch: { browserName: t.browser, browserVersion: t.browserVersion, platformName: `${t.os} ${t.osVersion}` } } }
+  if (cmd.name === 'Create New Session' && !cmd.path && t.platform === 'mobile') {
+    // The docs' example keys (Apple Pay Automation on Real Devices, step 2).
+    body = { capabilities: { alwaysMatch: { platformName: t.os, deviceName: t.device, platformVersion: t.osVersion, isRealMobile: true,
+      app: t.app, applePay: t.applePay, applePayCardType: t.applePayCardType } } }
+  }
   else if (cmd.name === 'Set Timeouts') body = { implicit: 0, pageLoad: 300000, script: 30000 }
   return {
     requestId: `LT01${b32(r, 26)}-${platformCode(t)}-DYNAMIC-SPOT-3-V1_${String(Math.floor(r() * 900000) + 100000)}-US-EAST-1`,
@@ -331,7 +414,8 @@ function buildResponse(cmd, sessionId) {
   else if (cmd.name === 'Find Element') value = { 'element-6066-11e4-a52e-4f735466cecf': hex(rng(cmd.idx), 8) }
   else if (cmd.name === 'Find Elements') value = [1, 2, 3].map(i => ({ 'element-6066-11e4-a52e-4f735466cecf': hex(rng(cmd.idx + i), 8) }))
   else if (cmd.name === 'Is Element Displayed') value = true
-  else if (cmd.name === 'Get Element Text') value = cmd.lockError ? 'Too many attempts. Try again in 15 minutes.' : (cmd.target === 'units' ? '12 units' : 'Gift card applied')
+  else if (cmd.name === 'Get Element Text') value = cmd.lockError ? 'Too many attempts. Try again in 15 minutes.'
+    : cmd.target === 'units' ? '12 units' : cmd.target === 'confirm' ? 'Order confirmed' : 'Gift card applied'
   else if (cmd.name === 'Get Element Attribute') value = cmd.value === 'src' ? 'siteplan-leasing.png' : null
   else if (cmd.name === 'Take Screenshot') value = 'iVBORw0KGgoAAAANSUhEUgAA…'
   return { responseStatus: 200, responseBody: JSON.stringify({ value }) }
@@ -354,6 +438,7 @@ export function getDetail(testId) {
   let blocks
   if (t.status === 'queued') blocks = []
   else if (t.id === 't-01') blocks = T01
+  else if (t.id === SETUP_TEST_ID) blocks = T19
   else blocks = generic(t, r)
 
   // A group's `items` are its direct children in order: commands as
@@ -504,8 +589,10 @@ export function historyFor(test) {
 }
 
 /* v5: network capture is on for every test but one, which keeps the
-   "capture is off" state reachable (the failed test without a video). */
-const NETWORK_OFF = new Set(['t-07'])
+   "capture is off" state reachable (the failed test without a video).
+   Setup state: off for the iPhone test too, so its results have no network
+   row (spec §12.3 item 1). */
+const NETWORK_OFF = new Set(['t-07', SETUP_TEST_ID])
 export const networkOn = t => !NETWORK_OFF.has(t.id)
 
 /* v6 item 15: LambdaTest's docs (testmuai.com/support/docs/debugging-options,
@@ -517,6 +604,15 @@ export const fullHarOn = t => networkOn(t) && FULL_HAR.has(t.id)
 
 /** Capabilities for the Meta Data tab: LambdaTest W3C `LT:Options` keys. */
 export function capabilitiesFor(t) {
+  if (t.platform === 'mobile') {
+    // The keys of TestMu AI's Apple Pay example (spec §12.1).
+    return [
+      ['platformName', t.os], ['platformVersion', t.osVersion], ['deviceName', t.device], ['isRealMobile', 'true'],
+      ['app', t.app], ['applePay', String(!!t.applePay)], ['applePayCardType', JSON.stringify(t.applePayCardType ?? [])],
+      ['build', BUILD.name], ['name', t.name],
+      ['tunnel', String(t.tunnel)], ['network', String(networkOn(t))], ['video', String(t.video)],
+    ]
+  }
   return [
     ['browserName', t.browser], ['browserVersion', t.browserVersion],
     ['platformName', `${t.os} ${t.osVersion}`], ['resolution', t.resolution],

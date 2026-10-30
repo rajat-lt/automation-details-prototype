@@ -1,7 +1,7 @@
 // Automation test details: Rajat's 18 changes of 16 Oct 2026, the 16 of
 // 17 Oct 2026 (v2), the 11 of 18 Oct 2026 (v3), the 12 of 19 Oct 2026 (v4),
 // the 11 of 27 Oct 2026 for the Network tab (v5, network.jsx) and its 28 of
-// 28 Oct 2026 (v6).
+// 28 Oct 2026 (v6); the setup state of 30 Oct 2026 (setup.jsx, spec §12).
 // Spec: automation-details.md. Shell, tokens, components and copy come from
 // design-context (main e014a73); every departure is recorded in the spec.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -20,7 +20,8 @@ import {
   TruncText, announce, cx,
 } from './lt.jsx'
 import { LTDrawer, LTModal, LTSegmentedControl, ToastProvider, useToast } from './overlays.jsx'
-import { BUILD, TESTS, getDetail, failureSegments, historyFor, commandHref, statusLabel } from './data.js'
+import { BUILD, TESTS, SETUP_TEST_ID, getDetail, failureSegments, historyFor, commandHref, networkOn, statusLabel } from './data.js'
+import { SETUP_TOTAL_SEC, SetupAnnouncer, SetupControls, SetupPanel, useSetupPhase } from './setup.jsx'
 import { fmtCount, fmtDateTime, fmtDuration, fmtMs, fmtRelative, fmtTime } from './format.js'
 import { playback } from './playback.js'
 import { copyText } from './clipboard.js'
@@ -49,6 +50,17 @@ const VIDEO_H = { min: 200, def: 360 }
 const LOGS_MIN_H = 240
 const PAYLOAD_TABS_MAX = 5 // v4 item 8.4
 const NO_MEDIA_TABS = { order: ['video'], active: 'video' }
+// The page opens on the test the earlier rounds opened on; the test being
+// set up is listed first, as the newest in the build.
+const DEFAULT_TEST = 't-01'
+
+/* Setup state (spec §12): the test being set up shows as running, with no
+   commands yet, until setup ends; then its results, and its duration counts
+   the setup too (§12.3 item 12). */
+const liveTest = (t, phase) => (t.id !== SETUP_TEST_ID ? t
+  : phase === 'setup' ? { ...t, status: 'running' } : { ...t, durationSec: SETUP_TOTAL_SEC })
+const emptyDetail = test => ({ test, sessionId: '', commands: [], tree: [], groups: [], failed: [],
+  passedCount: 0, failedCount: 0, durationSec: 0 })
 
 /* v2 item 15: the screenshot keeps its command's context, and its own
    download, bug and link actions. */
@@ -126,13 +138,15 @@ function Page() {
   useEffect(() => {
     const on = () => setRoute(parseHash())
     window.addEventListener('hashchange', on)
-    if (!window.location.hash) window.location.replace(`#/${TESTS[0].id}/commands`)
+    if (!window.location.hash) window.location.replace(`#/${DEFAULT_TEST}/commands`)
     return () => window.removeEventListener('hashchange', on)
   }, [])
 
-  const tests = TESTS.filter(t => !deleted.has(t.id))
-  const test = tests.find(t => t.id === route.testId) ?? tests[0]
-  const detail = getDetail(test.id)
+  const setupPhase = useSetupPhase()
+  const tests = TESTS.filter(t => !deleted.has(t.id)).map(t => liveTest(t, setupPhase))
+  const test = tests.find(t => t.id === route.testId) ?? tests.find(t => t.id === DEFAULT_TEST) ?? tests[0]
+  const inSetup = test.status === 'running'
+  const detail = useMemo(() => (inSetup ? emptyDetail(test) : getDetail(test.id)), [test.id, inSetup]) // eslint-disable-line react-hooks/exhaustive-deps
   const name = names[test.id] ?? test.name
   const segments = useMemo(() => failureSegments(detail.failed), [detail])
   const byId = useMemo(() => new Map(detail.commands.map(c => [c.id, c])), [detail])
@@ -142,7 +156,7 @@ function Page() {
 
   useEffect(() => {
     playback.set({ time: 0, playing: false, duration: detail.durationSec })
-  }, [test.id])
+  }, [test.id, inSetup]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { document.title = `${name} · Automation` }, [name])
 
   // v3 item 4.4: a comment asked for from the video while another tab shows
@@ -335,8 +349,14 @@ function Page() {
           counter: id === 'commands' && detail.commands.length ? fmtCount(detail.commands.length) : undefined,
         }))} />
       <div className="logs-panel">
+        {/* Setup state (spec §12.2): the step list stands in for the tabs the
+            run fills; Meta Data shows the capabilities, which exist already. */}
+        {inSetup && tab !== 'metadata' && (
+          <SetupPanel results={networkOn(test) ? 'Commands, logs, network requests, and the video' : 'Commands, logs, and the video'} />
+        )}
         {/* Kept mounted while other tabs show, so revealed runs, open groups
             and the scroll position survive a tab switch. */}
+        {!inSetup && <>
         <div className="tab-host" hidden={tab !== 'commands'}>
           <CommandsTab key={`${test.id}:${demo}`} detail={detail} searchRef={searchRef} codeTheme={codeTheme}
             setCodeTheme={setCodeTheme} payloadView={payloadView} setPayloadView={setPayloadView}
@@ -360,13 +380,14 @@ function Page() {
             demo={demo?.startsWith('network-') ? demo.slice('network-'.length) : null}
             onRetry={() => setDemo(null)} />
         </div>
+        </>}
         {tab === 'metadata' && <MetaDataTab test={test} />}
       </div>
     </section>
   )
 
   const videoPane = mode => (
-    <VideoPane key={test.id} detail={detail} segments={segments} byId={byId} onStub={onStub}
+    <VideoPane key={`${test.id}:${inSetup}`} detail={detail} segments={segments} byId={byId} onStub={onStub}
       loading={demo === 'video-loading'} mode={mode} dock={paneDock}
       onPip={() => changeVideoMode('pip', 'pip-dock')} onDock={() => changeVideoMode('docked', 'video-pip')}
       onCollapse={() => changeVideoMode('collapsed', 'show-video')} />
@@ -482,7 +503,7 @@ function Page() {
                   <LTTooltip type="description" text={fmtDateTime(h.at)} direction="bottom">
                     <time tabIndex={0} className="meta-hint" dateTime={h.at.toISOString()}>{fmtRelative(h.at)}</time>
                   </LTTooltip>
-                  {` · ${fmtDuration(h.durationSec)} · ${h.by}`}
+                  {` · ${h.status === 'running' ? 'Running' : fmtDuration(h.durationSec)} · ${h.by}`}
                 </span>
               </span>
               <span className="vh">{`, ${h.status}`}</span>
@@ -497,6 +518,11 @@ function Page() {
       </LTModal>
 
       <ShortcutsDialog isOpen={modal === 'shortcuts'} onClose={() => setModal(null)} />
+
+      {/* Setup state (spec §12.3 items 10 and 13): the step announcements,
+          heard on this test's page only, and the prototype's own bar. */}
+      <SetupAnnouncer active={test.id === SETUP_TEST_ID} outcome={TESTS.find(t => t.id === SETUP_TEST_ID).status} />
+      {test.id === SETUP_TEST_ID && <SetupControls />}
     </div>
   )
 }

@@ -131,13 +131,15 @@ export function TestsPane({ tests, names, selectedId, onCollapse, demo, onRetry 
         <LTActionMenu ariaLabel="Filter tests" width={200} selectionVariant="single" activeId={status}
           customAnchor={<LTIconButton icon={ListFilter} ariaLabel="Filter tests" variant="outline" size="small" />}
           onSelect={o => setStatus(o.value)}
-          options={[{ value: 'all', label: 'All' }, { value: 'passed', label: 'Passed' }, { value: 'failed', label: 'Failed' }, { value: 'queued', label: 'Queued' }]} />
+          options={[{ value: 'all', label: 'All' }, { value: 'passed', label: 'Passed' }, { value: 'failed', label: 'Failed' }, { value: 'running', label: 'Running' }, { value: 'queued', label: 'Queued' }]} />
       </div>
       {demo !== 'tests-loading' && demo !== 'tests-error' && demo !== 'tests-empty' && (
         <p className="tp-summary">
           {/* Readout, not a filter (base pattern open question 5). */}
           <span><StatusGlyph status="failed" />{n('failed')}<span className="vh"> failed</span></span>
           <span><StatusGlyph status="passed" />{n('passed')}<span className="vh"> passed</span></span>
+          {/* Setup state (spec §12.2): running tests are counted too. */}
+          <span><StatusGlyph status="running" />{n('running')}<span className="vh"> running</span></span>
           <span><StatusGlyph status="queued" />{n('queued')}<span className="vh"> queued</span></span>
         </p>
       )}
@@ -175,9 +177,9 @@ export function TestsPane({ tests, names, selectedId, onCollapse, demo, onRetry 
                       <StatusGlyph status={t.status} />
                       <span className="tp-row__main">
                         <span className="tp-row__name">{name}</span>
-                        <span className="tp-row__meta">{`${t.browser} ${t.browserVersion} · ${t.os} ${t.osVersion}`}</span>
+                        <span className="tp-row__meta">{t.platform === 'mobile' ? `${t.device} · ${t.os} ${t.osVersion}` : `${t.browser} ${t.browserVersion} · ${t.os} ${t.osVersion}`}</span>
                       </span>
-                      <span className="tp-row__dur">{t.status === 'queued' ? 'Queued' : fmtDuration(t.durationSec)}</span>
+                      <span className="tp-row__dur">{t.status === 'queued' ? 'Queued' : t.status === 'running' ? 'Running' : fmtDuration(t.durationSec)}</span>
                       <span className="vh">{`, ${t.status}`}</span>
                     </a>
                   </LTTooltip>

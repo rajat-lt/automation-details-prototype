@@ -283,19 +283,23 @@ export function LTToken({ text, fullText, onRemove, removeLabel = 'Remove', remo
 /* ---------- LTTestStatusLabel ----------
    Glyphs follow the Status component as mock-data.md describes it:
    passed = green circle, white tick; failed = red circle, white cross;
-   queued = purple circle, stacked lines. `bare` is the component's bg?=No
-   (the glyph without its circle), held per surface. With text it is the
-   header pill (showStatusText). */
-const STATUS_WORD = { passed: 'Passed', failed: 'Failed', queued: 'Queued' }
+   queued = purple circle, stacked lines; running (setup state, spec §12.2)
+   = blue partial ring, still, as the component draws it (question 82).
+   `bare` is the component's bg?=No (the glyph without its circle), held
+   per surface. With text it is the header pill (showStatusText). */
+const STATUS_WORD = { passed: 'Passed', failed: 'Failed', queued: 'Queued', running: 'Running' }
 export function StatusGlyph({ status, size = 16, bare = false, onEmphasis = false }) {
   const fg = onEmphasis ? 'var(--fg-on-emphasis)'
-    : status === 'passed' ? 'var(--success-fg)' : status === 'failed' ? 'var(--danger-fg)' : 'var(--done-fg)'
+    : status === 'passed' ? 'var(--success-fg)' : status === 'failed' ? 'var(--danger-fg)'
+      : status === 'running' ? 'var(--accent-fg)' : 'var(--done-fg)'
   const ink = bare ? fg : 'var(--fg-on-emphasis)'
   const glyph = status === 'passed'
     ? <path d="M4.6 8.3l2.2 2.2 4.6-4.8" fill="none" stroke={ink} strokeWidth={bare ? 1.8 : 1.6} strokeLinecap="round" strokeLinejoin="round" />
     : status === 'failed'
       ? <path d="M5.4 5.4l5.2 5.2M10.6 5.4l-5.2 5.2" fill="none" stroke={ink} strokeWidth={bare ? 1.8 : 1.6} strokeLinecap="round" />
-      : <path d="M5 6h6M5 8h6M5 10h6" fill="none" stroke={ink} strokeWidth="1.4" strokeLinecap="round" />
+      : status === 'running'
+        ? <path d={bare ? 'M8 2.5a5.5 5.5 0 1 1-5.5 5.5' : 'M8 4a4 4 0 1 1-4 4'} fill="none" stroke={ink} strokeWidth={bare ? 1.8 : 1.6} strokeLinecap="round" />
+        : <path d="M5 6h6M5 8h6M5 10h6" fill="none" stroke={ink} strokeWidth="1.4" strokeLinecap="round" />
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true" className="status-glyph">
       {!bare && <circle cx="8" cy="8" r="8" fill={fg} />}
@@ -468,12 +472,28 @@ export function LTCodeBlock({ title, headerActions, theme = 'dark', children, cl
   )
 }
 
+/* ---------- LTLoader ----------
+   COMPONENTS.md: LTLoader, SpinnerSizes small, medium and large. Its look is
+   not in the manifest; Primer's spinner (a faint ring and a turning arc, 16,
+   32 and 64px) is assumed (spec §12.8). It keeps turning when reduced
+   motion is asked for, as Primer asks of loading indicators. */
+const LOADER_PX = { small: 16, medium: 32, large: 64 }
+export function LTLoader({ size = 'large', className }) {
+  const px = LOADER_PX[size] ?? 64
+  return (
+    <svg className={cx('lt-loader', className)} width={px} height={px} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" vectorEffect="non-scaling-stroke" />
+      <path d="M15 8a7 7 0 0 0-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+    </svg>
+  )
+}
+
 /* ---------- LTBlankSlate ---------- */
 export function LTBlankSlate({ heading, description, primaryAction, visual, narrow = true }) {
   return (
     <div className={cx('lt-blank', narrow && 'lt-blank--narrow')}>
       {visual && <div className="lt-blank__visual" aria-hidden="true">{visual}</div>}
-      <p className="lt-blank__heading">{heading}</p>
+      {heading && <p className="lt-blank__heading">{heading}</p>}
       {description && <p className="lt-blank__desc">{description}</p>}
       {primaryAction && <div className="lt-blank__action">{primaryAction}</div>}
     </div>

@@ -1,4 +1,4 @@
-# Automation test details: 18 UX changes, then 16, then 11, then 12, then the Network tab in four rounds
+# Automation test details: 18 UX changes, then 16, then 11, then 12, then the Network tab in four rounds, then the setup state
 
 The automation test details page with Rajat's 18 changes of 16 Oct 2026 applied. Written in the `design-context/patterns/` house format, as an amendment proposal for `patterns/automation-details.md`. The working prototype in this repo implements it.
 
@@ -23,6 +23,8 @@ Every component and prop below was read from `COMPONENTS.md`. Proposals carry **
 **v7, 28 Oct 2026.** Rajat's seventh brief: 14 changes to the Network tab, written *v7 item 1* to *v7 item 14*, with four screenshots: *screenshot S1*, the status filter menu with its first item grey at rest; *S2* and *S3*, the new toolbar with the error count at rest and pressed; *S4*, the settings menu. The brief points at S2 to S4 for the toolbar, the count's two states and the menu, so they count as brief there; their copy and icons still follow the guidelines (C62, C63). One change went to design-context itself, and only that one: a menu item is grey on hover only, never at rest (rajat-lt/design-context PR #19, merged as `6cfb737`). Covered by §3f, §4h, conflicts C57 to C63, §7h and the v7 rows of every other section; v6 text that v7 replaces keeps an italic note. Sources read from `design-context` `main` (`618b4b8`, then `6cfb737`) on 28 Oct 2026: `ux-persona.md`, `ux-text-guidelines.md` (§2 sentence-case menu items, §3 tooltips, §4 colours), `guidelines/ltactionmenu.md` (single selection only, every item an icon or none, the trailing slot, an inactive item's reason in its text), `ltpopover.md`, `ltbutton.md`, `ltbuttongroup.md`, `ltinputbox.md`, `COMPONENTS.md` (`LTActionMenu`, `LTPopover`, `LTButton`), `patterns/automation-listing.md` (the scope selector joined to the search), `icons.md` and `data/tokens.json` (`btn.outline`, `btn.invisible`, `actionListItem`). The screenshots were measured (Pillow, about 2.6×): rows of 32px; the pressed count 32px tall with 8px side padding, a `#F6F8FA` fill and a `#D0D7DE` border, which are the outline variant's own; the hourglass in the toolbar's icon grey.
 
 **v8, 29 Oct 2026.** Rajat's eighth brief: 3 changes to the Network tab, written *v8 item 1* to *v8 item 3*, with the standing reminder against hallucination: the hourglass amber everywhere, no time window token, and *View in HAR viewer* (one of the finalists offered for v7 item 7). Covered by §4i, §7i and the v8 rows of the other sections; v7 text that v8 replaces keeps an italic note. The amber is `attention.fg` (`#9a6700`), v6's turtle colour, read from `data/tokens.json` through `src/tokens.css`.
+
+**Setup state, 30 Oct 2026.** Rajat's ninth brief: a loading state for the minutes before a test's results exist, for one flow (the device's setup, Apple Pay, the run, the results), with four reference screenshots. All of it sits in §12, in one place: the research, structure, behaviour, conflicts C64 to C75, decisions, copy, gaps, questions 72 to 85 and the illustrations. §6, §10 and §11 point there.
 
 ---
 
@@ -922,6 +924,8 @@ The review states are linked from the README.
 | C62 | Carets (S2, S3) | Screenshots: Primer's filled triangle on *All ▾* and the HAR caret | `icons.md`: lucide only; v5 and v6 used `ChevronDown` | `ChevronDown` kept | Guideline wins; icons in screenshots follow the guidelines |
 | C63 | Menu item casing (S4) | Screenshot: *Show Waterfall Overview*, *Show Connect* | `ux-text-guidelines.md` §2 (9 Oct 2026): action-menu items take sentence case; CONNECT is the method's name, written in capitals in the Method column and the v5 switch | *Show waterfall overview*, *Show CONNECT* | Guideline wins on casing; copy in screenshots follows the guide |
 
+C64 to C75, the setup state's: §12.5.
+
 ## 7. Design decisions [proposed]
 
 - **The video follows the list, never the other way round during playback.** The list does not auto-scroll while the video plays; it moves only when the video jumps (item 9). A list that scrolls under the reader's eyes while they read is the hostile kind of motion. Rejected: live follow mode.
@@ -1408,6 +1412,8 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 
 71. **A visible way back to the whole session**: the token's × was the visible twin of **R** (`ux-persona.md`: every power-user shortcut has a visible twin). A window now clears with R, by zooming out, or with Clear Filters when nothing matches. Add a visible control, for example a reset button at the overview's end like the v5 strip's, or leave it?
 
+Questions 72 to 85, the setup state's: §12.9.
+
 ## 11. When this ships into design-context/
 
 - [ ] Amend `patterns/automation-details.md`: header, meta row, actions and menu, the All Commands anatomy, dock and splitters, states, and this file's copy rows in its copy table. Keep the 4 Sep wording visible with dated notes.
@@ -1449,3 +1455,250 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 - [ ] v7: `icons.md`, fill *Settings* (`Settings`) and swap Turtle for Hourglass (README).
 - [ ] v8: amend `patterns/automation-details.md` with §4i.
 - [ ] v8: `guidelines/`: the slow-response mark's colour (`attention.fg`) wherever it shows.
+- [ ] Setup state: §12.10.
+
+## 12. The setup state (30 Oct 2026)
+
+Rajat's ninth brief, 30 Oct 2026, written *setup item 1* to *setup item 17*. The page shows nothing while a test is being set up, so users think it is stuck (item 1). How long setup takes depends on what the run asks for: usually 15 to 30 seconds with no preferences, 10 to 15 minutes with many or complex ones, and there is no maximum, median or average to show (items 2, 3, 10). The brief lists the backend's steps (item 4) and asks for:
+- one flow, with generic setup, Apple Pay, the test run and showing the results (items 5, 16, 17);
+- the current step and the next few (item 7);
+- no time left and no percentage, because steps retry, Apple Pay up to 5 times (item 8), with retries perhaps shown (item 9);
+- small animated illustrations or icons, one per major step and only the current one visible (item 11), animated with oil-motion if it helps (item 12);
+- the tests list and the header filled, the other sections bare until the data arrives (item 14), and the test's status *running* meanwhile (item 15);
+- an objective, bias-aware view (item 6), no hallucination (item 13), and at most two minutes of grounded research (item 7).
+
+Four reference screenshots came with it: *R1*, Claude's working line (a spinning mark, the step's name, a stream of text under a rail); *R2*, Metaview's onboarding steps (ticked, current with nested sub-steps, pending); *R3*, Lovable's project steps (tick, spinner with a sub-line, grey dot); *R4*, a task list with dashed circles for pending steps. The brief says not to follow them alone, so they count as reference.
+
+Sources read from `design-context` `main` (`6cfb737`) on 30 Oct 2026:
+- `ux-persona.md`.
+- `ux-text-guidelines.md`: §3 empty states, whose own example is *Setting up your device · Logs stream here as soon as the device is ready.*; §3 inline status (announce what visuals hide); §5 *running* over *in progress*; §7 no ETA unless it is reliable, and running work shows elapsed time.
+- `guidelines/README.md`: §4 the status vocabulary and the open conflict over running's colour; §7 `LTSkeletonBox` against `LTLoader`.
+- `guidelines/ltprogressbar.md`: motion only while a value changes; reduced motion.
+- `patterns/automation-details.md` (§4, the panes load independently), `patterns/kane-agent-playground.md` (`LTTimeline` as a live step rail), `patterns/realtime-testing-window.md` §5 (*Connecting to Galaxy Z Fold4*, *Allocating a device*).
+- `COMPONENTS.md`: `LTTimeline` (compound `LTTimeline.Item` with `badgeIcon` and `LTTimeline.Body`; `politenessLevel`), `LTLoader`, `LTBlankSlate` (`visual`), `LTTimer`, `LTTestStatusLabel`.
+- `mock-data.md` (the statuses; the Status component draws running as a blue partial ring), `icons.md`, `TOKENS.md` (`animation.easeOutCubic`, the only motion token).
+- `illustration-style-kit/`: `SKILL.md`, `references/parts.md` and the checker.
+
+Outside sources, each read on 30 Oct 2026:
+- Primer, [Loading](https://primer.style/product/ui-patterns/loading/), from GitHub's design system, on which design-context builds.
+- NN/g, [Progress Indicators Make a Slow System Less Insufferable](https://www.nngroup.com/articles/progress-indicators/) (Katie Sherwin, Oct 26, 2014).
+- W3C, [Understanding SC 2.2.2: Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide.html) (WCAG 2.2, Level A).
+- TestMu AI (formerly LambdaTest), [Apple Pay Automation on Real Devices](https://www.testmuai.com/support/docs/apple-pay-auto/) and [Upload Your Application](https://www.testmuai.com/support/docs/application-setup-via-api/), for the product's facts.
+- [oil-oil/oil-motion](https://github.com/oil-oil/oil-motion): `README.en.md` and `SKILL.md`, read through the GitHub API (MIT licence, created Aug 07, 2026, last pushed Oct 04, 2026).
+
+### 12.1 What the research says, and what it changed
+
+- **Primer, Loading.**
+  - Says: over about 10 seconds, use a determinate state and treat the process as a background task, so the rest of the page stays usable. An animated icon or illustration may be a "branding moment" for special loading states, used sparingly. Put the indicator nearest to the content it stands in for, without a jarring shift when content replaces it, and replace a cluster of indicators with one. Announce status with `role="status"` or a live region, without over-announcing. Loading indicators keep animating for people who prefer reduced motion, kept subtle.
+  - Changed: one panel in the centre pane; the page stays usable; the spinner turns under reduced motion, the illustration does not.
+- **NN/g.**
+  - Says: looped spinners suit 2 to 10 seconds; beyond that a user cannot tell a working spinner from a stuck one. Percent-done suits longer waits, and when the time is hard to know, showing the number of steps helps users estimate. Static text such as "Loading…" is not enough. Long processes should offer a way to stop.
+  - Changed: steps instead of a percentage, a ticking time on the current step, the attempt count, and question 79.
+- **W3C, 2.2.2.**
+  - Says: motion that starts by itself, lasts more than 5 seconds and sits beside other content needs a way to pause, stop or hide it, unless it is essential. Its note on loading lets an animation count as essential when no interaction can happen during that phase and leaving out progress could make the page look frozen or broken.
+  - Changed: this page stays usable during setup, so the note does not cover a looping illustration; each one moves for at most 4 seconds, then rests (C66).
+- **TestMu AI docs.**
+  - Say: Apple Pay automation runs on real iOS devices, with Appium (and with Playwright in Safari), on the Real Device Plus Automation Cloud plan. The `applePay` capability provisions the Wallet, a sandbox card, AssistiveTouch and the passcode; `applePayCardType` takes amex, visa, master and discover, in priority order. The page lists iPhone 17 (iOS 26), iPhone 16 (18), iPhone 15 (17), iPhone 14 (16) and iPhone 13 (15), and its example uses an iPhone 16 on iOS 18. An uploaded app's URL has the form `lt://APP` followed by 21 digits.
+  - Changed: the mock test is an Appium app test on an iPhone 16 with iOS 18, with `applePay: true` and `applePayCardType: ["visa"]`.
+- **oil-motion.**
+  - Is: an agent skill, not an animation library. It makes frame animations (sprite sheets, video) with AI image and video models called through ZenMux, billed per generation on the user's API key, and ties them to scroll, pointer, drag, touch or state. Its own scope leaves out interface transitions and micro-interactions that CSS, JavaScript, SVG, Lottie or real-time 3D can do, and single illustrations.
+  - Changed: not used (C67). The spots move with CSS keyframes on their SVG groups.
+
+### 12.2 Structure
+
+- **Where:** the centre pane, under the tab bar, in place of All Commands, Logs and Network, the tabs whose content the run produces. Meta Data shows the run's capabilities, which exist before it starts. The tab bar, the tests pane and the header stay as they are (item 14).
+- **The panel:** an ordered list of steps, up to 560px wide, centred in the pane with its text left-aligned, and top-aligned 32px below the tabs. Top-aligned, so the list does not jump as steps open and fold.
+- **The rail:** a 16px badge per major step on a 1px `border.muted` line (`LTTimeline.Item` with `badgeIcon`; story `lttimeline--timeline`; drawn by the look-alike, §12.8).
+  - Done: `CircleCheck` in `success.fg`; the label in default text and its time at the row's end.
+  - Current: `CircleDot` in `accent.fg`, with `aria-current="step"`; the step opens into a card.
+  - Pending: `CircleDashed` and the label in `fg.muted`.
+- **The current step's card** (1px `border.default`, 6px radius `radii.2`, 16px padding):
+  - The step's illustration in a 144 × 136 slot, decorative (`aria-hidden`).
+  - The step's name, bold, with the step's own elapsed time at the end of the line.
+  - After a failed attempt: *Attempt 2 of 5* with `RotateCw`, and the failed attempt's reason.
+  - For a slow step, once: *This step takes longer than the others.*
+  - Its sub-steps: done (`CircleCheck`, its time at the end), current (`LTLoader` small, the page's only spinner, the label semibold), pending (`CircleDashed`, muted).
+  - The illustration sits left of the text when the card is at least 360px wide (the narrowest logs pane, 480px, leaves 404px), and above it when narrower.
+- **Under the list:** *Commands, logs, and the video appear here after the test runs.*, muted; with network capture on, *Commands, logs, network requests, and the video appear here after the test runs.*
+- **Video pane:** its bare frame and one muted line, *The video appears here after the test runs.*, with no heading: the centre pane is the only narrator.
+- **Header:** the status pill *Running*, and the duration ticking the test's elapsed time (`ux-text-guidelines.md` §7: *Running · 14m 11s*). For a device test the meta row shows the device, its OS and the framework: *iPhone 16*, *iOS 18*, *Appium*.
+- **Tests pane:** the row's running glyph, and *Running* where the duration goes, as *Queued* does. The readout and the status filter gain *Running*.
+
+### 12.3 Behaviour, item by item
+
+1. **The flow (items 4, 16):** four major steps, each from the brief.
+
+| Major step | Its sub-steps | Brief |
+|---|---|---|
+| Setting up iPhone 16 | Finding an available iPhone 16 · Allocating the device · Checking your app · Installing your app · Applying your capabilities | 4.1 to 4.6 (4.5 and 4.6 share the last row) |
+| Setting up Apple Pay | Setting up the wallet · Adding a sandbox card · Loading the wallet and card · Setting the card as the payment method | 4.7, 4.8 |
+| Running your test | Running final checks · Running your commands | 4.10 |
+| Loading your results | Loading commands · Loading logs · Loading the video | 4.11; network capture is off for this run, so it has no network row |
+
+2. **The current step and the next ones (item 7):** every major step shows from the start; only the current one opens. Finished steps fold to one line with their time.
+3. **No time left, no percentage (items 8, 10):** elapsed time only: the test's in the header, the current step's in its card, and each finished step's and sub-step's at the end of its row. The steps do the determinate job (NN/g); screen readers hear *Step 2 of 4*.
+4. **Retries (items 8, 9):** nothing shows on a first attempt. When an attempt fails, the card shows *Attempt 2 of 5* and *The card failed to load on attempt 1.*, and the step's sub-steps run again from the first (question 73). The attempt line stays until the step ends. Grey with an icon: the user has no decision to make and nothing is broken yet (`ux-text-guidelines.md` §4).
+5. **The slow step (item 4.8):** Apple Pay's card says once, from the moment the step starts, *This step takes longer than the others.* No minutes are promised.
+6. **Illustrations (item 11):** one per major step, none for sub-steps, only the current one shown. Each plays for at most 4 seconds when its step starts, when a retry starts, and when a sub-step starts if the last play ended 10 or more seconds before; then it rests in the pose the kit drew (C66). With reduced motion it never moves. Each one's motion: §12.11.
+7. **The spinner:** on the current sub-step only, `LTLoader` small, about a turn a second. It keeps turning with reduced motion, as Primer asks of loading indicators (question 80).
+8. **Status (item 15):** the test is *Running* from the moment setup starts: header pill, tests pane row, readout and filter.
+9. **The hand-off (items 4.11, 14):** when the last sub-step ends, the list shows it done for 600ms, then the results replace the panel in place: All Commands' list (and its counter in the tab), Logs, Network's state, the video, the header's *Passed* and final duration, and the tests pane row. Nothing else moves. Screen readers hear *Results ready. Test passed.* Focus stays where it was (C73).
+10. **Announcements:** one hidden status line, not the list (C74): each major step as it starts (*Setting up Apple Pay. Step 2 of 4.*), each retry (*The card failed to load. Trying again, attempt 2 of 5.*), and the end. Sub-steps are not announced; each row carries its state in hidden text (*, done in 41s*, *, running*, *, pending*), read on demand.
+11. **The page stays usable:** the tests list, the header's actions and the tabs work throughout. Opening another test and coming back finds the run where it is: progress belongs to the run, not to the page.
+12. **Duration:** counts from the moment the test started, setup included; once the run ends it stops at its final value [proposed].
+13. **Prototype only:** a dashed *Prototype* bar at the bottom right, over the video pane's empty space, on this test only, with **Pause** (or **Play**), **Next Step** and **Restart**. The demo plays the whole flow in about 90 seconds, its first Apple Pay attempt failing on its third sub-step; real setups take minutes (item 3). Not part of the design.
+
+### 12.4 States
+
+| State | What shows |
+|---|---|
+| Setting up | The list and the current step's card with its illustration; the header's *Running* and ticking duration; the video pane's line |
+| Retrying | As above, with *Attempt 2 of 5* and the failed attempt's reason in the card |
+| Running your test | The flask; *Running final checks*, then *Running your commands* |
+| Loading your results | The chart; a row for each result the run captured |
+| Done | The results in place; *Passed* in the header and the tests pane |
+| Reduced motion | Still illustrations; the spinner turns |
+| Meta Data | The run's capabilities, as for a finished test |
+
+### 12.5 Conflicts recorded
+
+| # | Topic | Brief or reference | Guideline or source | Built | Why |
+|---|---|---|---|---|---|
+| C64 | Determinate progress | Brief: no time left, no percentage | Primer: a determinate state beyond about 10 seconds; NN/g: percent-done for 10 seconds or more | Steps and sub-steps as the determinate part, and elapsed times; no percentage, no ETA | NN/g's own advice when the time is hard to know: show the number of steps. `ux-text-guidelines.md` §7: no ETA unless it is reliable |
+| C65 | A spinner on a long wait | A sub-step can last minutes | NN/g: looped animation for 2 to 10 seconds | The spinner marks the current sub-step only; the step's ticking time and the attempt count show it is alive | A ticking time tells working from stuck, which a spinner alone cannot |
+| C66 | How long illustrations move | Brief: animated illustrations | WCAG 2.2.2 (Level A): motion over 5 seconds beside other content needs pause, stop or hide, unless essential; its note on loading covers a phase in which no interaction can happen | At most 4 seconds per play, then rest; plays on a step's start, a retry, and a sub-step's start at most once every 10 seconds; none with reduced motion | The page stays usable during setup, so a looping illustration is not essential |
+| C67 | oil-motion | Brief: use oil-motion for the animation | Its README and SKILL.md: frame animation from AI video for scroll, pointer and state; UI motion that CSS or SVG can do is outside its scope; generation needs a ZenMux API key, is billed, and sends prompts and images to model providers | CSS keyframes on the illustrations' SVG groups, transform and opacity only | Its own scope excludes this job, and the drawings already exist as vectors |
+| C68 | One loader or three | Brief: keep the sections bare | Base pattern §4: each pane gets its own loader | One progress panel in the centre pane; the video pane keeps one static line; the tests pane and header show data | Primer: replace a cluster of loading indicators with one; persona: one narrator per screen. The base pattern speaks of data loading, a separate wait |
+| C69 | Running's colour | Brief: status *running* | README §4 (open since 8 Oct 2026): *Running* uses `attention` (yellow) for `LTTag`; `mock-data.md`: the Status component's running glyph is a blue partial ring | The pill in `accent.emphasis` with a white partial ring, as each pill takes its glyph's colour | `LTTestStatusLabel` is the Status component; Rajat is fixing the status colours (9 Oct 2026) |
+| C70 | Apple Pay's sub-steps | Brief: wallet, card, loading, checkout payment method | TestMu AI docs: `applePay` provisions the Wallet, a sandbox card, AssistiveTouch and the passcode | The brief's four | Brief wins; question 75 |
+| C71 | Results together or one by one | Brief: a step that shows the results | Primer: show each item as soon as it loads | The results arrive together at the end of *Loading your results* | Brief wins; question 77 |
+| C72 | The reference screenshots' words and colours | R2 to R4: Title Case steps (*Client Setup*), blue or green marks | `ux-text-guidelines.md` §2 sentence case; §4 colours | Sentence case; blue only on the current step's dot and the spinner; green on finished steps' ticks | Reference only (item 7) |
+| C73 | Focus after loading | Primer: when a process loads new content, move focus to its first focusable element | The user did not start this load and may be working elsewhere on the page | Focus stays; screen readers hear the result | Moving focus would pull the user out of what they are doing |
+| C74 | A live rail | `kane-agent-playground.md`: `LTTimeline` with `politenessLevel="polite"`, so steps are heard | Primer: avoid over-announcing; times tick every second inside the list | The list is not live; one hidden status line announces steps, retries and the end | A live list would read a time every second |
+| C75 | The time component | Base pattern: `LTTimer` (`00:00:24`) for times in the run | `ux-text-guidelines.md` §7 and `mock-data.md`: running work as *14m 11s* | The duration form, *1m 12s*; `LTTimer` is not used | `LTTimer` writes a clock time; elapsed work is a duration |
+
+### 12.6 Design decisions [proposed]
+
+- **One place narrates.** The panel stands in for the tabs whose content the run produces. Rejected: the illustration in the video pane (two places to look, and the video can float or collapse); a full-page interstitial (Primer: sparingly; it would hide the tests list and header that item 14 keeps); a banner above the tabs (the layout shifts when it leaves).
+- **The list is the progress.** Every major step always shows; only the current one opens. Rejected: every sub-step always open (16 rows, the current one buried); a bar with a percentage (no reliable figure, item 8).
+- **The illustration sits in the current step's card**, beside its name, and leaves with it. Rejected: one picture above the list, which leaves the eye to match picture and row.
+- **Elapsed, never remaining.** Rejected: an ETA or a range (items 8 and 10; no historic data yet).
+- **Retries show only when they happen.** Rejected: *Attempt 1 of 5* from the start, which suggests failure on every run.
+- **The slow step says so once.** Rejected: an estimate in minutes, which nothing in the system can keep.
+- **One spinner on screen**, on the current sub-step; the current major step has a still blue dot. Rejected: a spinner on both, which doubles the motion.
+- **A motion budget:** transform and opacity only; entrances on `animation.easeOutCubic` (`--ease-out`); turns ease in and out and end where they began, so a replay starts without a snap.
+- **The hand-off holds the last tick for 600ms**, then the results replace the panel, with no toast: the result is in view (`ux-text-guidelines.md` §3: success only when the result is out of sight).
+- **The steps follow the capabilities:** Apple Pay is a step because `applePay` is true; with network capture off, *Loading your results* has no network row.
+
+### 12.7 Copy
+
+All strings follow `ux-text-guidelines.md`; rule numbers are that guide's.
+
+| Where | String | Rule |
+|---|---|---|
+| Major steps | Setting up iPhone 16 · Setting up Apple Pay · Running your test · Loading your results | §2 sentence case; §5 *running*; the device by its name. *Test run* is avoided: it names a Test Manager entity (§6) |
+| Sub-steps | Finding an available iPhone 16 · Allocating the device · Checking your app · Installing your app · Applying your capabilities | *Allocating*, as `realtime-testing-window.md` §5 says it; *capabilities*, as the TestMu AI docs and Meta Data say it |
+| Sub-steps | Setting up the wallet · Adding a sandbox card · Loading the wallet and card · Setting the card as the payment method | The brief's four; *sandbox card* is the docs' term |
+| Sub-steps | Running final checks · Running your commands · Loading commands · Loading logs · Loading the video | *commands*, as All Commands says it |
+| Retry | Attempt 2 of 5 · *The card failed to load on attempt 1.* | §5 *{object} failed to {verb}*; one clause |
+| Slow step | This step takes longer than the others. | No minutes promised (§7) |
+| Under the list | Commands, logs, and the video appear here after the test runs. (With network capture on: Commands, logs, network requests, and the video appear here after the test runs.) | §3 empty states: the body says what the user gets; serial comma |
+| Video pane | The video appears here after the test runs. | As above |
+| Header and tests pane | Running · *1m 12s* | §7: running work shows elapsed time |
+| Screen readers | *Setting up Apple Pay. Step 2 of 4.* · *The card failed to load. Trying again, attempt 2 of 5.* · *Results ready. Test passed.* · rows: *, done in 41s*, *, running*, *, pending* | §3: announce what visuals hide |
+| Prototype bar | Prototype · Pause · Play · Next Step · Restart | §2 Title Case buttons; not product copy |
+
+Finalists for the four strings that carry the most (§8 format):
+
+**The retry line**
+
+| | Option |
+|---|---|
+| A, recommended | *Attempt 2 of 5* (label) and *The card failed to load on attempt 1.* |
+| B | *Trying again · attempt 2 of 5* and *The card failed to load.* |
+| C | *Retrying (2 of 5)*, the reason in a tooltip |
+| D | *Attempt 1 failed while loading the card. Trying again.* |
+
+- Why these work: A counts and names the failure in the house form, *{object} failed to {verb}*, in two short lines. B carries the same facts with more motion in the words. C keeps the line short. D says it all in one sentence.
+- Picking between them: B when the reason is often unknown; C when space is tight, accepting that a tooltip hides the reason from many users; D when retries are rare and a counter is not wanted.
+
+**The slow step**
+
+| | Option |
+|---|---|
+| A, recommended | *This step takes longer than the others.* |
+| B | *Apple Pay takes the longest to set up.* |
+| C | *Apple Pay setup can take several minutes.* |
+| D | *Longer than the other steps* |
+
+- Why these work: A holds for any slow step and promises nothing. B and C name the preference. D is the shortest.
+- Picking between them: B once timings show Apple Pay is always the longest; C once historic data exists (item 10); D only where a label, not a sentence, fits.
+
+**Under the list**
+
+| | Option |
+|---|---|
+| A, recommended | *Commands, logs, and the video appear here after the test runs.* |
+| B | *Your results appear here after the test runs.* |
+| C | *Results show here as soon as they are ready.* |
+
+- Why these work: A names what will arrive, as the queued state does. B is shorter. C fits results that arrive one by one.
+- Picking between them: B if the list of results varies a lot between runs; C if question 77 is answered with incremental loading.
+
+**The video pane**
+
+| | Option |
+|---|---|
+| A, recommended | *The video appears here after the test runs.* |
+| B | *Video after the test runs* |
+| C | *Waiting for the session* (the queued state's heading) |
+
+- Why these work: A matches the line under the list. B is the shortest. C reuses an existing string.
+- Picking between them: B where only a label fits; C only before the session exists, which is the queued state.
+
+### 12.8 Gaps found in design-context
+
+- `mock-data.md` has no mobile devices, OS versions or app IDs. The mock uses the TestMu AI docs' example (iPhone 16, iOS 18, Appium) and their app URL form (`lt://APP` and 21 digits, generated).
+- Nothing in design-context names setup steps, sub-steps or retry limits; these are the brief's, worded here.
+- `icons.md` leaves *Running or in progress* and *Retry or rerun* [TO FILL]. Used here: `LTLoader`'s spinner and `RotateCw`; the step badges `CircleCheck`, `CircleDot` and `CircleDashed` (lucide 1.58.0, each checked in the installed package).
+- `COMPONENTS.md`: `LTTimeline.Item`'s badge size, and whether `badgeIcon` takes a spinner (story `lttimeline--timeline`); `LTLoader`'s look (Primer's spinner assumed).
+- No pattern for step progress; `kane-agent-playground.md`'s rail is the nearest.
+- `TOKENS.md` has one easing and no durations.
+- The illustration kit has no drawing for a device being set up, a payment, a running test or results loading. The four spots are built from lifted parts (§12.11) and wait for Rajat's approval, as the kit requires.
+
+### 12.9 Open questions
+
+72. **When do preference steps appear?** Built: from the start, read from the capabilities. Or only once *Applying your capabilities* has listed them (brief 4.6)?
+73. **An Apple Pay retry:** does it start again from *Setting up the wallet* (built), or retry only the failed sub-step?
+74. **After the fifth failed attempt:** does the test end with an error, go on without Apple Pay, or something else? That failure state is a later variant.
+75. **AssistiveTouch and the passcode:** the docs list them in Apple Pay's provisioning. Show them as sub-steps?
+76. **Do commands stream in while the test runs?** If so, the panel should give way to the live list when *Running your commands* starts.
+77. **Results all at once** (built, as the brief describes), or each as soon as it is ready, the video last (Primer)?
+78. **Finished steps:** should they open to show their sub-steps and times, during setup and afterwards (in Meta Data, say), to see where a slow setup spent its time?
+79. **Stop:** can a user stop a test while it sets up (NN/g: long processes need a way out)? Where would it live?
+80. **The spinner beyond 5 seconds** (C66): accept it as essential, or stop it too and let the ticking time carry it?
+81. **The illustrations:** keep the kit drafts, change them, or use lucide icons instead?
+82. **The running glyph** is still, as the Status component draws it. Should it turn?
+83. **Elsewhere:** should a test being set up show as such beyond this page, for example in the builds listing or in notifications?
+84. **The backend's names for the steps**, and the retry limits of steps other than Apple Pay's 5?
+85. **Duration:** does a running test's duration count its setup (built), or only the run?
+
+### 12.10 When this ships into design-context/
+
+- [ ] Amend `patterns/automation-details.md` with this section: the setup state and its hand-off; record C64 to C75.
+- [ ] `guidelines/`: a step-progress pattern (rail, current card, retries, elapsed times, announcements), the motion budget (C66), and one narrator for a page that loads in parts.
+- [ ] `mock-data.md`: mobile devices, OS versions, app URLs and setup steps.
+- [ ] `icons.md`: fill *Running or in progress* and *Retry or rerun*; add CircleCheck, CircleDot, CircleDashed and RotateCw to this page's names.
+- [ ] FE asks: `LTTimeline` badge states (done, current, pending), `LTLoader` inside a list, and a running state for `LTTestStatusLabel`.
+- [ ] Illustration kit: the four drafts into `gallery/pending/`, once Rajat approves them.
+
+### 12.11 The illustrations
+
+Four spots built with design-context's illustration kit (`illustration-style-kit/skill/lambdatest-illustration` at `6cfb737`) from parts lifted out of LambdaTest's own drawings, in a scratch copy of the repo: nothing was committed to design-context. Their modules are in `illustrations/kit-drafts/`, with 2x previews, so the kit can rebuild them. Each is cut to a 144 × 136 slot shown at 1x, so the line stays 2px. Each piece that moves is its own SVG group.
+
+| Step | Parts | The one accent (share of ink) | Checker | Motion: at most 4 seconds, then rest |
+|---|---|---|---|---|
+| Setting up iPhone 16 | `phone-r134` without its home button (an iPhone 16 has none), its right edge drawn closed where r134's plus badge sat; `gears-r13`'s three gears at half size, each over a white disc | The large gear's hub (0.06) | PASS | The gears turn: the large one once, the small ones twice the other way, easing in and out |
+| Setting up Apple Pay | `credit-card-r69` and its broken grey ring, at 0.84 | The filled circle of the card's mark (0.133); the stripe took 0.32, over the cap | PASS | The ring turns once; the card lifts 4px and settles |
+| Running your test | `flask-r97` at 0.84 | The burner's flame (0.016) | WARN, line evenness 0.205: the lifted flask alone measures 0.234 | The bubbles rise into place one after another; the flame flickers |
+| Loading your results | `bar-chart-r107` at 0.46, to fit the slot | The tallest bar as an accent outline (0.121); solid, at 0.48, it took 0.285 | WARN, subject height 0.142 of the artboard (cut for a 144px slot, not an empty state) and line evenness 0.198 (short strokes taper more when small; at 3x the bars read as closed outlines) | The bars rise from the baseline in turn, then the tooltip appears |

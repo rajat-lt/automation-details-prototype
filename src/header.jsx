@@ -2,11 +2,12 @@
 // v4 items 3 and 4. Spec: automation-details.md §3, §4, §4b, §4c and §4d.
 import React, { useId, useLayoutEffect, useRef, useState } from 'react'
 import {
-  Bug, Clock, Ellipsis, History, Keyboard, Maximize, Minimize, Monitor, PanelLeftOpen, Share2, Trash2, Unlink, Zap,
+  Bug, Clock, Ellipsis, History, Keyboard, Maximize, Minimize, Monitor, PanelLeftOpen, Share2, Smartphone, Trash2, Unlink, Zap,
 } from 'lucide-react'
 import { LTButton, LTIconButton, LTTooltip, LTCopyToClipboard, LTTestStatusLabel, LTMetaData, LTLink, cx } from './lt.jsx'
 import { LTActionMenu, LTInlineTextInput } from './overlays.jsx'
 import { fmtDateTime, fmtDuration, fmtRelative } from './format.js'
+import { SetupClock } from './setup.jsx'
 
 /* v3 item 2: the test run's remarks, under the meta row, only when there
    are some. One line by default, cut to the width the header has; when that
@@ -116,7 +117,10 @@ export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleF
             icons.md has no brand marks (C14). */}
         <p className="td-meta">
           <LTTestStatusLabel status={test.status} showStatusText />
-          {test.status !== 'queued' && <LTMetaData leadingIcon={Clock} label="Duration" value={fmtDuration(test.durationSec)} />}
+          {/* Setup state: a running test's duration ticks its elapsed time
+              (ux-text-guidelines.md §7; spec §12.2). */}
+          {test.status !== 'queued' && <LTMetaData leadingIcon={Clock} label="Duration"
+            value={test.status === 'running' ? <SetupClock /> : fmtDuration(test.durationSec)} />}
           <LTMetaData>
             {linked ? (
               // v2 item 12: Unlink sits right beside the test case ID. v3 item 1:
@@ -136,9 +140,20 @@ export function TestHeader({ test, name, onRename, onMenu, fullscreen, onToggleF
               </button>
             )}
           </LTMetaData>
-          <LTMetaData label="Browser" value={`${test.browser} ${test.browserVersion}`} />
-          <LTMetaData label="Operating system" value={`${test.os} ${test.osVersion}`} />
-          <LTMetaData leadingIcon={Monitor} label="Resolution" value={test.resolution} />
+          {/* A device test shows its device and OS instead of a browser and a
+              resolution (setup state, spec §12.2). */}
+          {test.platform === 'mobile' ? (
+            <>
+              <LTMetaData leadingIcon={Smartphone} label="Device" value={test.device} />
+              <LTMetaData label="Operating system" value={`${test.os} ${test.osVersion}`} />
+            </>
+          ) : (
+            <>
+              <LTMetaData label="Browser" value={`${test.browser} ${test.browserVersion}`} />
+              <LTMetaData label="Operating system" value={`${test.os} ${test.osVersion}`} />
+              <LTMetaData leadingIcon={Monitor} label="Resolution" value={test.resolution} />
+            </>
+          )}
           <LTMetaData label="Framework" value={test.framework} />
           <LTMetaData value={test.tunnel ? 'Tunnel on' : 'Tunnel off'} />
           {/* Items 3 and 4: tooltips on focusable text (C1). */}
