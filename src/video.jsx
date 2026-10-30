@@ -426,7 +426,7 @@ function useClock(duration) {
  * moves the same playhead (playback.js).
  */
 export function VideoPane({ detail, segments, byId, onStub, loading = false, mode = 'docked', dock = 'side', onPip, onDock,
-  onCollapse }) {
+  onCollapse, bare = false, fadeIn = false }) {
   const hasVideo = detail && detail.test.video && detail.commands.length > 0
   const duration = detail?.durationSec ?? 0
   const playing = usePlayback(s => s.playing)
@@ -485,7 +485,8 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
               description={queued ? 'The video appears here once the test starts.' : 'This session ended without a recording.'} />
           )}
         </div>
-        <div className="vc-row vc-row--empty">{windowControls}</div>
+        {/* Setup v2 item 1.2: while the test loads, nothing to hide or float. */}
+        {!bare && <div className="vc-row vc-row--empty">{windowControls}</div>}
       </section>
     )
   }
@@ -495,7 +496,7 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
     playback.set({ playing: !s.playing })
   }
   return (
-    <section ref={paneRef} className={cx('vp', `vp--${mode}`, fs && 'is-fullscreen')} aria-label="Video">
+    <section ref={paneRef} className={cx('vp', `vp--${mode}`, fs && 'is-fullscreen', fadeIn && 'is-revealing')} aria-label="Video">
       <div className="vp-stage" onClick={toggle}>
         <ReplayCanvas detail={detail} rotation={rotation} />
       </div>
