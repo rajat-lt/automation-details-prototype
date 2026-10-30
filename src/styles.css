@@ -1420,13 +1420,16 @@ kbd {
 @keyframes su-rise-out { to { transform: translateY(-100%); opacity: 0; } }
 /* Setup v3 item 3: a sub-step's line. The words, invisible, hold its width
    (the ghost); the typed words sit in the same cell from its left edge; the
-   end slot holds the running dots, or the tick once it is done, at one
-   width, so nothing shifts. */
-.su-type { display: inline-grid; grid-template-columns: auto 20px; align-items: center; }
+   end slot holds the running dots, which stay once it is done (setup v4
+   item 2), so nothing shifts. */
+.su-type { position: relative; display: inline-grid; grid-template-columns: auto 20px; align-items: center; }
 .su-type__ghost, .su-type__text { grid-row: 1; grid-column: 1; white-space: pre; }
 .su-type__ghost { visibility: hidden; }
 .su-type__end { grid-row: 1; grid-column: 2; display: flex; align-items: center; height: var(--lh-14); }
-.su-type__tick { color: var(--success-fg); margin-left: var(--space-1); }
+/* Setup v4 item 1: a finished sub-step's tick sits in front of its words,
+   8px away as setup v2's icon did, hung outside the line's box, so the
+   words and the dots stay put. */
+.su-type__tick { position: absolute; top: 50%; right: 100%; margin-right: var(--space-2); color: var(--success-fg); transform: translateY(-50%); }
 /* Setup v3 item 5: every running sub-step shimmers, a soft band sweeping
    across its words (setup v2 item 4 did it for long ones only). */
 .su-type.is-running .su-type__text {
@@ -1435,10 +1438,12 @@ kbd {
   animation: su-shimmer 2.4s ease-in-out infinite;
 }
 @keyframes su-shimmer { from { background-position: 100% 0; } to { background-position: 0% 0; } }
-/* The running dots: they appear one by one, hold, and fade together. */
+/* The running dots: they appear one by one, hold, and fade together. Every
+   line's dots keep one rhythm (setup.jsx sets the delay), so a finished
+   line's carry on as it rises out. */
 .su-dots { display: inline-flex; }
 .su-dots.is-waiting { visibility: hidden; }
-.su-dots i { font-style: normal; opacity: 0; animation: 1.5s ease-in-out infinite both; }
+.su-dots i { font-style: normal; opacity: 0; animation: 1.5s ease-in-out infinite both; animation-delay: var(--su-dots-at, 0ms); }
 .su-dots i:nth-child(1) { animation-name: su-dot-1; }
 .su-dots i:nth-child(2) { animation-name: su-dot-2; }
 .su-dots i:nth-child(3) { animation-name: su-dot-3; }
