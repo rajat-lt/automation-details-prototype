@@ -4,7 +4,7 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 
 **Live:** https://rajat-lt.github.io/automation-details-prototype/
 
-**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33; v4 adds §3c, §4d and §7d and conflicts C34 to C39; v5 adds §3d, §4e and §7e and conflicts C40 to C47; Rajat's answers add §4f and §7f and conflicts C48 and C49; v6 adds §3e, §4g and §7g and conflicts C50 to C56. The setup state has its own §12, with conflicts C64 to C75 and questions 72 to 85; Rajat's review of it (setup v2) adds §12.12, conflicts C76 to C79 and questions 86 to 90.
+**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33; v4 adds §3c, §4d and §7d and conflicts C34 to C39; v5 adds §3d, §4e and §7e and conflicts C40 to C47; Rajat's answers add §4f and §7f and conflicts C48 and C49; v6 adds §3e, §4g and §7g and conflicts C50 to C56. The setup state has its own §12, with conflicts C64 to C75 and questions 72 to 85; Rajat's review of it (setup v2) adds §12.12, conflicts C76 to C79 and questions 86 to 90. His second review (setup v3) adds §12.13, conflicts C80 and C81 and questions 91 and 92.
 
 ## Where to see each change
 
@@ -187,6 +187,16 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | Setup v2 7 | Apple Pay found in the settings | Three steps at first; Apple Pay's row opens into the list when *Reading your capabilities* ends |
 | Setup v2 8 | Passcode | *Setting up the passcode*, Apple Pay's fourth sub-step |
 | Setup v2 9 | Skeletons | When the run ends: skeletons in All Commands, Logs and the video, each fading in as it arrives; *Passed* in the header from that moment |
+
+**Setup v3, 30 Oct 2026** (spec §12.13), on the same test:
+
+| # | Change | Try it |
+|---|---|---|
+| Setup v3 1 | Looping spots | The gears turn, the bubbles rise and the card floats for as long as their step runs |
+| Setup v3 2 | The floating card | Apple Pay's spot: no ring; the card rises and tilts over its shadow, a spark twinkles, its mark swells |
+| Setup v3 3 | Typing and running dots | Each sub-step types itself out as it starts, then three dots run at its end; done, a green tick takes the dots' place |
+| Setup v3 4 | Carousel kept | The finished sub-step rises out as the next rises in |
+| Setup v3 5 | Shimmer on every sub-step | Every running sub-step shimmers; a long one still adds *Still working on this step. It finishes on its own.* |
 
 ## Review states
 

@@ -1418,14 +1418,33 @@ kbd {
 .su-carousel__item.is-out { animation: su-rise-out 320ms var(--ease-out) both; }
 @keyframes su-rise-in { from { transform: translateY(100%); opacity: 0; } }
 @keyframes su-rise-out { to { transform: translateY(-100%); opacity: 0; } }
-/* Setup v2 item 4: a long setup sub-step shimmers, a soft band sweeping
-   across its words, while the note below says it is still working. */
-.su-carousel__item.is-long .su-carousel__text {
+/* Setup v3 item 3: a sub-step's line. The words, invisible, hold its width
+   (the ghost); the typed words sit in the same cell from its left edge; the
+   end slot holds the running dots, or the tick once it is done, at one
+   width, so nothing shifts. */
+.su-type { display: inline-grid; grid-template-columns: auto 20px; align-items: center; }
+.su-type__ghost, .su-type__text { grid-row: 1; grid-column: 1; white-space: pre; }
+.su-type__ghost { visibility: hidden; }
+.su-type__end { grid-row: 1; grid-column: 2; display: flex; align-items: center; height: var(--lh-14); }
+.su-type__tick { color: var(--success-fg); margin-left: var(--space-1); }
+/* Setup v3 item 5: every running sub-step shimmers, a soft band sweeping
+   across its words (setup v2 item 4 did it for long ones only). */
+.su-type.is-running .su-type__text {
   background: linear-gradient(90deg, var(--fg-default) 0%, var(--fg-default) 42%, var(--fg-disabled) 50%, var(--fg-default) 58%, var(--fg-default) 100%);
   background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
   animation: su-shimmer 2.4s ease-in-out infinite;
 }
 @keyframes su-shimmer { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+/* The running dots: they appear one by one, hold, and fade together. */
+.su-dots { display: inline-flex; }
+.su-dots.is-waiting { visibility: hidden; }
+.su-dots i { font-style: normal; opacity: 0; animation: 1.5s ease-in-out infinite both; }
+.su-dots i:nth-child(1) { animation-name: su-dot-1; }
+.su-dots i:nth-child(2) { animation-name: su-dot-2; }
+.su-dots i:nth-child(3) { animation-name: su-dot-3; }
+@keyframes su-dot-1 { 0%, 10% { opacity: 0; } 25%, 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes su-dot-2 { 0%, 30% { opacity: 0; } 45%, 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes su-dot-3 { 0%, 50% { opacity: 0; } 65%, 85% { opacity: 1; } 100% { opacity: 0; } }
 
 /* Badges (setup v2 item 5): blue spinner running, green tick done, dashed
    circle pending. A white disc behind each hides the rail. */
@@ -1462,28 +1481,38 @@ kbd {
   background-size: 200% 100%;
 }
 
-/* The spots' motion (§12.11, C66): transform and opacity only, at most 4
-   seconds, ending in the drawn pose so a replay starts without a snap. */
+/* The spots' motion (§12.11; setup v3 items 1 and 2): transform and
+   opacity only, looping for as long as the step runs, like a GIF. */
 .su-hero__ill g { transform-box: fill-box; transform-origin: center; }
 @keyframes su-turn { to { transform: rotate(360deg); } }
 @keyframes su-turn-back-twice { to { transform: rotate(-720deg); } }
-@keyframes su-lift { 40% { transform: translateY(-4px); } }
-@keyframes su-bubble { from { transform: translateY(8px); opacity: 0; } 60% { opacity: 1; } }
-@keyframes su-flicker { 25% { transform: scaleY(1.18); } 50% { transform: scaleY(0.92); } 75% { transform: scaleY(1.1); } }
-.su-hero__ill #su-device-gear-big { animation: su-turn 4s cubic-bezier(0.45, 0, 0.55, 1) both; }
+/* Phone and gears: the gears turn without end, the small ones twice as fast the other way. */
+.su-hero__ill #su-device-gear-big { animation: su-turn 8s linear infinite; }
 .su-hero__ill #su-device-gear-mid,
-.su-hero__ill #su-device-gear-small { animation: su-turn-back-twice 4s cubic-bezier(0.45, 0, 0.55, 1) both; }
-.su-hero__ill #su-applepay-ring { animation: su-turn 3.5s cubic-bezier(0.45, 0, 0.55, 1) both; }
-.su-hero__ill #su-applepay-card { animation: su-lift 1.2s cubic-bezier(0.45, 0, 0.55, 1) both; }
-/* Bubbles rise bottom first: groups follow the lift's layer order, not height. */
-.su-hero__ill [id^="su-run-bubble-"] { animation: su-bubble 1.2s var(--ease-out) both; }
-.su-hero__ill #su-run-bubble-7 { animation-delay: 0.3s; }
-.su-hero__ill #su-run-bubble-4 { animation-delay: 0.6s; }
-.su-hero__ill #su-run-bubble-5 { animation-delay: 0.9s; }
-.su-hero__ill #su-run-bubble-3 { animation-delay: 1.2s; }
-.su-hero__ill #su-run-bubble-6 { animation-delay: 1.5s; }
-.su-hero__ill #su-run-bubble-2 { animation-delay: 1.8s; }
-.su-hero__ill #su-run-flame { transform-origin: 50% 100%; animation: su-flicker 1.6s ease-in-out 2 both; }
+.su-hero__ill #su-device-gear-small { animation: su-turn-back-twice 8s linear infinite; }
+/* The card (setup v3 item 2): it rises and settles, tilting a little, while its shadow
+   narrows and pales below; the spark twinkles at the top of each rise, and the mark's
+   accent circle swells twice a cycle. */
+@keyframes su-float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-6px) rotate(-2deg); } }
+@keyframes su-shadow { 0%, 100% { transform: scaleX(1); opacity: 1; } 50% { transform: scaleX(0.8); opacity: 0.55; } }
+@keyframes su-twinkle { 0%, 30% { transform: scale(0.6); opacity: 0; } 50% { transform: scale(1); opacity: 1; } 75%, 100% { transform: scale(0.9); opacity: 0; } }
+@keyframes su-swell { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
+.su-hero__ill #su-applepay-float { animation: su-float 3.2s ease-in-out infinite; }
+.su-hero__ill #su-applepay-shadow { animation: su-shadow 3.2s ease-in-out infinite; }
+.su-hero__ill #su-applepay-spark { animation: su-twinkle 3.2s ease-in-out infinite; }
+.su-hero__ill #su-applepay-mark { animation: su-swell 1.6s ease-in-out infinite; }
+/* The flask: bubbles rise past their places and fade, without end, the lowest first
+   (groups follow the lift's layer order, not height); the flame flickers. */
+@keyframes su-bubble-loop { 0% { transform: translateY(9px); opacity: 0; } 25%, 70% { opacity: 1; } 100% { transform: translateY(-9px); opacity: 0; } }
+@keyframes su-flicker { 0%, 100% { transform: scaleY(1); } 25% { transform: scaleY(1.18); } 50% { transform: scaleY(0.92); } 75% { transform: scaleY(1.1); } }
+.su-hero__ill [id^="su-run-bubble-"] { animation: su-bubble-loop 2.8s linear infinite; }
+.su-hero__ill #su-run-bubble-7 { animation-delay: -0.4s; }
+.su-hero__ill #su-run-bubble-4 { animation-delay: -0.8s; }
+.su-hero__ill #su-run-bubble-5 { animation-delay: -1.2s; }
+.su-hero__ill #su-run-bubble-3 { animation-delay: -1.6s; }
+.su-hero__ill #su-run-bubble-6 { animation-delay: -2s; }
+.su-hero__ill #su-run-bubble-2 { animation-delay: -2.4s; }
+.su-hero__ill #su-run-flame { transform-origin: 50% 100%; animation: su-flicker 1.6s ease-in-out infinite; }
 
 /* Prototype only (§12.3 item 13): dashed, so it never reads as product UI. */
 .proto-bar {
@@ -1494,10 +1523,12 @@ kbd {
 .proto-bar__label { margin-right: var(--space-1); color: var(--fg-muted); font-size: var(--font-12); font-weight: var(--weight-semibold); }
 
 @media (prefers-reduced-motion: reduce) {
-  /* Spots, the carousel and the shimmer stay still; the spinner keeps
-     turning, as Primer asks of loading indicators (§12.3 items 6 and 7). */
+  /* Spots, the carousel and the shimmer stay still and the words show whole
+     (setup.jsx); the spinner and the running dots keep going, as Primer asks
+     of loading indicators (§12.3 items 6 and 7, setup v3). */
   .su-hero__ill *, .su-carousel__item { animation: none !important; }
   .su-carousel__item.is-out { display: none; }
-  .su-carousel__item.is-long .su-carousel__text { background: none; color: inherit; }
+  .su-type.is-running .su-type__text { animation: none !important; background: none; color: inherit; }
   .lt-loader { animation-duration: 1s !important; animation-iteration-count: infinite !important; }
+  .su-dots i { animation-duration: 1.5s !important; animation-iteration-count: infinite !important; }
 }

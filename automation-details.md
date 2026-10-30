@@ -24,7 +24,7 @@ Every component and prop below was read from `COMPONENTS.md`. Proposals carry **
 
 **v8, 29 Oct 2026.** Rajat's eighth brief: 3 changes to the Network tab, written *v8 item 1* to *v8 item 3*, with the standing reminder against hallucination: the hourglass amber everywhere, no time window token, and *View in HAR viewer* (one of the finalists offered for v7 item 7). Covered by §4i, §7i and the v8 rows of the other sections; v7 text that v8 replaces keeps an italic note. The amber is `attention.fg` (`#9a6700`), v6's turtle colour, read from `data/tokens.json` through `src/tokens.css`.
 
-**Setup state, 30 Oct 2026.** Rajat's ninth brief: a loading state for the minutes before a test's results exist, for one flow (the device's setup, Apple Pay, the run, the results), with four reference screenshots. All of it sits in §12, in one place: the research, structure, behaviour, conflicts C64 to C75, decisions, copy, gaps, questions 72 to 85 and the illustrations. §6, §10 and §11 point there. Rajat reviewed it the same day (setup v2, 9 items): §12.12, conflicts C76 to C79, questions 86 to 90; the §12 text it replaces keeps a dated note.
+**Setup state, 30 Oct 2026.** Rajat's ninth brief: a loading state for the minutes before a test's results exist, for one flow (the device's setup, Apple Pay, the run, the results), with four reference screenshots. All of it sits in §12, in one place: the research, structure, behaviour, conflicts C64 to C75, decisions, copy, gaps, questions 72 to 85 and the illustrations. §6, §10 and §11 point there. Rajat reviewed it the same day (setup v2, 9 items): §12.12, conflicts C76 to C79, questions 86 to 90; then again (setup v3, 5 items): §12.13, conflicts C80 and C81, questions 91 and 92. Text they replace keeps a dated note.
 
 ---
 
@@ -924,7 +924,7 @@ The review states are linked from the README.
 | C62 | Carets (S2, S3) | Screenshots: Primer's filled triangle on *All ▾* and the HAR caret | `icons.md`: lucide only; v5 and v6 used `ChevronDown` | `ChevronDown` kept | Guideline wins; icons in screenshots follow the guidelines |
 | C63 | Menu item casing (S4) | Screenshot: *Show Waterfall Overview*, *Show Connect* | `ux-text-guidelines.md` §2 (9 Oct 2026): action-menu items take sentence case; CONNECT is the method's name, written in capitals in the Method column and the v5 switch | *Show waterfall overview*, *Show CONNECT* | Guideline wins on casing; copy in screenshots follows the guide |
 
-C64 to C75, the setup state's: §12.5; C76 to C79, its review's: §12.12.
+C64 to C75, the setup state's: §12.5; C76 to C79, its review's: §12.12; C80 and C81: §12.13.
 
 ## 7. Design decisions [proposed]
 
@@ -1412,7 +1412,7 @@ Still open from v1: 1, 2, 3, 4 and 12. **New in v2:**
 
 71. **A visible way back to the whole session**: the token's × was the visible twin of **R** (`ux-persona.md`: every power-user shortcut has a visible twin). A window now clears with R, by zooming out, or with Clear Filters when nothing matches. Add a visible control, for example a reset button at the overview's end like the v5 strip's, or leave it?
 
-Questions 72 to 85, the setup state's: §12.9; 86 to 90, its review's: §12.12.
+Questions 72 to 85, the setup state's: §12.9; 86 to 90, its review's: §12.12; 91 and 92: §12.13.
 
 ## 11. When this ships into design-context/
 
@@ -1539,8 +1539,8 @@ Outside sources, each read on 30 Oct 2026:
 3. **No time left, no percentage (items 8, 10):** elapsed time only: the test's in the header, the current step's in its card, and each finished step's and sub-step's at the end of its row. The steps do the determinate job (NN/g); screen readers hear *Step 2 of 4*. *Setup v2 item 1.3: steps and sub-steps show no times; the header's duration stays.*
 4. **Retries (items 8, 9):** nothing shows on a first attempt. When an attempt fails, the card shows *Attempt 2 of 5* and *The card failed to load on attempt 1.*, and the step's sub-steps run again from the first (question 73). The attempt line stays until the step ends. Grey with an icon: the user has no decision to make and nothing is broken yet (`ux-text-guidelines.md` §4).
 5. **The slow step (item 4.8):** Apple Pay's card says once, from the moment the step starts, *This step takes longer than the others.* No minutes are promised. *Setup v2 item 4: replaced by the long-step note, shown only when a setup sub-step runs long (§12.12).*
-6. **Illustrations (item 11):** one per major step, none for sub-steps, only the current one shown. Each plays for at most 4 seconds when its step starts, when a retry starts, and when a sub-step starts if the last play ended 10 or more seconds before; then it rests in the pose the kit drew (C66). With reduced motion it never moves. Each one's motion: §12.11. *Setup v2 item 2: on the centred stage; Loading your results has none (§12.12).*
-7. **The spinner:** on the current sub-step only, `LTLoader` small, about a turn a second. It keeps turning with reduced motion, as Primer asks of loading indicators (question 80). *Setup v2 item 5: the running main step has it too (§12.12).*
+6. **Illustrations (item 11):** one per major step, none for sub-steps, only the current one shown. Each plays for at most 4 seconds when its step starts, when a retry starts, and when a sub-step starts if the last play ended 10 or more seconds before; then it rests in the pose the kit drew (C66). With reduced motion it never moves. Each one's motion: §12.11. *Setup v2 item 2: on the centred stage; Loading your results has none (§12.12).* *Setup v3 item 1: they loop for as long as their step runs (§12.13).*
+7. **The spinner:** on the current sub-step only, `LTLoader` small, about a turn a second. It keeps turning with reduced motion, as Primer asks of loading indicators (question 80). *Setup v2 item 5: the running main step has it too (§12.12).* *Setup v3 item 3: the sub-step line has running dots instead; the spinner stays on the running main step (§12.13).*
 8. **Status (item 15):** the test is *Running* from the moment setup starts: header pill, tests pane row, readout and filter.
 9. **The hand-off (items 4.11, 14):** when the last sub-step ends, the list shows it done for 600ms, then the results replace the panel in place: All Commands' list (and its counter in the tab), Logs, Network's state, the video, the header's *Passed* and final duration, and the tests pane row. Nothing else moves. Screen readers hear *Results ready. Test passed.* Focus stays where it was (C73). *Replaced by setup v2 item 9: when the run ends, the stage gives way to skeletons and each result fades in as it arrives (§12.12).*
 10. **Announcements:** one hidden status line, not the list (C74): each major step as it starts (*Setting up Apple Pay. Step 2 of 4.*), each retry (*The card failed to load. Trying again, attempt 2 of 5.*), and the end. Sub-steps are not announced; each row carries its state in hidden text (*, done in 41s*, *, running*, *, pending*), read on demand. *Setup v2: also a long sub-step, once, and the outcome as the results start loading (§12.12).*
@@ -1566,7 +1566,7 @@ Outside sources, each read on 30 Oct 2026:
 |---|---|---|---|---|---|
 | C64 | Determinate progress | Brief: no time left, no percentage | Primer: a determinate state beyond about 10 seconds; NN/g: percent-done for 10 seconds or more | Steps and sub-steps as the determinate part, and elapsed times; no percentage, no ETA | NN/g's own advice when the time is hard to know: show the number of steps. `ux-text-guidelines.md` §7: no ETA unless it is reliable |
 | C65 | A spinner on a long wait | A sub-step can last minutes | NN/g: looped animation for 2 to 10 seconds | The spinner marks the current sub-step only; the step's ticking time and the attempt count show it is alive | A ticking time tells working from stuck, which a spinner alone cannot |
-| C66 | How long illustrations move | Brief: animated illustrations | WCAG 2.2.2 (Level A): motion over 5 seconds beside other content needs pause, stop or hide, unless essential; its note on loading covers a phase in which no interaction can happen | At most 4 seconds per play, then rest; plays on a step's start, a retry, and a sub-step's start at most once every 10 seconds; none with reduced motion | The page stays usable during setup, so a looping illustration is not essential |
+| C66 | How long illustrations move | Brief: animated illustrations | WCAG 2.2.2 (Level A): motion over 5 seconds beside other content needs pause, stop or hide, unless essential; its note on loading covers a phase in which no interaction can happen | At most 4 seconds per play, then rest; plays on a step's start, a retry, and a sub-step's start at most once every 10 seconds; none with reduced motion. *Superseded by setup v3 item 1 (C80)* | The page stays usable during setup, so a looping illustration is not essential |
 | C67 | oil-motion | Brief: use oil-motion for the animation | Its README and SKILL.md: frame animation from AI video for scroll, pointer and state; UI motion that CSS or SVG can do is outside its scope; generation needs a ZenMux API key, is billed, and sends prompts and images to model providers | CSS keyframes on the illustrations' SVG groups, transform and opacity only | Its own scope excludes this job, and the drawings already exist as vectors |
 | C68 | One loader or three | Brief: keep the sections bare | Base pattern §4: each pane gets its own loader | One progress panel in the centre pane; the video pane keeps one static line; the tests pane and header show data | Primer: replace a cluster of loading indicators with one; persona: one narrator per screen. The base pattern speaks of data loading, a separate wait |
 | C69 | Running's colour | Brief: status *running* | README §4 (open since 8 Oct 2026): *Running* uses `attention` (yellow) for `LTTag`; `mock-data.md`: the Status component's running glyph is a blue partial ring | The pill in `accent.emphasis` with a white partial ring, as each pill takes its glyph's colour | `LTTestStatusLabel` is the Status component; Rajat is fixing the status colours (9 Oct 2026) |
@@ -1586,7 +1586,7 @@ Outside sources, each read on 30 Oct 2026:
 - **Retries show only when they happen.** Rejected: *Attempt 1 of 5* from the start, which suggests failure on every run.
 - **The slow step says so once.** Rejected: an estimate in minutes, which nothing in the system can keep. *Setup v2 item 4: replaced by the long-step note.*
 - **One spinner on screen**, on the current sub-step; the current major step has a still blue dot. Rejected: a spinner on both, which doubles the motion. *Setup v2 item 5: two, the running main step's and its sub-step's.*
-- **A motion budget:** transform and opacity only; entrances on `animation.easeOutCubic` (`--ease-out`); turns ease in and out and end where they began, so a replay starts without a snap.
+- **A motion budget:** transform and opacity only; entrances on `animation.easeOutCubic` (`--ease-out`); turns ease in and out and end where they began, so a replay starts without a snap. *Setup v3 item 1: the spots now loop (§12.13).*
 - **The hand-off holds the last tick for 600ms**, then the results replace the panel, with no toast: the result is in view (`ux-text-guidelines.md` §3: success only when the result is out of sight). *Setup v2 item 9: replaced by skeletons.*
 - **The steps follow the capabilities:** Apple Pay is a step because `applePay` is true; with network capture off, *Loading your results* has no network row.
 
@@ -1699,9 +1699,11 @@ Four spots built with design-context's illustration kit (`illustration-style-kit
 | Step | Parts | The one accent (share of ink) | Checker | Motion: at most 4 seconds, then rest |
 |---|---|---|---|---|
 | Setting up iPhone 16 | `phone-r134` without its home button (an iPhone 16 has none), its right edge drawn closed where r134's plus badge sat; `gears-r13`'s three gears at half size, each over a white disc | The large gear's hub (0.06) | PASS | The gears turn: the large one once, the small ones twice the other way, easing in and out |
-| Setting up Apple Pay | `credit-card-r69` and its broken grey ring, at 0.84 | The filled circle of the card's mark (0.133); the stripe took 0.32, over the cap | PASS | The ring turns once; the card lifts 4px and settles |
+| Setting up Apple Pay | `credit-card-r69` and its broken grey ring, at 0.84. *Setup v3 item 2: rebuilt without the ring, §12.13* | The filled circle of the card's mark (0.133); the stripe took 0.32, over the cap | PASS | The ring turns once; the card lifts 4px and settles |
 | Running your test | `flask-r97` at 0.84 | The burner's flame (0.016) | WARN, line evenness 0.205: the lifted flask alone measures 0.234 | The bubbles rise into place one after another; the flame flickers |
 | Loading your results | `bar-chart-r107` at 0.46, to fit the slot | The tallest bar as an accent outline (0.121); solid, at 0.48, it took 0.285 | WARN, subject height 0.142 of the artboard (cut for a 144px slot, not an empty state) and line evenness 0.198 (short strokes taper more when small; at 3x the bars read as closed outlines) | The bars rise from the baseline in turn, then the tooltip appears *Setup v2 item 9: no longer shown, since Loading your results happens as skeletons; the draft stays in `illustrations/kit-drafts/`.* |
+
+*Setup v3 item 1: every spot's motion now loops for as long as its step runs; item 2: the card is rebuilt without its ring (§12.13).*
 
 ### 12.12 Setup v2: Rajat's review (30 Oct 2026)
 
@@ -1725,7 +1727,7 @@ Read again for this round: `ux-text-guidelines.md` (§1 rules 2, 3 and 7; §2 fu
   - the running main step's illustration, 144 × 136;
   - its name, 16px bold;
   - a line for retries, 12px muted: *Attempt 2 of 5. The card failed to load on attempt 1.*;
-  - the sub-step carousel: one line, 14px, the blue spinner and the running sub-step;
+  - the sub-step carousel: one line, 14px, the blue spinner and the running sub-step; *Setup v3 item 3: no spinner; the words type in and dots run at their end (§12.13).*
   - a line for a long sub-step, 12px muted: *Still working on this step. It finishes on its own.*
   - The two 12px lines keep their room when empty, so the stage never jumps.
 - **The main steps**, 32px under the stage: a block centred in the pane, its rows left-aligned on one rail, 32px each. Done: green tick, default text. Running: blue spinner, semibold. Pending: dashed circle, muted. No times.
@@ -1745,8 +1747,8 @@ Read again for this round: `ux-text-guidelines.md` (§1 rules 2, 3 and 7; §2 fu
 
 2. **Apple Pay joins the list** (item 7): before the settings are read, three steps show (*Step 1 of 3*). When *Reading your capabilities* ends, Apple Pay's row opens into place, pending, and starts half a second later (*Step 2 of 4*).
 3. **The carousel** (item 3): one sub-step at a time. A finished one swaps its spinner for a green tick for half a second, then rises out as the next rises in (320ms, `animation.easeOutCubic`). A failed one gives way at once, to the retry.
-4. **A long sub-step** (item 4): after 8 seconds in the prototype (question 86 for the product), a setup sub-step's words shimmer, a soft band sweeping across them every 2.4 seconds, and the note fades in below. Screen readers hear the note once. Only setup sub-steps count: *Running your commands* lasts as long as the user's own test (question 90). In the demo, Apple Pay's second attempt spends 16 seconds on *Loading the wallet and card*.
-5. **Icons** (item 5): the blue spinner on the running main step and on the running sub-step, the green tick for done, the dashed circle for pending. Two spinners now show at once; §12.6's single spinner is superseded.
+4. **A long sub-step** (item 4): after 8 seconds in the prototype (question 86 for the product), a setup sub-step's words shimmer, a soft band sweeping across them every 2.4 seconds, and the note fades in below. Screen readers hear the note once. Only setup sub-steps count: *Running your commands* lasts as long as the user's own test (question 90). In the demo, Apple Pay's second attempt spends 16 seconds on *Loading the wallet and card*. *Setup v3 item 5: every running sub-step shimmers now; a long one still adds the note (§12.13).*
+5. **Icons** (item 5): the blue spinner on the running main step and on the running sub-step, the green tick for done, the dashed circle for pending. Two spinners now show at once; §12.6's single spinner is superseded. *Setup v3 item 3: the sub-step's spinner gave way to running dots (§12.13).*
 6. **Retries:** as before, now on the line under the step's name, centred and without an icon: a 12px icon would need a filled glyph (`icons.md`), which lucide does not have.
 7. **The illustrations:** as §12.11, one per main step, on the stage. Loading your results has no stage, so the chart is no longer shown (question 89).
 8. **The results** (item 9): when the run ends and its last tick has shown, the stage gives way to a skeleton in each region, fading in over 300ms:
@@ -1765,7 +1767,7 @@ Read again for this round: `ux-text-guidelines.md` (§1 rules 2, 3 and 7; §2 fu
 | # | Topic | Brief | Guideline or source | Built | Why |
 |---|---|---|---|---|---|
 | C76 | Hidden controls (item 1) | Remove the dock control and the option to hide or show the video while the test loads | `ux-persona.md`: disabled with a tooltip beats hidden | Hidden while the test loads; back with the results | Brief wins: there is nothing yet to dock, hide or float, and they return as soon as there is |
-| C77 | The shimmer (item 4) | Shimmer a long sub-step's words | WCAG 2.2.2: motion over 5 seconds beside other content needs pause, stop or hide, unless essential (C66) | The shimmer runs while the sub-step runs long; still with reduced motion | Brief wins; it carries the reassurance. Question 80 covers it too |
+| C77 | The shimmer (item 4) | Shimmer a long sub-step's words | WCAG 2.2.2: motion over 5 seconds beside other content needs pause, stop or hide, unless essential (C66) | The shimmer runs while the sub-step runs long; still with reduced motion. *Setup v3 item 5: on every running sub-step (C81)* | Brief wins; it carries the reassurance. Question 80 covers it too |
 | C78 | Hidden sub-steps (item 3) | Only the running sub-step shows | NN/g: showing the number of steps helps users estimate | The main steps still show in full; the running step's sub-steps do not | Brief wins; the main steps keep NN/g's point where it matters most |
 | C79 | "Please wait" (item 4) | Tell users to please wait for it to finish | `ux-text-guidelines.md` §1 rules 2 and 7: no negation, no *please* | *Still working on this step. It finishes on its own.* | Guide wins on the words; the meaning is the brief's |
 
@@ -1816,3 +1818,52 @@ Finalists for the long-step note (§8 format):
 - [ ] Record C76 to C79 and these decisions in `patterns/automation-details.md`, with §12.
 - [ ] `guidelines/`: the sub-step carousel, the long-step shimmer and note, and skeletons per region with one announcement.
 - [ ] The long-step note into `ux-text-guidelines.md`'s examples, once chosen.
+
+### 12.13 Setup v3: Rajat's second review (30 Oct 2026)
+
+Rajat's second review, the same day, written *setup v3 item 1* to *setup v3 item 5*:
+
+1. Keep the illustrations animating, like an auto-playing looping GIF.
+2. Remove the animating circle around Apple Pay's illustration, and find a beautiful way to animate the illustration itself.
+3. Remove the blue spinner in front of the sub-steps; put animated three dots at their end (*Adding a sandbox card...*), and type each sub-step out as it starts.
+4. Keep the carousel (as built) for moving to the next sub-step.
+5. The shimmer (as built) on every sub-step; a sub-step that takes unusually long still adds the helping line below it (as built).
+
+**What changed**
+
+1. **Looping spots** (item 1): each loops for as long as its step runs; with reduced motion they stay still.
+   - Phone and gears: the gears turn without end, the large one a turn every 8 seconds, the two small ones twice as fast the other way.
+   - Card (item 2): see below.
+   - Flask: the bubbles rise past their drawn places and fade, the lowest first, every 2.8 seconds; the flame flickers every 1.6 seconds.
+2. **The card, rebuilt** (item 2) with the kit, from r69's card without its broken grey ring:
+   - It floats over a grey floor shadow (`#A0A0A0`, the style spec's colour for floor shadows), with a house spark mark (the kit's `sparkle()`, tapered flicks) off its top right corner.
+   - In a 3.2-second loop it rises 6px and tilts 2 degrees, then settles; the shadow narrows to 80% and pales as it rises; the spark twinkles at the top of each rise; the mark's accent circle swells by 12% twice a cycle.
+   - The one accent stays the mark's filled circle. Without the ring there is less ink, so at 1.1 the accent took 0.181 (WARN, over the 0.15 cap); at 0.85 to 1.0 with an 8px shadow, 0.151 to 0.163. At 0.95 with a 12px deep shadow it takes 0.144: PASS on every check, centred. An accent ring instead of the filled circle passed at 0.065, but showed the card outline's open lower right corner, which the filled circle covers.
+3. **The sub-step line** (item 3):
+   - No icon in front. The words type out a character every 32ms, starting 240ms after the line has risen in, from a fixed left edge: the full words, invisible underneath, hold the line's width, so nothing shifts.
+   - When the words are complete, three dots run at their end: they appear one by one, hold, and fade together, every 1.5 seconds.
+   - A finished sub-step swaps its dots for the green tick, in the same place, for its half-second beat, then rises out.
+   - Typing happens only as a sub-step starts; reopening the stage later shows the words whole. With reduced motion they always show whole.
+   - Screen readers get the words whole at once, with *, running* or *, done*; the dots are hidden from them.
+   - The running main step in the list keeps its blue spinner (setup v2 item 5).
+4. **The carousel** (item 4): unchanged; the line now rises in and then types.
+5. **Shimmer** (item 5): every running sub-step's words shimmer, as long ones did; the note (*Still working on this step. It finishes on its own.*) still appears only on a setup sub-step that runs long. With reduced motion, no shimmer; the dots and the list's spinner keep going, as Primer asks of loading indicators.
+
+**Conflicts recorded**
+
+| # | Topic | Brief | Guideline or source | Built | Why |
+|---|---|---|---|---|---|
+| C80 | Looping spots (item 1) | Animate like an auto-playing looping GIF | WCAG 2.2.2 (Level A): motion that starts by itself, lasts over 5 seconds and sits beside other content needs a way to pause, stop or hide it, unless essential; C66 kept each play to 4 seconds for that reason | Loops for as long as the step runs; still with reduced motion; no pause control | Brief wins. Question 91 asks about a pause control |
+| C81 | Shimmer everywhere (item 5) | Shimmer every running sub-step | The same criterion (C77) | On every running sub-step; none with reduced motion | Brief wins; question 80 covers it |
+
+**Decisions [proposed]**
+
+- **The dots are an indicator, not copy.** The strings stay as they were, with no punctuation of their own (`ux-text-guidelines.md` §2); the dots are drawn after them and hidden from screen readers, which hear *, running*.
+- **The tick takes the dots' place** when a sub-step finishes, so the line keeps one width, where it used to replace the spinner in front.
+- **Type only as a sub-step starts**, so a stage reopened mid-step does not retype old words.
+- **The card's spark** is the house's own mark for activity (the kit's `sparkle()`), so the card's motion stays in the kit's own vocabulary.
+
+**Open questions**
+
+91. **A pause control** for the looping spots (C80): add one beside the stage, or treat the loop as part of the loading indicator?
+92. **Typing speed:** 32ms a character (about a second for *Setting the card as the payment method*). Faster, slower, or as built?
