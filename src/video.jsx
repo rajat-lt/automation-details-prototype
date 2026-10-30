@@ -34,6 +34,7 @@ function colors() {
     fgMuted: v('--fg-muted'), fgSubtle: v('--fg-subtle'), accent: v('--accent-emphasis'),
     accentSubtle: v('--accent-subtle'), danger: v('--danger-emphasis'), dangerFg: v('--danger-fg'),
     dangerSubtle: v('--danger-subtle'), onEmphasis: v('--fg-on-emphasis'), backdrop: v('--overlay-backdrop'),
+    success: v('--success-fg'), successSubtle: v('--success-subtle'),
     sans: v('--font-sans'),
   }
   return C
@@ -93,7 +94,97 @@ function typedAt(cmds, t, page) {
   return out
 }
 
+/* Setup state (spec §12): a device test's video is a portrait screen in the
+   16:9 frame, as a real device's recording shows. GAP: the app and its
+   screens are the prototype's own (data.js T19); mock-data.md has none. */
+const PW = 250, PX = (W - PW) / 2
+const PT = {
+  tile: [12, 96, 107, 120], addToCart: [16, 470, 218, 44], cartButton: [206, 38, 32, 32],
+  gift: [16, 236, 160, 36], apply: [184, 236, 50, 36], total: [16, 296, 218, 28], applePay: [16, 470, 218, 44],
+  sheet: [0, 300, 250, 240], passcode: [45, 438, 160, 30], confirm: [25, 252, 200, 40],
+}
+const PHONE_TITLE = { 'app-home': 'Shop', 'app-product': 'Product', 'app-cart': 'Cart', 'app-pay': 'Cart', 'app-done': 'Order' }
+
+function drawPhone(ctx, detail, t) {
+  const c = colors()
+  const cur = commandAt(detail.commands, t)
+  const page = cur?.page ?? 'app-home'
+  const typed = typedAt(detail.commands, t, page)
+  ctx.fillStyle = c.subtle; ctx.fillRect(0, 0, W, H)
+  ctx.save(); ctx.translate(PX, 0)
+  ctx.fillStyle = c.canvas; ctx.fillRect(0, 0, PW, H)
+  text(ctx, PHONE_TITLE[page], 16, 56, { size: 16, weight: 600 })
+  box(ctx, PT.cartButton, c.neutral, null, 16)
+  ctx.fillStyle = c.border; ctx.fillRect(0, 84, PW, 1)
+  const button = (rect, label, fill, color) => {
+    box(ctx, rect, fill, null, 10)
+    text(ctx, label, rect[0] + rect[2] / 2 - ctx.measureText(label).width / 2, rect[1] + rect[3] / 2, { size: 13, weight: 600, color })
+  }
+  if (page === 'app-home') {
+    for (let row = 0; row < 3; row++) for (let col = 0; col < 2; col++) {
+      const x = 12 + col * 119, y = 96 + row * 150
+      box(ctx, [x, y, 107, 100], c.neutral, null, 8)
+      line(ctx, x, y + 110, 80); line(ctx, x, y + 124, 48)
+    }
+  } else if (page === 'app-product') {
+    box(ctx, [16, 96, 218, 200], c.neutral, null, 10)
+    line(ctx, 16, 314, 170); line(ctx, 16, 332, 90); line(ctx, 16, 360, 200); line(ctx, 16, 376, 160)
+    ctx.font = `600 13px ${c.sans}`
+    button(PT.addToCart, 'Add to cart', c.fg, c.onEmphasis)
+  } else {
+    // The cart, also behind the payment sheet.
+    box(ctx, [16, 100, 56, 56], c.neutral, null, 8)
+    line(ctx, 84, 110, 120); line(ctx, 84, 128, 70)
+    ctx.fillStyle = c.border; ctx.fillRect(16, 176, 218, 1)
+    box(ctx, PT.gift, c.canvas, c.border, 8)
+    text(ctx, typed.gift || 'Gift card code', 28, 254, { size: 12, color: typed.gift ? c.fg : c.fgSubtle, max: 136 })
+    ctx.font = `600 13px ${c.sans}`
+    button(PT.apply, 'Apply', c.neutral, c.fg)
+    text(ctx, 'Total', 16, 310, { size: 13, weight: 600 })
+    line(ctx, 170, 306, 64)
+    ctx.font = `600 13px ${c.sans}`
+    button(PT.applePay, 'Apple Pay', c.fg, c.onEmphasis)
+    if (page === 'app-pay') {
+      ctx.globalAlpha = 0.5; ctx.fillStyle = c.backdrop; ctx.fillRect(0, 0, PW, H); ctx.globalAlpha = 1
+      rr(ctx, 0, 300, PW, 260, 16); ctx.fillStyle = c.canvas; ctx.fill()
+      box(ctx, [16, 324, 48, 32], c.neutral, null, 6)
+      line(ctx, 76, 330, 110); line(ctx, 76, 346, 70)
+      ctx.fillStyle = c.border; ctx.fillRect(16, 380, 218, 1)
+      text(ctx, 'Pay with passcode', 16, 410, { size: 13, weight: 600 })
+      const n = (typed.passcode ?? '').length
+      for (let i = 0; i < 6; i++) {
+        ctx.beginPath(); ctx.arc(PT.passcode[0] + 13 + i * 27, PT.passcode[1] + 15, 6, 0, Math.PI * 2)
+        if (i < n) { ctx.fillStyle = c.fg; ctx.fill() } else { ctx.strokeStyle = c.border; ctx.lineWidth = 1.5; ctx.stroke() }
+      }
+    }
+  }
+  if (page === 'app-done') {
+    ctx.fillStyle = c.canvas; ctx.fillRect(0, 85, PW, H - 85)
+    ctx.beginPath(); ctx.arc(PW / 2, 196, 28, 0, Math.PI * 2); ctx.fillStyle = c.successSubtle; ctx.fill()
+    ctx.beginPath(); ctx.moveTo(PW / 2 - 11, 197); ctx.lineTo(PW / 2 - 3, 205); ctx.lineTo(PW / 2 + 12, 189)
+    ctx.strokeStyle = c.success; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke()
+    text(ctx, 'Order confirmed', PW / 2 - 52, 272, { size: 14, weight: 600 })
+    line(ctx, 45, 300, 160); line(ctx, 65, 316, 120)
+  }
+  // The command's target while it runs, and a tap for a click.
+  if (cur?.target && PT[cur.target]) {
+    const until = cur.at + Math.max(0.9, cur.ms / 1000)
+    if (t <= until) {
+      const [x, y, w, h] = PT[cur.target]
+      rr(ctx, x - 3, y - 3, w + 6, h + 6, 10)
+      ctx.globalAlpha = 0.35; ctx.fillStyle = c.accentSubtle; ctx.fill(); ctx.globalAlpha = 1
+      ctx.lineWidth = 2; ctx.strokeStyle = c.accent; ctx.stroke()
+      if (/Click/.test(cur.name)) {
+        ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2, 12, 0, Math.PI * 2)
+        ctx.globalAlpha = 0.4; ctx.fillStyle = c.fg; ctx.fill(); ctx.globalAlpha = 1
+      }
+    }
+  }
+  ctx.restore()
+}
+
 export function drawFrame(ctx, detail, t) {
+  if (detail.test.platform === 'mobile') return drawPhone(ctx, detail, t)
   const c = colors()
   const cmds = detail.commands
   const cur = commandAt(cmds, t)
@@ -383,11 +474,16 @@ export function VideoPane({ detail, segments, byId, onStub, loading = false, mod
   }
   if (!hasVideo) {
     const queued = detail?.test.status === 'queued'
+    // Setup state: one muted line and no heading, so the step list in the
+    // centre pane is the only narrator (spec §12.2, C68).
+    const running = detail?.test.status === 'running'
     return (
       <section className={cx('vp', `vp--${mode}`)} aria-label="Video">
         <div className="vp-empty">
-          <LTBlankSlate heading={queued ? 'Waiting for the session' : 'Video unavailable'}
-            description={queued ? 'The video appears here once the test starts.' : 'This session ended without a recording.'} />
+          {running ? <LTBlankSlate description="The video appears here after the test runs." /> : (
+            <LTBlankSlate heading={queued ? 'Waiting for the session' : 'Video unavailable'}
+              description={queued ? 'The video appears here once the test starts.' : 'This session ended without a recording.'} />
+          )}
         </div>
         <div className="vc-row vc-row--empty">{windowControls}</div>
       </section>

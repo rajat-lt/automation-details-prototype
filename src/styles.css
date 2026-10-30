@@ -1379,3 +1379,116 @@ kbd {
   .cmd-flash { animation: none; opacity: 1; }
   .lt-skeleton { animation: none; }
 }
+
+/* ---------------- setup state (30 Oct 2026, spec §12) ---------------- */
+.status-pill--running { background: var(--accent-emphasis); }
+
+/* LTLoader look-alike: Primer's spinner (spec §12.8). */
+.lt-loader { display: block; flex: none; color: var(--accent-fg); animation: lt-spin 1s linear infinite; }
+@keyframes lt-spin { to { transform: rotate(360deg); } }
+
+/* The step list (§12.2): top-aligned, centred up to 560px, text left. */
+.su { flex: 1; min-height: 0; overflow-y: auto; padding: var(--space-8) var(--space-6) var(--space-6); }
+.su-steps, .su-subs { list-style: none; margin: 0; padding: 0; }
+.su-steps { max-width: 560px; margin: 0 auto; }
+.su-step { position: relative; display: flex; align-items: flex-start; gap: var(--space-3); padding-bottom: var(--space-5); }
+.su-step:last-child { padding-bottom: 0; }
+/* The rail, from under one badge to the next (LTTimeline). */
+.su-step:not(:last-child)::after {
+  content: ''; position: absolute; left: 7.5px; top: 24px; bottom: 4px; width: 1px; background: var(--border-muted);
+}
+.su-step.is-current:not(:last-child)::after { top: 40px; }
+.su-badge { flex: none; width: 16px; height: 20px; display: flex; align-items: center; }
+.su-step.is-done > .su-badge, .su-step.is-complete > .su-badge, .su-sub.is-done > .su-badge { color: var(--success-fg); }
+.su-step.is-current:not(.is-complete) > .su-badge, .su-sub.is-current > .su-badge { color: var(--accent-fg); }
+.su-step.is-pending > .su-badge, .su-sub.is-pending > .su-badge { color: var(--fg-muted); }
+.su-step__title { flex: 1; min-width: 0; font-size: var(--font-14); line-height: var(--lh-14); }
+.su-step.is-pending .su-step__title { color: var(--fg-muted); }
+.su-time {
+  flex: none; margin-left: auto; padding-left: var(--space-2); color: var(--fg-muted);
+  font-size: var(--font-12); line-height: var(--lh-14); font-weight: var(--weight-regular); font-variant-numeric: tabular-nums;
+}
+/* The current step's badge sits level with its name, 16px into the card. */
+.su-step.is-current > .su-badge { margin-top: calc(var(--space-4) + 1px); }
+
+/* The current step's card. The illustration sits left of the text from
+   360px of card width (the narrowest logs pane, 480px, gives 404px), above
+   it when narrower. */
+.su-card {
+  flex: 1; min-width: 0; container-type: inline-size; padding: var(--space-4);
+  border: 1px solid var(--border-default); border-radius: var(--radius-2); background: var(--canvas-default);
+}
+.su-card__top { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-3); }
+.su-card__ill { flex: none; display: block; align-self: center; width: 144px; height: 136px; }
+.su-card__ill svg { display: block; width: 144px; height: 136px; overflow: visible; }
+@container (min-width: 360px) {
+  .su-card__top { flex-direction: row; gap: var(--space-4); }
+  .su-card__ill { align-self: flex-start; }
+}
+.su-card__text { flex: 1; min-width: 0; }
+.su-card__title { display: flex; align-items: baseline; margin: 0; font-size: var(--font-14); line-height: var(--lh-14); text-wrap: pretty; }
+.su-card__name { min-width: 0; font-weight: var(--weight-bold); }
+.su-attempt {
+  display: flex; align-items: center; gap: var(--space-1); margin: var(--space-2) 0 0;
+  font-size: var(--font-12); line-height: var(--lh-12); font-weight: var(--weight-semibold);
+}
+.su-attempt svg { flex: none; color: var(--fg-muted); }
+.su-card__line { margin: var(--space-1) 0 0; color: var(--fg-muted); font-size: var(--font-12); line-height: var(--lh-12); text-wrap: pretty; }
+.su-attempt + .su-card__line { margin-top: 2px; }
+.su-subs { margin-top: var(--space-4); padding-top: var(--space-2); border-top: 1px solid var(--border-muted); }
+.su-sub { display: flex; align-items: center; gap: var(--space-2); min-height: 28px; font-size: var(--font-14); line-height: var(--lh-14); }
+.su-sub > .su-badge { height: 28px; }
+.su-sub__title { flex: 1; min-width: 0; }
+.su-sub.is-current .su-sub__title { font-weight: var(--weight-semibold); }
+.su-sub.is-pending .su-sub__title { color: var(--fg-muted); }
+.su-foot {
+  max-width: 560px; margin: var(--space-6) auto 0; padding-left: 28px;
+  color: var(--fg-muted); font-size: var(--font-12); line-height: var(--lh-12); text-wrap: pretty;
+}
+
+/* The spots' motion (§12.11, C66): transform and opacity only, at most 4
+   seconds, ending in the drawn pose so a replay starts without a snap. */
+.su-card__ill g { transform-box: fill-box; transform-origin: center; }
+@keyframes su-turn { to { transform: rotate(360deg); } }
+@keyframes su-turn-back-twice { to { transform: rotate(-720deg); } }
+@keyframes su-lift { 40% { transform: translateY(-4px); } }
+@keyframes su-bubble { from { transform: translateY(8px); opacity: 0; } 60% { opacity: 1; } }
+@keyframes su-flicker { 25% { transform: scaleY(1.18); } 50% { transform: scaleY(0.92); } 75% { transform: scaleY(1.1); } }
+@keyframes su-grow { from { transform: scaleY(0); } }
+@keyframes su-pop { from { transform: translateY(4px) scale(0.9); opacity: 0; } }
+.su-card__ill #su-device-gear-big { animation: su-turn 4s cubic-bezier(0.45, 0, 0.55, 1) both; }
+.su-card__ill #su-device-gear-mid,
+.su-card__ill #su-device-gear-small { animation: su-turn-back-twice 4s cubic-bezier(0.45, 0, 0.55, 1) both; }
+.su-card__ill #su-applepay-ring { animation: su-turn 3.5s cubic-bezier(0.45, 0, 0.55, 1) both; }
+.su-card__ill #su-applepay-card { animation: su-lift 1.2s cubic-bezier(0.45, 0, 0.55, 1) both; }
+/* Bubbles rise bottom first: groups follow the lift's layer order, not height. */
+.su-card__ill [id^="su-run-bubble-"] { animation: su-bubble 1.2s var(--ease-out) both; }
+.su-card__ill #su-run-bubble-7 { animation-delay: 0.3s; }
+.su-card__ill #su-run-bubble-4 { animation-delay: 0.6s; }
+.su-card__ill #su-run-bubble-5 { animation-delay: 0.9s; }
+.su-card__ill #su-run-bubble-3 { animation-delay: 1.2s; }
+.su-card__ill #su-run-bubble-6 { animation-delay: 1.5s; }
+.su-card__ill #su-run-bubble-2 { animation-delay: 1.8s; }
+.su-card__ill #su-run-flame { transform-origin: 50% 100%; animation: su-flicker 1.6s ease-in-out 2 both; }
+.su-card__ill [id^="su-results-bar-"] { transform-origin: 50% 100%; animation: su-grow 0.6s var(--ease-out) both; }
+.su-card__ill #su-results-bar-2 { animation-delay: 0.09s; }
+.su-card__ill #su-results-bar-3 { animation-delay: 0.18s; }
+.su-card__ill #su-results-bar-4 { animation-delay: 0.27s; }
+.su-card__ill #su-results-bar-5 { animation-delay: 0.36s; }
+.su-card__ill #su-results-bar-6 { animation-delay: 0.45s; }
+.su-card__ill #su-results-tooltip { transform-origin: 50% 100%; animation: su-pop 0.4s var(--ease-out) 0.75s both; }
+
+/* Prototype only (§12.3 item 13): dashed, so it never reads as product UI. */
+.proto-bar {
+  position: fixed; right: var(--space-4); bottom: var(--space-4); z-index: 500;
+  display: flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+  border: 1px dashed var(--fg-muted); border-radius: var(--radius-2); background: var(--canvas-default); box-shadow: var(--shadow-medium);
+}
+.proto-bar__label { margin-right: var(--space-1); color: var(--fg-muted); font-size: var(--font-12); font-weight: var(--weight-semibold); }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The spots stay still; the spinner keeps turning, as Primer asks of
+     loading indicators (spec §12.3 items 6 and 7). */
+  .su-card__ill * { animation: none !important; }
+  .lt-loader { animation-duration: 1s !important; animation-iteration-count: infinite !important; }
+}

@@ -1,10 +1,10 @@
 # Automation test details · prototype
 
-A working prototype of LambdaTest's automation test details page with Rajat's 18 UX changes of 16 Oct 2026, his 16 more of 17 Oct 2026 (v2), 11 more of 18 Oct 2026 (v3), 12 more of 19 Oct 2026 (v4), the Network tab's 11 of 27 Oct 2026 (v5, with Rajat's answers of 28 Oct 2026) and its 28 more of 28 Oct 2026 (v6), built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
+A working prototype of LambdaTest's automation test details page with Rajat's 18 UX changes of 16 Oct 2026, his 16 more of 17 Oct 2026 (v2), 11 more of 18 Oct 2026 (v3), 12 more of 19 Oct 2026 (v4), the Network tab's 11 of 27 Oct 2026 (v5, with Rajat's answers of 28 Oct 2026) and its 28 more of 28 Oct 2026 (v6), and the setup state of 30 Oct 2026, built from the `design-context` repo: its tokens, component names and props, guidelines, page patterns, text guide and mock data.
 
 **Live:** https://rajat-lt.github.io/automation-details-prototype/
 
-**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33; v4 adds §3c, §4d and §7d and conflicts C34 to C39; v5 adds §3d, §4e and §7e and conflicts C40 to C47; Rajat's answers add §4f and §7f and conflicts C48 and C49; v6 adds §3e, §4g and §7g and conflicts C50 to C56.
+**Spec:** [`automation-details.md`](automation-details.md), in the `design-context/patterns/` house format. It maps each change to components, and records every conflict between the brief, the guidelines and the screenshots (§6), the design decisions (§7), the copy (§8), the gaps found in design-context (§9), and the open questions (§10). v2 adds §3b, §4b and §7b, conflicts C20 to C28, and Rajat's answers; v3 adds §4c and §7c and conflicts C29 to C33; v4 adds §3c, §4d and §7d and conflicts C34 to C39; v5 adds §3d, §4e and §7e and conflicts C40 to C47; Rajat's answers add §4f and §7f and conflicts C48 and C49; v6 adds §3e, §4g and §7g and conflicts C50 to C56. The setup state has its own §12, with conflicts C64 to C75 and questions 72 to 85.
 
 ## Where to see each change
 
@@ -159,6 +159,22 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | v8 2 | No time window token | Click a ▼ above the overview: the list, the footer (*10 of 61 requests*) and the Waterfall header follow, with no token. R shows the whole session again |
 | v8 3 | *View in HAR viewer* | The caret beside Download HAR |
 
+**Setup state, 30 Oct 2026** (spec §12): open [`#/t-19/commands`](https://rajat-lt.github.io/automation-details-prototype/#/t-19/commands), the first test in the list. The demo plays the whole setup in about 90 seconds and starts again on reload.
+
+| # | Change | Try it |
+|---|---|---|
+| Setup 1 | The step list | In place of All Commands, Logs and Network: four steps, the current one open with its sub-steps; Meta Data shows the capabilities (`applePay`, `applePayCardType`) |
+| Setup 2 | One illustration per major step | In the current step's card; it moves for at most 4 seconds when its step or a retry starts, and when a sub-step starts at most every 10 seconds, then rests |
+| Setup 3 | Elapsed time, no ETA | The header's duration ticks; the current step's time ticks in its card; finished steps and sub-steps keep theirs |
+| Setup 4 | Retries | Apple Pay's first attempt fails on *Loading the wallet and card*: *Attempt 2 of 5* and the reason, and its sub-steps start again |
+| Setup 5 | The slow step | Apple Pay's card: *This step takes longer than the others.* |
+| Setup 6 | Running | The header pill, the test's row (*Running*), the readout and the status filter |
+| Setup 7 | The quiet video pane | *The video appears here after the test runs.*, no heading |
+| Setup 8 | The hand-off | After *Loading the video*: the results in place (*All Commands 22*, the phone's video, *Passed*, 1m 28s), and *Results ready. Test passed.* for screen readers |
+| Setup 9 | Keeps going elsewhere | Open another test, then come back: setup has moved on |
+| Setup 10 | Reduced motion | With the system's reduce motion setting on, the illustrations stay still and the spinner turns |
+| Prototype | Pause, Next Step, Restart | The dashed bar at the bottom right, on this test only; not part of the design |
+
 ## Review states
 
 | State | Link |
@@ -168,6 +184,8 @@ A working prototype of LambdaTest's automation test details page with Rajat's 18
 | Failure further down | [`#/t-04/commands`](https://rajat-lt.github.io/automation-details-prototype/#/t-04/commands) |
 | Video unavailable | [`#/t-07/commands`](https://rajat-lt.github.io/automation-details-prototype/#/t-07/commands) |
 | Queued test | [`#/t-12/commands`](https://rajat-lt.github.io/automation-details-prototype/#/t-12/commands) |
+| Test being set up | [`#/t-19/commands`](https://rajat-lt.github.io/automation-details-prototype/#/t-19/commands) |
+| Its capabilities while it sets up | [`#/t-19/metadata`](https://rajat-lt.github.io/automation-details-prototype/#/t-19/metadata) |
 | Command list loading | [`?demo=commands-loading`](https://rajat-lt.github.io/automation-details-prototype/?demo=commands-loading#/t-01/commands) |
 | Command list error | [`?demo=commands-error`](https://rajat-lt.github.io/automation-details-prototype/?demo=commands-error#/t-01/commands) |
 | Tests pane loading | [`?demo=tests-loading`](https://rajat-lt.github.io/automation-details-prototype/?demo=tests-loading#/t-01/commands) |
@@ -196,7 +214,8 @@ Pane sizes (the Network tab's details panel too), the dock position, the Network
 - **Picture-in-picture** is a window inside the page, not the browser's own (spec §7b).
 - **Comments** are kept in the page until a reload. The one on Create New Session at 0:32 is seeded mock data, by the signed-in user. **Delete Comment** deletes at once, with no confirmation, as the brief asks for now.
 - **Payload tabs** are kept per test until a reload.
-- **Rotate video** is built for mobile recordings, but every mock test is web: `mock-data.md` has no mobile devices.
+- **Rotate video** is built for mobile recordings, but every mock test is web: `mock-data.md` has no mobile devices. *Since 30 Oct 2026, t-19 is an iPhone 16 app test, from TestMu AI's docs, and its video is a portrait screen.*
+- **The setup state** runs on a simulated clock (`src/setup.jsx`): the whole flow in about 90 seconds, where real setups take minutes. It starts when the page loads, keeps going while other tests are open, and starts again on reload or **Restart**. Apple Pay's first attempt always fails, to show a retry.
 - **Network logs** are built from each test's own commands (`src/network-data.js`), with the first page's files, sizes and durations from the v5 screenshots; there is no capture behind them. **Download HAR** saves a real HAR 1.2 file of them, and each test's HAR is also built beside the page (`har/{test}.har`) for the external viewer. The image previews of *whatnew.png* and *favicon.ico* are stand-ins drawn for the mock; which runs captured bodies, and which requests are slow, are mock choices (spec §4g). **Copy as cURL**, **Copy as fetch** and the other request copies really copy.
 
 ## How it is built from design-context
@@ -204,7 +223,8 @@ Pane sizes (the Network tab's details panel too), the dock position, the Network
 - **Tokens:** `scripts/tokens.mjs` reads `data/tokens.json` from design-context's `main` branch and writes `src/tokens.css`. Every variable names its token path, and the script stops if a token is missing. The current file was generated from `main` at `618b4b8` (v5 added the switch tokens). The network phase colours are Chrome DevTools' own, by Rajat's answer of 28 Oct 2026, in `src/devtools-phases.css` with each value's DevTools source.
 - **Components:** each one is a look-alike of the private `lt-components` library under its real name, using only props documented in `COMPONENTS.md`, styled from the tokens and used as `guidelines/` says.
 - **Layout, copy and data:** `patterns/automation-details.md` is the base. `ux-text-guidelines.md` governs every string. `mock-data.md` supplies the cast, names, formats and IDs, and everything it lacks is listed in the spec's §9.
-- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 81 used: Accessibility, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, ExternalLink, Globe, GripHorizontal, History, Hourglass, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, LocateFixed, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, Smartphone, SquareArrowOutUpRight, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
+- **Icons:** lucide-react **1.58.0**, the library `icons.md` names, and only icon names confirmed present in that version. All 85 used: Accessibility, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, ArrowUpDown, Bell, Bot, Braces, Bug, ChartColumn, Check, ChevronDown, ChevronRight, ChevronUp, ChevronsDownUp, ChevronsUpDown, CircleAlert, CircleCheck, CircleDashed, CircleDot, CircleHelp, ClipboardList, Clock, Copy, Download, Ellipsis, ExternalLink, Globe, GripHorizontal, History, Hourglass, House, Image, Info, KeyRound, Keyboard, Layers, Link, ListFilter, LocateFixed, Maximize, MessageSquare, MessageSquarePlus, Minimize, Monitor, Moon, PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, PanelRightOpen, PanelTop, PanelTopClose, PanelTopOpen, Pause, Pencil, PictureInPicture2, Play, RotateCcw, RotateCw, RotateCwSquare, Rows2, Rows4, ScanEye, Search, Settings, Share2, SkipForward, Smartphone, SquareArrowOutUpRight, SquareTerminal, Sun, Table, TestTubes, Trash2, TriangleAlert, Undo2, Unlink, Workflow, X, Zap, ZoomIn. The platform sidebar's icons are placeholders chosen by intent, since `patterns/platform-sidebar.md` does not name them.
+- **Illustrations:** the setup state's four spots are drafts built with design-context's illustration kit (`illustration-style-kit`, at `6cfb737`) from parts lifted out of LambdaTest's own drawings, in a scratch copy: nothing was committed to design-context. Their modules and 2x previews are in `illustrations/kit-drafts/`; the cut SVGs the page uses are in `src/illustrations/`. They wait for Rajat's approval (spec §12.11).
 
 ## Run it
 
@@ -246,3 +266,6 @@ Build for GitHub Pages with `npm run build`; the site is served from the `gh-pag
 | `src/network-detail.jsx`, `src/network-copy.js` | A request's details, with Preview and the capture state (v6), and its copies: link, cURL, fetch and HAR in the menus; the header tables, the body and the timings in their tabs (v7) |
 | `vite.config.js` | Builds each test's HAR beside the page, for the external viewer (v6 item 23) |
 | `src/data.js`, `src/format.js` | Mock data, including the nested test cases (v4 item 10), and the `mock-data.md` formats |
+| `src/setup.jsx` | The setup state: its steps, the simulated clock, the step list, the announcements and the prototype bar (spec §12) |
+| `src/illustrations/` | The four setup spots, cut to a 144 × 136 slot, each moving piece its own group |
+| `illustrations/kit-drafts/` | The spots' kit modules (`setup-*.mjs`, `_setup-lib.mjs`) and 2x previews, to rebuild them in design-context's illustration kit |
